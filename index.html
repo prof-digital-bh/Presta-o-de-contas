@@ -4,7 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sistema de Prestação de Contas — Caixa Escolar</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%230e1117'/><rect width='64' height='64' rx='14' fill='url(%23g)'/><defs><linearGradient id='g' x1='0' y1='0' x2='64' y2='64' gradientUnits='userSpaceOnUse'><stop offset='0' stop-color='%234f8ef7'/><stop offset='1' stop-color='%2338d9a9'/></linearGradient></defs><rect x='14' y='18' width='36' height='28' rx='4' fill='none' stroke='%23fff' stroke-width='3'/><line x1='14' y1='26' x2='50' y2='26' stroke='%23fff' stroke-width='3'/><line x1='22' y1='33' x2='30' y2='33' stroke='%23fff' stroke-width='2.5' stroke-linecap='round'/><line x1='22' y1='39' x2='34' y2='39' stroke='%23fff' stroke-width='2.5' stroke-linecap='round'/><circle cx='44' cy='36' r='5' fill='%2338d9a9'/><line x1='44' y1='33' x2='44' y2='36' stroke='%230e1117' stroke-width='1.8' stroke-linecap='round'/><line x1='44' y1='36' x2='46' y2='38' stroke='%230e1117' stroke-width='1.8' stroke-linecap='round'/></svg>">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --bg: #0e1117;
@@ -714,6 +716,97 @@
   .text-right { text-align: right; }
   .font-bold { font-weight: 600; }
 
+  /* LOGIN SCREEN */
+  #login-screen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  #login-screen.visible { display: flex; }
+
+  .login-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 40px 36px;
+    width: 360px;
+    max-width: 92vw;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    animation: slideUp 0.25s ease;
+  }
+
+  .login-logo {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 700; color: #fff;
+    margin: 0 auto 20px;
+  }
+
+  .login-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    text-align: center;
+    margin-bottom: 6px;
+  }
+
+  .login-sub {
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  .login-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+  .login-field label { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+  .login-field input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 13px;
+    font-size: 13px;
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .login-field input:focus { border-color: var(--accent); background: var(--surface3); }
+
+  .login-btn {
+    width: 100%;
+    padding: 11px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: background 0.15s;
+  }
+  .login-btn:hover { background: #6fa3f9; }
+  .login-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  .login-error {
+    font-size: 12px;
+    color: var(--accent-red);
+    text-align: center;
+    margin-top: 12px;
+    min-height: 18px;
+  }
+
+  /* Esconder app até autenticar */
+  .app-shell { display: none; }
+  .app-shell.authed { display: grid; }
+
   /* PRINT STYLES */
   @media print {
     .sidebar, .page-header .btn, .action-btn, .modal-overlay { display: none !important; }
@@ -726,6 +819,25 @@
 </style>
 </head>
 <body>
+
+<!-- TELA DE LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">CE</div>
+    <div class="login-title">Prestação de Contas</div>
+    <div class="login-sub">Caixa Escolar — Acesso restrito</div>
+    <div class="login-field">
+      <label>E-mail</label>
+      <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email">
+    </div>
+    <div class="login-field">
+      <label>Senha</label>
+      <input type="password" id="login-senha" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="login-btn" id="login-btn" onclick="fazerLogin()">Entrar</button>
+    <div class="login-error" id="login-erro"></div>
+  </div>
+</div>
 
 <div class="app-shell">
 
@@ -781,6 +893,13 @@
         <span class="nav-icon">🏢</span> Fornecedores
       </div>
     </nav>
+
+    <div style="margin-top:auto;padding:12px">
+      <div id="login-user-info" style="font-size:11px;color:var(--text-dim);padding:8px 12px;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+      <div class="nav-item" onclick="fazerLogout()" style="color:var(--accent-red)">
+        <span class="nav-icon">⎋</span> Sair
+      </div>
+    </div>
   </aside>
 
   <!-- MAIN CONTENT -->
@@ -3947,6 +4066,72 @@ renderAlertas();
 renderLinks();
 // Aplicar máscaras de moeda a todos os campos monetários estáticos
 initMoneyMasks();
+
+// ==================== SUPABASE AUTH ====================
+const SUPA_URL = 'https://nvwkbdlzyfivmkapdhyl.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52d2tiZGx6eWZpdm1rYXBkaHlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjI4MzgsImV4cCI6MjA5MzkzODgzOH0.YVVj7nt5u0wsf9UmjLlSaSNFzfzY52kJwKCzh_lCcmw';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+const loginScreen = document.getElementById('login-screen');
+const appShell = document.querySelector('.app-shell');
+
+function mostrarApp(user) {
+  loginScreen.classList.remove('visible');
+  appShell.classList.add('authed');
+  const info = document.getElementById('login-user-info');
+  if (info) info.textContent = user.email;
+}
+
+function mostrarLogin() {
+  loginScreen.classList.add('visible');
+  appShell.classList.remove('authed');
+}
+
+async function fazerLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const senha = document.getElementById('login-senha').value;
+  const btn = document.getElementById('login-btn');
+  const erro = document.getElementById('login-erro');
+
+  if (!email || !senha) { erro.textContent = 'Preencha e-mail e senha.'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Entrando…';
+  erro.textContent = '';
+
+  const { data, error } = await supa.auth.signInWithPassword({ email, password: senha });
+
+  if (error) {
+    erro.textContent = 'E-mail ou senha incorretos.';
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+  } else {
+    mostrarApp(data.user);
+  }
+}
+
+async function fazerLogout() {
+  await supa.auth.signOut();
+  mostrarLogin();
+}
+
+// Permitir login com Enter
+document.getElementById('login-senha').addEventListener('keydown', e => {
+  if (e.key === 'Enter') fazerLogin();
+});
+document.getElementById('login-email').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('login-senha').focus();
+});
+
+// Verificar sessão existente ao carregar
+(async () => {
+  const { data: { session } } = await supa.auth.getSession();
+  if (session) {
+    mostrarApp(session.user);
+  } else {
+    mostrarLogin();
+  }
+})();
 
 
 </script>
