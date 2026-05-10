@@ -107,6 +107,46 @@
     text-transform: uppercase;
   }
 
+  /* ── Sync status indicator ── */
+  .sync-bar {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 14px;
+    border-top: 1px solid var(--border);
+    background: transparent;
+    transition: opacity 0.4s;
+  }
+  .sync-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: background 0.5s;
+  }
+  .sync-dot.idle    { background: #38d9a9; }
+  .sync-dot.syncing { background: #f5a623; animation: sdot-pulse 0.75s ease-in-out infinite; }
+  .sync-dot.error   { background: #f05060; }
+  @keyframes sdot-pulse {
+    0%,100% { opacity:1; transform:scale(1); }
+    50%      { opacity:0.35; transform:scale(0.65); }
+  }
+  .sync-text {
+    font-size: 10.5px;
+    color: var(--text-dim);
+    white-space: nowrap;
+    transition: color 0.4s;
+    line-height: 1;
+  }
+  .sync-time {
+    font-size: 10px;
+    color: var(--text-dim);
+    opacity: 0.5;
+    margin-left: auto;
+    white-space: nowrap;
+    font-family: 'DM Mono', monospace;
+  }
+
   .nav-section {
     padding: 16px 12px 8px;
   }
@@ -895,6 +935,12 @@
     </nav>
 
     <div style="margin-top:auto;padding:12px">
+      <!-- Sync status -->
+      <div class="sync-bar" id="sync-bar">
+        <div class="sync-dot idle" id="sync-dot"></div>
+        <span class="sync-text" id="sync-text">Sincronizado</span>
+        <span class="sync-time" id="sync-time"></span>
+      </div>
       <div style="padding:10px 12px;margin-bottom:4px">
         <div style="font-size:12px;font-weight:600;color:var(--text)">Prof. Everton Correa Alves</div>
         <div style="font-size:11px;color:var(--text-dim);margin-top:2px">Prestador de Contas</div>
@@ -2326,8 +2372,10 @@ async function salvarFornecedor() {
   if (!nome) { alert('Informe o nome do fornecedor.'); return; }
   if (!state.fornecedoresCad) state.fornecedoresCad = [];
   const f = { id: Date.now(), nome, cnpj, responsavel: resp };
+  setSyncStatus('syncing');
   const { error } = await supa.from('fornecedores').insert({ id: f.id, nome: f.nome, cnpj: f.cnpj, responsavel: f.responsavel });
-  if (error) { alert('Erro ao salvar fornecedor: ' + error.message); return; }
+  if (error) { setSyncStatus('error'); alert('Erro ao salvar fornecedor: ' + error.message); return; }
+  setSyncStatus('ok');
   state.fornecedoresCad.push(f);
   closeModal('modal-fornecedor');
   document.getElementById('forn-nome').value = '';
@@ -2356,7 +2404,9 @@ function renderFornecedores() {
 
 async function removerFornecedor(id) {
   if (!confirm('Remover fornecedor?')) return;
+  setSyncStatus('syncing');
   await supa.from('fornecedores').delete().eq('id', id);
+  setSyncStatus('ok');
   state.fornecedoresCad = (state.fornecedoresCad||[]).filter(f => f.id !== id);
   renderFornecedores();
 }
@@ -2497,8 +2547,10 @@ async function salvarDespesa() {
   };
   if (!d.credor || !d.valor) { alert('Preencha ao menos o credor e o valor.'); return; }
   if (!d.tcVinculo) { alert('Selecione o TC ou Aditivo vinculado.'); return; }
+  setSyncStatus('syncing');
   const { error } = await supa.from('despesas').insert(despesaToRow(d));
-  if (error) { alert('Erro ao salvar despesa: ' + error.message); return; }
+  if (error) { setSyncStatus('error'); alert('Erro ao salvar despesa: ' + error.message); return; }
+  setSyncStatus('ok');
   state.despesas.push(d);
   addParcelaTab(d.parcela);
   closeModal('modal-despesa');
@@ -2809,13 +2861,15 @@ async function salvarTC() {
     id: Date.now()
   };
   if (!tc.numero) { alert('Preencha o número do TC ou Aditivo.'); return; }
+  setSyncStatus('syncing');
   const { error } = await supa.from('tcs').insert(tcToRow(tc));
-  if (error) { alert('Erro ao salvar TC: ' + error.message); return; }
+  if (error) { setSyncStatus('error'); alert('Erro ao salvar TC: ' + error.message); return; }
   state.tcs.push(tc);
   if (state.tcAtivo === null && !ehAditivo) {
     state.tcAtivo = tc.id;
     await supa.from('configuracoes').upsert({ chave: 'tc_ativo', valor: String(tc.id) });
   }
+  setSyncStatus('ok');
   // reset modal
   document.getElementById('tc-eh-aditivo').value = 'nao';
   toggleAditivoFields();
@@ -2892,7 +2946,9 @@ function renderTCs() {
 
 async function setTCAtivo(id) {
   state.tcAtivo = id;
+  setSyncStatus('syncing');
   await supa.from('configuracoes').upsert({ chave: 'tc_ativo', valor: String(id) });
+  setSyncStatus('ok');
   renderTCs();
   updateSidebarStatus();
 }
@@ -2901,7 +2957,9 @@ async function removerTC(i) {
   if (!confirm('Remover este TC?')) return;
   const tc = state.tcs[i];
   if (!tc) return;
+  setSyncStatus('syncing');
   await supa.from('tcs').delete().eq('id', tc.id);
+  setSyncStatus('ok');
   state.tcs.splice(i, 1);
   renderTCs();
 }
@@ -2970,7 +3028,9 @@ function renderDespesas() {
 
 async function removerDespesa(id) {
   if (!confirm('Remover este lançamento?')) return;
+  setSyncStatus('syncing');
   await supa.from('despesas').delete().eq('id', id);
+  setSyncStatus('ok');
   state.despesas = state.despesas.filter(d => d.id !== id);
   renderDespesas();
   renderDashboard();
@@ -3156,7 +3216,8 @@ async function toggleCheck(key) {
   const ci = document.getElementById('ci-'+key);
   if (state.checkStates[key]) { ci.classList.add('done'); ci.classList.remove('pending','pending-yellow'); }
   else { ci.classList.remove('done'); }
-  await supa.from('checklist_states').upsert({ chave: key, marcado: state.checkStates[key], atualizado_em: new Date().toISOString() });
+  const { error } = await supa.from('checklist_states').upsert({ chave: key, marcado: state.checkStates[key], atualizado_em: new Date().toISOString() });
+  if (error) { setSyncStatus('error'); } else { setSyncStatus('ok'); }
   updatePendenciasSummary();
   refreshPendenciaBadge();
 }
@@ -4015,8 +4076,10 @@ async function salvarLink() {
   const desc = document.getElementById('link-descricao').value.trim();
   if (!titulo || !url) { alert('Preencha o título e o link.'); return; }
   const link = { id: Date.now(), titulo, url, cat, desc };
+  setSyncStatus('syncing');
   const { error } = await supa.from('links_rapidos').insert({ id: link.id, titulo, url, categoria: cat, descricao: desc });
-  if (error) { alert('Erro ao salvar link: ' + error.message); return; }
+  if (error) { setSyncStatus('error'); alert('Erro ao salvar link: ' + error.message); return; }
+  setSyncStatus('ok');
   linksData.push(link);
   closeModal('modal-add-link');
   document.getElementById('link-titulo').value = '';
@@ -4115,7 +4178,9 @@ function removerLink(id) {
 async function confirmarRemoverLink() {
   const overlay = document.getElementById('modal-confirm-delete');
   const id = Number(overlay.dataset.pendingId);
+  setSyncStatus('syncing');
   await supa.from('links_rapidos').delete().eq('id', id);
+  setSyncStatus('ok');
   linksData = linksData.filter(l => l.id !== id);
   overlay.classList.remove('open');
   renderLinks();
@@ -4143,8 +4208,10 @@ async function salvarEdicaoLink() {
   const cat = document.getElementById('edit-link-categoria').value;
   const desc = document.getElementById('edit-link-descricao').value.trim();
   if (!titulo || !url) { alert('Preencha o título e o link.'); return; }
+  setSyncStatus('syncing');
   const { error } = await supa.from('links_rapidos').update({ titulo, url, categoria: cat, descricao: desc }).eq('id', id);
-  if (error) { alert('Erro ao atualizar link: ' + error.message); return; }
+  if (error) { setSyncStatus('error'); alert('Erro ao atualizar link: ' + error.message); return; }
+  setSyncStatus('ok');
   const idx = linksData.findIndex(l => l.id === id);
   if (idx !== -1) linksData[idx] = { ...linksData[idx], titulo, url, cat, desc };
   closeModal('modal-edit-link');
@@ -4171,6 +4238,34 @@ addAnx4Row();
 addAnx6Row();
 initMoneyMasks();
 
+// ==================== SYNC INDICATOR ====================
+function setSyncStatus(s) {
+  const dot  = document.getElementById('sync-dot');
+  const txt  = document.getElementById('sync-text');
+  const time = document.getElementById('sync-time');
+  if (!dot) return;
+  const hhmm = () => new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  dot.className = 'sync-dot ' + (s === 'ok' ? 'idle' : s);
+  if (s === 'syncing') {
+    txt.textContent  = 'Sincronizando…';
+    txt.style.color  = '#f5a623';
+    time.textContent = '';
+  } else if (s === 'ok') {
+    txt.textContent  = 'Sincronizado';
+    txt.style.color  = '#38d9a9';
+    time.textContent = hhmm();
+    setTimeout(() => {
+      if (document.getElementById('sync-text')) {
+        document.getElementById('sync-text').style.color = 'var(--text-dim)';
+      }
+    }, 3500);
+  } else {
+    txt.textContent  = 'Erro ao sincronizar';
+    txt.style.color  = '#f05060';
+    time.textContent = hhmm();
+  }
+}
+
 // ==================== SUPABASE AUTH ====================
 const loginScreen = document.getElementById('login-screen');
 const appShell = document.querySelector('.app-shell');
@@ -4191,6 +4286,7 @@ async function inicializarApp() {
   initExtras();
   renderAlertas();
   renderLinks();
+  setSyncStatus('ok');
 }
 
 async function mostrarApp(user) {
