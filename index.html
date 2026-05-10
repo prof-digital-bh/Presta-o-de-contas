@@ -2313,15 +2313,22 @@
 </div>
 
 <script>
+// ==================== SUPABASE CLIENT ====================
+const SUPA_URL = 'https://nvwkbdlzyfivmkapdhyl.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52d2tiZGx6eWZpdm1rYXBkaHlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjI4MzgsImV4cCI6MjA5MzkzODgzOH0.YVVj7nt5u0wsf9UmjLlSaSNFzfzY52kJwKCzh_lCcmw';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
 // ==================== STATE ====================
-function salvarFornecedor() {
+async function salvarFornecedor() {
   const nome = document.getElementById('forn-nome').value.trim();
   const cnpj = document.getElementById('forn-cnpj').value.trim();
   const resp = document.getElementById('forn-responsavel').value.trim();
   if (!nome) { alert('Informe o nome do fornecedor.'); return; }
   if (!state.fornecedoresCad) state.fornecedoresCad = [];
-  state.fornecedoresCad.push({ id: Date.now(), nome, cnpj, responsavel: resp });
-  save();
+  const f = { id: Date.now(), nome, cnpj, responsavel: resp };
+  const { error } = await supa.from('fornecedores').insert({ id: f.id, nome: f.nome, cnpj: f.cnpj, responsavel: f.responsavel });
+  if (error) { alert('Erro ao salvar fornecedor: ' + error.message); return; }
+  state.fornecedoresCad.push(f);
   closeModal('modal-fornecedor');
   document.getElementById('forn-nome').value = '';
   document.getElementById('forn-cnpj').value = '';
@@ -2347,10 +2354,10 @@ function renderFornecedores() {
   `).join('');
 }
 
-function removerFornecedor(id) {
+async function removerFornecedor(id) {
   if (!confirm('Remover fornecedor?')) return;
+  await supa.from('fornecedores').delete().eq('id', id);
   state.fornecedoresCad = (state.fornecedoresCad||[]).filter(f => f.id !== id);
-  save();
   renderFornecedores();
 }
 
@@ -2467,7 +2474,7 @@ function togglePendenciaField(campo) {
 }
 
 // ==================== OVERRIDE salvarDespesa com novos campos ====================
-function salvarDespesa() {
+async function salvarDespesa() {
   const tcVinculo = document.getElementById('d-tc-vinculo').value;
   const d = {
     tcVinculo,
@@ -2490,9 +2497,10 @@ function salvarDespesa() {
   };
   if (!d.credor || !d.valor) { alert('Preencha ao menos o credor e o valor.'); return; }
   if (!d.tcVinculo) { alert('Selecione o TC ou Aditivo vinculado.'); return; }
+  const { error } = await supa.from('despesas').insert(despesaToRow(d));
+  if (error) { alert('Erro ao salvar despesa: ' + error.message); return; }
   state.despesas.push(d);
   addParcelaTab(d.parcela);
-  save();
   closeModal('modal-despesa');
   renderDespesas();
   renderDashboard();
@@ -2553,25 +2561,118 @@ let state = {
   tcAtivo: null
 };
 
-// Load from localStorage — ignora dados de demonstração (despesas sem tcVinculo real)
-try {
-  const saved = localStorage.getItem('pc_state');
-  if (saved) {
-    const parsed = JSON.parse(saved);
-    // Se havia dados de demo (despesas com credores de exemplo), limpa tudo
-    const temDemo = (parsed.despesas||[]).some(d =>
-      ['COMERCIAL JL MOCEIS','FONTEPEL','FC ATACADIST','MP PRODUTOS','AGAPE'].some(n => (d.credor||'').toUpperCase().includes(n))
-    );
-    if (temDemo) {
-      localStorage.removeItem('pc_state');
-    } else {
-      state = { ...state, ...parsed };
-    }
-  }
-} catch(e) {}
+// save() é mantido como no-op para compatibilidade — persistência agora é pelo Supabase
+function save() {}
 
-function save() {
-  try { localStorage.setItem('pc_state', JSON.stringify(state)); } catch(e) {}
+// ==================== SUPABASE DATA HELPERS ====================
+
+// Converte objeto TC do app para linha do Supabase
+function tcToRow(tc) {
+  return {
+    id: tc.id,
+    numero: tc.numero,
+    escola: tc.escola || null,
+    cnpj: tc.cnpj || null,
+    presidente: tc.presidente || null,
+    inicio: tc.inicio || null,
+    fim: tc.fim || null,
+    valor: tc.valor || null,
+    status: tc.status || null,
+    obs: tc.obs || null,
+    eh_aditivo: tc.ehAditivo || false,
+    tc_pai_id: tc.tcPaiId || null
+  };
+}
+
+// Converte linha do Supabase para objeto TC do app
+function rowToTc(r) {
+  return {
+    id: r.id,
+    numero: r.numero,
+    escola: r.escola,
+    cnpj: r.cnpj,
+    presidente: r.presidente,
+    inicio: r.inicio,
+    fim: r.fim,
+    valor: r.valor,
+    status: r.status,
+    obs: r.obs,
+    ehAditivo: r.eh_aditivo,
+    tcPaiId: r.tc_pai_id
+  };
+}
+
+// Converte objeto despesa do app para linha do Supabase
+function despesaToRow(d) {
+  return {
+    id: d.id,
+    tc_vinculo: d.tcVinculo || null,
+    tipo: d.tipo || null,
+    subtipo: d.subtipo || null,
+    parcela: d.parcela || null,
+    credor: d.credor,
+    cnpj: d.cnpj || null,
+    nf_num: d.nfNum || null,
+    nf_data: d.nfData || null,
+    valor: d.valor,
+    descricao: d.descricao || null,
+    orcamentos: d.orcamentos || null,
+    orcamentos_pend: d.orcamentosPend || null,
+    certidoes: d.certidoes || null,
+    certidoes_pend: d.certidoesPend || null,
+    cartao_cnpj: d.cartaoCnpj || null,
+    cartao_cnpj_pend: d.cartaoCnpjPend || null
+  };
+}
+
+// Converte linha do Supabase para objeto despesa do app
+function rowToDespesa(r) {
+  return {
+    id: r.id,
+    tcVinculo: r.tc_vinculo,
+    tipo: r.tipo,
+    subtipo: r.subtipo,
+    parcela: r.parcela,
+    credor: r.credor,
+    cnpj: r.cnpj,
+    nfNum: r.nf_num,
+    nfData: r.nf_data,
+    valor: r.valor,
+    descricao: r.descricao,
+    orcamentos: r.orcamentos,
+    orcamentosPend: r.orcamentos_pend,
+    certidoes: r.certidoes,
+    certidoesPend: r.certidoes_pend,
+    cartaoCnpj: r.cartao_cnpj,
+    cartaoCnpjPend: r.cartao_cnpj_pend
+  };
+}
+
+// Carrega todos os dados do Supabase para o state
+async function carregarDados() {
+  const [
+    { data: tcsData },
+    { data: despesasData },
+    { data: fornsData },
+    { data: checksData },
+    { data: confsData }
+  ] = await Promise.all([
+    supa.from('tcs').select('*').order('criado_em'),
+    supa.from('despesas').select('*').order('criado_em'),
+    supa.from('fornecedores').select('*').order('criado_em'),
+    supa.from('checklist_states').select('*'),
+    supa.from('configuracoes').select('*')
+  ]);
+
+  state.tcs = (tcsData || []).map(rowToTc);
+  state.despesas = (despesasData || []).map(rowToDespesa);
+  state.fornecedoresCad = (fornsData || []).map(r => ({ id: r.id, nome: r.nome, cnpj: r.cnpj, responsavel: r.responsavel }));
+  state.checkStates = {};
+  (checksData || []).forEach(r => { state.checkStates[r.chave] = r.marcado; });
+  (confsData || []).forEach(r => {
+    if (r.chave === 'tc_ativo') state.tcAtivo = r.valor ? Number(r.valor) : null;
+    if (r.chave === 'parcela_filtro') state.parcelaFiltro = r.valor || 'todas';
+  });
 }
 
 // ==================== MÁSCARA DE MOEDA ====================
@@ -2686,7 +2787,7 @@ function abrirModalAditivo(tcPaiId) {
   openModal('modal-tc');
 }
 
-function salvarTC() {
+async function salvarTC() {
   const inicio = document.getElementById('tc-inicio').value;
   const fim = document.getElementById('tc-fim').value;
   const ehAditivo = document.getElementById('tc-eh-aditivo').value === 'sim';
@@ -2708,11 +2809,13 @@ function salvarTC() {
     id: Date.now()
   };
   if (!tc.numero) { alert('Preencha o número do TC ou Aditivo.'); return; }
+  const { error } = await supa.from('tcs').insert(tcToRow(tc));
+  if (error) { alert('Erro ao salvar TC: ' + error.message); return; }
   state.tcs.push(tc);
   if (state.tcAtivo === null && !ehAditivo) {
     state.tcAtivo = tc.id;
+    await supa.from('configuracoes').upsert({ chave: 'tc_ativo', valor: String(tc.id) });
   }
-  save();
   // reset modal
   document.getElementById('tc-eh-aditivo').value = 'nao';
   toggleAditivoFields();
@@ -2787,17 +2890,19 @@ function renderTCs() {
   `}).join('');
 }
 
-function setTCAtivo(id) {
+async function setTCAtivo(id) {
   state.tcAtivo = id;
-  save();
+  await supa.from('configuracoes').upsert({ chave: 'tc_ativo', valor: String(id) });
   renderTCs();
   updateSidebarStatus();
 }
 
-function removerTC(i) {
+async function removerTC(i) {
   if (!confirm('Remover este TC?')) return;
+  const tc = state.tcs[i];
+  if (!tc) return;
+  await supa.from('tcs').delete().eq('id', tc.id);
   state.tcs.splice(i, 1);
-  save();
   renderTCs();
 }
 
@@ -2863,10 +2968,10 @@ function renderDespesas() {
   document.getElementById('total-tabela').textContent = fmtMoney(total);
 }
 
-function removerDespesa(id) {
+async function removerDespesa(id) {
   if (!confirm('Remover este lançamento?')) return;
+  await supa.from('despesas').delete().eq('id', id);
   state.despesas = state.despesas.filter(d => d.id !== id);
-  save();
   renderDespesas();
   renderDashboard();
   renderChecklist();
@@ -3046,12 +3151,12 @@ function checkItem(key, label, sub, company, checked, cls) {
   `;
 }
 
-function toggleCheck(key) {
+async function toggleCheck(key) {
   state.checkStates[key] = document.getElementById('cb-'+key).checked;
   const ci = document.getElementById('ci-'+key);
   if (state.checkStates[key]) { ci.classList.add('done'); ci.classList.remove('pending','pending-yellow'); }
   else { ci.classList.remove('done'); }
-  save();
+  await supa.from('checklist_states').upsert({ chave: key, marcado: state.checkStates[key], atualizado_em: new Date().toISOString() });
   updatePendenciasSummary();
   refreshPendenciaBadge();
 }
@@ -3901,16 +4006,18 @@ function toggleRec(headerEl) {
 }
 
 // ==================== LINKS RÁPIDOS ====================
-let linksData = JSON.parse(localStorage.getItem('ce_links') || '[]');
+let linksData = [];
 
-function salvarLink() {
+async function salvarLink() {
   const titulo = document.getElementById('link-titulo').value.trim();
   const url = document.getElementById('link-url').value.trim();
   const cat = document.getElementById('link-categoria').value;
   const desc = document.getElementById('link-descricao').value.trim();
   if (!titulo || !url) { alert('Preencha o título e o link.'); return; }
-  linksData.push({ id: Date.now(), titulo, url, cat, desc });
-  localStorage.setItem('ce_links', JSON.stringify(linksData));
+  const link = { id: Date.now(), titulo, url, cat, desc };
+  const { error } = await supa.from('links_rapidos').insert({ id: link.id, titulo, url, categoria: cat, descricao: desc });
+  if (error) { alert('Erro ao salvar link: ' + error.message); return; }
+  linksData.push(link);
   closeModal('modal-add-link');
   document.getElementById('link-titulo').value = '';
   document.getElementById('link-url').value = '';
@@ -4005,11 +4112,11 @@ function removerLink(id) {
   overlay.classList.add('open');
 }
 
-function confirmarRemoverLink() {
+async function confirmarRemoverLink() {
   const overlay = document.getElementById('modal-confirm-delete');
   const id = Number(overlay.dataset.pendingId);
+  await supa.from('links_rapidos').delete().eq('id', id);
   linksData = linksData.filter(l => l.id !== id);
-  localStorage.setItem('ce_links', JSON.stringify(linksData));
   overlay.classList.remove('open');
   renderLinks();
 }
@@ -4029,18 +4136,17 @@ function editarLink(id) {
   openModal('modal-edit-link');
 }
 
-function salvarEdicaoLink() {
+async function salvarEdicaoLink() {
   const id = Number(document.getElementById('edit-link-id').value);
   const titulo = document.getElementById('edit-link-titulo').value.trim();
   const url = document.getElementById('edit-link-url').value.trim();
   const cat = document.getElementById('edit-link-categoria').value;
   const desc = document.getElementById('edit-link-descricao').value.trim();
   if (!titulo || !url) { alert('Preencha o título e o link.'); return; }
+  const { error } = await supa.from('links_rapidos').update({ titulo, url, categoria: cat, descricao: desc }).eq('id', id);
+  if (error) { alert('Erro ao atualizar link: ' + error.message); return; }
   const idx = linksData.findIndex(l => l.id === id);
-  if (idx !== -1) {
-    linksData[idx] = { ...linksData[idx], titulo, url, cat, desc };
-    localStorage.setItem('ce_links', JSON.stringify(linksData));
-  }
+  if (idx !== -1) linksData[idx] = { ...linksData[idx], titulo, url, cat, desc };
   closeModal('modal-edit-link');
   renderLinks();
 }
@@ -4060,32 +4166,37 @@ function openLinkExternal() {
 }
 
 // ==================== INIT ====================
-state.despesas.forEach(d => addParcelaTab(d.parcela));
-renderDespesas();
-renderTCs();
-renderDashboard();
-renderChecklist();
-refreshPendenciaBadge();
-initExtras();
-// Inicializar linhas padrão dos anexos
+// (renderizações chamadas após carregarDados no auth)
 addAnx4Row();
 addAnx6Row();
-renderAlertas();
-renderLinks();
-// Aplicar máscaras de moeda a todos os campos monetários estáticos
 initMoneyMasks();
 
 // ==================== SUPABASE AUTH ====================
-const SUPA_URL = 'https://nvwkbdlzyfivmkapdhyl.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52d2tiZGx6eWZpdm1rYXBkaHlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjI4MzgsImV4cCI6MjA5MzkzODgzOH0.YVVj7nt5u0wsf9UmjLlSaSNFzfzY52kJwKCzh_lCcmw';
-const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
-
 const loginScreen = document.getElementById('login-screen');
 const appShell = document.querySelector('.app-shell');
 
-function mostrarApp(user) {
+async function inicializarApp() {
+  // Carregar links do Supabase para linksData
+  const { data: linksRows } = await supa.from('links_rapidos').select('*').order('criado_em');
+  linksData = (linksRows || []).map(r => ({ id: r.id, titulo: r.titulo, url: r.url, cat: r.categoria, desc: r.descricao }));
+
+  await carregarDados();
+
+  state.despesas.forEach(d => addParcelaTab(d.parcela));
+  renderDespesas();
+  renderTCs();
+  renderDashboard();
+  renderChecklist();
+  refreshPendenciaBadge();
+  initExtras();
+  renderAlertas();
+  renderLinks();
+}
+
+async function mostrarApp(user) {
   loginScreen.classList.remove('visible');
   appShell.classList.add('authed');
+  await inicializarApp();
 }
 
 function mostrarLogin() {
@@ -4112,7 +4223,7 @@ async function fazerLogin() {
     btn.disabled = false;
     btn.textContent = 'Entrar';
   } else {
-    mostrarApp(data.user);
+    await mostrarApp(data.user);
   }
 }
 
@@ -4133,7 +4244,7 @@ document.getElementById('login-email').addEventListener('keydown', e => {
 (async () => {
   const { data: { session } } = await supa.auth.getSession();
   if (session) {
-    mostrarApp(session.user);
+    await mostrarApp(session.user);
   } else {
     mostrarLogin();
   }
