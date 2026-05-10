@@ -1,0 +1,2292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Prestação de Contas — Caixa Escolar</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e1117;
+    --surface: #161b24;
+    --surface2: #1e2535;
+    --surface3: #252d3e;
+    --border: #2a3349;
+    --border-light: #3a4560;
+    --accent: #4f8ef7;
+    --accent2: #38d9a9;
+    --accent3: #f6a623;
+    --accent-red: #f05060;
+    --text: #e8edf5;
+    --text-muted: #8892a4;
+    --text-dim: #5a6478;
+    --custeio: #4f8ef7;
+    --capital: #38d9a9;
+    --alem: #b57bee;
+    --obras: #f6a623;
+    --capina: #60c689;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* GRID NOISE TEXTURE */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      radial-gradient(circle at 15% 20%, rgba(79,142,247,0.06) 0%, transparent 50%),
+      radial-gradient(circle at 85% 70%, rgba(56,217,169,0.04) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app-shell {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: 100vh;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .sidebar-header {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-mark {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    margin-bottom: 14px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.5px;
+  }
+
+  .sidebar-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 15px;
+    line-height: 1.35;
+    color: var(--text);
+  }
+
+  .sidebar-sub {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .nav-section {
+    padding: 16px 12px 8px;
+  }
+
+  .nav-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-dim);
+    padding: 0 12px;
+    margin-bottom: 6px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13.5px;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    border: 1px solid transparent;
+  }
+
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active {
+    background: rgba(79,142,247,0.12);
+    color: var(--accent);
+    border-color: rgba(79,142,247,0.2);
+  }
+
+  .nav-icon {
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .tc-info {
+    margin: 12px;
+    padding: 14px;
+    background: var(--surface2);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+
+  .tc-info-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 8px; }
+  .tc-info-value { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--accent); }
+  .tc-info-row { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 12px; color: var(--text-muted); }
+  .tc-badge {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+  .badge-green { background: rgba(56,217,169,0.15); color: var(--accent2); border: 1px solid rgba(56,217,169,0.3); }
+  .badge-blue { background: rgba(79,142,247,0.15); color: var(--accent); border: 1px solid rgba(79,142,247,0.3); }
+  .badge-orange { background: rgba(246,166,35,0.15); color: var(--accent3); border: 1px solid rgba(246,166,35,0.3); }
+  .badge-red { background: rgba(240,80,96,0.15); color: var(--accent-red); border: 1px solid rgba(240,80,96,0.3); }
+  .badge-purple { background: rgba(181,123,238,0.15); color: var(--alem); border: 1px solid rgba(181,123,238,0.3); }
+
+  /* MAIN CONTENT */
+  .main {
+    padding: 32px 36px;
+    overflow-y: auto;
+  }
+
+  /* PAGE HEADER */
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+
+  .page-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  .page-subtitle { font-size: 13px; color: var(--text-muted); margin-top: 5px; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    font-family: 'Outfit', sans-serif;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover { background: #6fa3f9; transform: translateY(-1px); }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { background: var(--surface3); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--border-light); }
+
+  .btn-success {
+    background: var(--accent2);
+    color: #0e1117;
+    font-weight: 600;
+  }
+  .btn-success:hover { background: #5ce6c0; }
+
+  .btn-danger {
+    background: var(--accent-red);
+    color: #fff;
+  }
+  .btn-danger:hover { background: #f27080; }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+  }
+
+  /* STATS ROW */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .stat-custeio::before { background: var(--custeio); }
+  .stat-capital::before { background: var(--capital); }
+  .stat-alem::before { background: var(--alem); }
+  .stat-total::before { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+
+  .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-dim); }
+  .stat-value { font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 500; margin: 6px 0; }
+  .stat-value-custeio { color: var(--custeio); }
+  .stat-value-capital { color: var(--capital); }
+  .stat-value-alem { color: var(--alem); }
+  .stat-meta { font-size: 11px; color: var(--text-muted); }
+
+  /* SECTIONS */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* FORM */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .form-grid-3 {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .form-full { grid-column: 1 / -1; }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.3px;
+  }
+
+  input, select, textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 13px;
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    background: var(--surface3);
+  }
+
+  select option { background: var(--surface2); }
+
+  textarea { resize: vertical; min-height: 72px; }
+
+  .field-money input {
+    font-family: 'DM Mono', monospace;
+    color: var(--accent2);
+  }
+
+  /* TABLE */
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead tr {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  th {
+    padding: 11px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+  td {
+    padding: 11px 14px;
+    color: var(--text);
+    vertical-align: middle;
+  }
+
+  .td-mono { font-family: 'DM Mono', monospace; }
+  .td-muted { color: var(--text-muted); font-size: 12px; }
+  .td-value { font-family: 'DM Mono', monospace; font-weight: 500; }
+
+  .tipo-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  .tipo-CUSTEIO { background: rgba(79,142,247,0.15); color: var(--custeio); border: 1px solid rgba(79,142,247,0.25); }
+  .tipo-CAPITAL { background: rgba(56,217,169,0.15); color: var(--capital); border: 1px solid rgba(56,217,169,0.25); }
+  .tipo-ALEM_MUROS { background: rgba(181,123,238,0.15); color: var(--alem); border: 1px solid rgba(181,123,238,0.25); }
+  .tipo-OBRAS { background: rgba(246,166,35,0.15); color: var(--obras); border: 1px solid rgba(246,166,35,0.25); }
+  .tipo-CAPINA { background: rgba(96,198,137,0.15); color: var(--capina); border: 1px solid rgba(96,198,137,0.25); }
+
+  .action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 5px;
+    color: var(--text-muted);
+    font-size: 13px;
+    transition: all 0.1s;
+  }
+
+  .action-btn:hover { background: var(--surface2); color: var(--text); }
+  .action-btn.del:hover { color: var(--accent-red); }
+
+  /* CHECKLIST */
+  .check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 13px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    transition: all 0.15s;
+  }
+
+  .check-item.done {
+    opacity: 0.55;
+    border-color: transparent;
+  }
+
+  .check-item.pending {
+    border-color: rgba(240,80,96,0.25);
+    background: rgba(240,80,96,0.04);
+  }
+
+  .check-item.pending-yellow {
+    border-color: rgba(246,166,35,0.25);
+    background: rgba(246,166,35,0.04);
+  }
+
+  .check-cb {
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+    accent-color: var(--accent2);
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  .check-label { font-size: 13px; font-weight: 500; color: var(--text); }
+  .check-sub { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+  .check-company { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--accent); margin-top: 4px; }
+
+  .check-section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    margin: 18px 0 8px;
+    padding-left: 2px;
+    border-left: 2px solid var(--border-light);
+    padding-left: 8px;
+  }
+
+  /* DIVIDER */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 20px 0;
+  }
+
+  /* ALERT */
+  .alert {
+    padding: 12px 16px;
+    border-radius: 9px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .alert-info { background: rgba(79,142,247,0.1); border: 1px solid rgba(79,142,247,0.2); color: #a3c2fb; }
+  .alert-warn { background: rgba(246,166,35,0.1); border: 1px solid rgba(246,166,35,0.2); color: #f9c96a; }
+  .alert-success { background: rgba(56,217,169,0.1); border: 1px solid rgba(56,217,169,0.2); color: #7be8cc; }
+
+  /* PENDENCIAS */
+  .pendencia-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-red);
+    color: #fff;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    font-weight: 700;
+    margin-left: 6px;
+  }
+
+  /* MODAL OVERLAY */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    width: 680px;
+    max-width: 95vw;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow);
+    animation: slideUp 0.2s ease;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 22px;
+  }
+
+  .modal-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 20px;
+    padding: 4px;
+    line-height: 1;
+    border-radius: 5px;
+    transition: all 0.15s;
+  }
+
+  .modal-close:hover { background: var(--surface2); color: var(--text); }
+
+  .modal-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* PREVIEW AREA */
+  .preview-box {
+    background: #1a2035;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--text-muted);
+    white-space: pre-wrap;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  /* PROGRESS BAR */
+  .progress-bar-wrap {
+    background: var(--surface2);
+    border-radius: 20px;
+    height: 6px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 20px;
+    transition: width 0.4s ease;
+  }
+
+  /* PARCELA TABS */
+  .parcela-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+
+  .parcela-tab {
+    padding: 7px 14px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-muted);
+    transition: all 0.15s;
+  }
+
+  .parcela-tab.active {
+    background: rgba(79,142,247,0.15);
+    color: var(--accent);
+    border-color: rgba(79,142,247,0.3);
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .app-shell { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-muted);
+  }
+
+  .empty-icon { font-size: 36px; margin-bottom: 12px; }
+  .empty-title { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+  .empty-sub { font-size: 13px; }
+
+  /* TOOLTIP */
+  [data-tip] {
+    position: relative;
+    cursor: help;
+  }
+  [data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface3);
+    border: 1px solid var(--border-light);
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    white-space: nowrap;
+    color: var(--text);
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .gap-8 { display: flex; gap: 8px; align-items: center; }
+  .gap-12 { display: flex; gap: 12px; align-items: center; }
+  .flex-wrap { flex-wrap: wrap; }
+  .ml-auto { margin-left: auto; }
+  .mt-16 { margin-top: 16px; }
+  .mt-20 { margin-top: 20px; }
+  .mb-16 { margin-bottom: 16px; }
+  .mb-20 { margin-bottom: 20px; }
+  .text-right { text-align: right; }
+  .font-bold { font-weight: 600; }
+
+  /* PRINT STYLES */
+  @media print {
+    .sidebar, .page-header .btn, .action-btn, .modal-overlay { display: none !important; }
+    .app-shell { grid-template-columns: 1fr; }
+    .main { padding: 0; }
+    body { background: #fff; color: #000; }
+    .card, .table-wrap, .stat-card { border-color: #ccc; background: #fff; }
+    .stats-grid { display: grid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-mark">PC</div>
+      <div class="sidebar-title">Prestação de Contas</div>
+      <div class="sidebar-sub">Caixa Escolar</div>
+    </div>
+
+    <div class="tc-info">
+      <div class="tc-info-label">Termo Ativo</div>
+      <div class="tc-info-value" id="tc-sidebar-num" style="color:var(--text-dim)">Nenhum TC</div>
+      <div class="tc-info-row">
+        <span id="tc-sidebar-escola" style="color:var(--text-dim);font-size:12px">Cadastre um TC</span>
+        <span class="tc-badge" id="tc-sidebar-status" style="display:none"></span>
+      </div>
+    </div>
+
+    <nav class="nav-section">
+      <div class="nav-label">Principal</div>
+      <div class="nav-item active" onclick="showSection('dashboard')">
+        <span class="nav-icon">◈</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="showSection('tc')">
+        <span class="nav-icon">⊞</span> Termos de Compromisso
+      </div>
+      <div class="nav-item" onclick="showSection('despesas')">
+        <span class="nav-icon">⊟</span> Despesas
+      </div>
+      <div class="nav-item" onclick="showSection('fornecedores')">
+        <span class="nav-icon">🏢</span> Fornecedores
+      </div>
+    </nav>
+
+    <nav class="nav-section">
+      <div class="nav-label">Documentos</div>
+      <div class="nav-item" onclick="showSection('checklist')" id="nav-checklist">
+        <span class="nav-icon">☑</span> Checklist <span id="pendencia-badge" class="pendencia-count" style="display:none">0</span>
+      </div>
+      <div class="nav-item" onclick="showSection('relatorio')">
+        <span class="nav-icon">◧</span> Relatório (Anexo III)
+      </div>
+      <div class="nav-item" onclick="showSection('preview')">
+        <span class="nav-icon">◫</span> Gerar Documento
+      </div>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <section class="section active" id="section-dashboard">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Dashboard</div>
+          <div class="page-subtitle">Visão geral das prestações de contas</div>
+        </div>
+        <button class="btn btn-primary" onclick="showSection('despesas'); openModal('modal-despesa')">+ Lançar Despesa</button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card stat-custeio">
+          <div class="stat-label">Custeio</div>
+          <div class="stat-value stat-value-custeio" id="stat-custeio">R$ 0,00</div>
+          <div class="stat-meta" id="stat-custeio-qt">0 lançamentos</div>
+        </div>
+        <div class="stat-card stat-capital">
+          <div class="stat-label">Capital</div>
+          <div class="stat-value stat-value-capital" id="stat-capital">R$ 0,00</div>
+          <div class="stat-meta" id="stat-capital-qt">0 lançamentos</div>
+        </div>
+        <div class="stat-card stat-alem">
+          <div class="stat-label">Além dos Muros</div>
+          <div class="stat-value stat-value-alem" id="stat-alem">R$ 0,00</div>
+          <div class="stat-meta" id="stat-alem-qt">0 lançamentos</div>
+        </div>
+        <div class="stat-card stat-total">
+          <div class="stat-label">Total Gasto</div>
+          <div class="stat-value" style="color:var(--text)" id="stat-total">R$ 0,00</div>
+          <div class="stat-meta" id="stat-total-qt">0 lançamentos</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <div class="card-title-icon" style="background:rgba(79,142,247,0.15);color:var(--custeio)">⊟</div>
+              Últimos Lançamentos
+            </div>
+            <button class="btn btn-ghost" style="font-size:12px" onclick="showSection('despesas')">Ver todos →</button>
+          </div>
+          <div id="dash-ultimos">
+            <div class="empty-state" style="padding:24px">
+              <div class="empty-icon">📋</div>
+              <div class="empty-sub">Nenhuma despesa lançada ainda</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <div class="card-title-icon" style="background:rgba(240,80,96,0.15);color:var(--accent-red)">⚠</div>
+              Pendências
+            </div>
+            <button class="btn btn-ghost" style="font-size:12px" onclick="showSection('checklist')">Ver checklist →</button>
+          </div>
+          <div id="dash-pendencias">
+            <div class="empty-state" style="padding:24px">
+              <div class="empty-icon">✅</div>
+              <div class="empty-sub">Sem pendências no momento</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Saldo da Parcela</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+          <div>
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Valor Recebido</div>
+            <div style="font-family:'DM Mono',monospace;font-size:16px;color:var(--text)" id="saldo-recebido">R$ 0,00</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Total Gasto</div>
+            <div style="font-family:'DM Mono',monospace;font-size:16px;color:var(--accent-red)" id="saldo-gasto">R$ 0,00</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Saldo Disponível</div>
+            <div style="font-family:'DM Mono',monospace;font-size:16px;color:var(--accent2)" id="saldo-disponivel">R$ 0,00</div>
+          </div>
+        </div>
+        <div class="progress-bar-wrap mt-16">
+          <div class="progress-bar-fill" id="progress-bar" style="width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2))"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:6px" id="progress-label">0% utilizado</div>
+      </div>
+    </section>
+
+    <!-- TERMOS DE COMPROMISSO -->
+    <section class="section" id="section-tc">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Termos de Compromisso</div>
+          <div class="page-subtitle">Gerenciamento dos TCs e parcelas</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('modal-tc')">+ Novo TC</button>
+      </div>
+
+      <div id="tc-list">
+        <div class="empty-state">
+          <div class="empty-icon">📄</div>
+          <div class="empty-title">Nenhum TC cadastrado</div>
+          <div class="empty-sub">Adicione um Termo de Compromisso para começar</div>
+          <button class="btn btn-primary mt-16" onclick="openModal('modal-tc')">Adicionar TC</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- DESPESAS -->
+    <section class="section" id="section-despesas">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Despesas</div>
+          <div class="page-subtitle">Lançamentos por parcela e tipo</div>
+        </div>
+        <div class="gap-8">
+          <button class="btn btn-secondary" onclick="exportarTabela()">⬇ Exportar CSV</button>
+          <button class="btn btn-primary" onclick="openModal('modal-despesa')">+ Lançar Despesa</button>
+        </div>
+      </div>
+
+      <div class="parcela-tabs" id="parcela-tabs">
+        <div class="parcela-tab active" data-parcela="todas" onclick="filtrarParcela('todas', this)">Todas</div>
+      </div>
+
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="table-wrap" style="border:none;border-radius:0">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>TC/Aditivo</th>
+                <th>Tipo</th>
+                <th>Parcela</th>
+                <th>Credor</th>
+                <th>CNPJ/CPF</th>
+                <th>Nº NF</th>
+                <th>Data NF</th>
+                <th>Descrição</th>
+                <th class="text-right">Valor</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="despesas-tbody">
+              <tr>
+                <td colspan="10">
+                  <div class="empty-state">
+                    <div class="empty-icon">📊</div>
+                    <div class="empty-title">Nenhuma despesa lançada</div>
+                    <div class="empty-sub">Clique em "Lançar Despesa" para começar</div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="gap-8 mt-16" style="justify-content:flex-end">
+        <div style="font-size:13px;color:var(--text-muted)">Total selecionado:</div>
+        <div style="font-family:'DM Mono',monospace;font-size:15px;color:var(--accent2)" id="total-tabela">R$ 0,00</div>
+      </div>
+    </section>
+
+    <!-- FORNECEDORES -->
+    <section class="section" id="section-fornecedores">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Fornecedores / Tomadores</div>
+          <div class="page-subtitle">Cadastro de empresas e responsáveis</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('modal-fornecedor')">+ Novo Fornecedor</button>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div class="table-wrap" style="border:none;border-radius:0">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Razão Social</th>
+                <th>CNPJ/CPF</th>
+                <th>Responsável</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="fornecedores-tbody">
+              <tr><td colspan="5"><div class="empty-state"><div class="empty-icon">🏢</div><div class="empty-title">Nenhum fornecedor cadastrado</div><div class="empty-sub">Clique em "Novo Fornecedor" para adicionar</div></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHECKLIST -->
+    <section class="section" id="section-checklist">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Checklist de Documentos</div>
+          <div class="page-subtitle">Documentos necessários para a prestação de contas</div>
+        </div>
+        <div class="gap-8">
+          <button class="btn btn-secondary" onclick="imprimirPendencias()">🖨 Imprimir Pendências</button>
+          <button class="btn btn-success" onclick="refreshChecklist()">↺ Atualizar</button>
+        </div>
+      </div>
+
+      <div class="alert alert-info">
+        <span>ℹ</span>
+        <span>O checklist é gerado automaticamente com base nas despesas lançadas. Marque os itens conforme os documentos forem recebidos.</span>
+      </div>
+
+      <!-- FILTROS CHECKLIST -->
+      <div class="card mb-16" style="padding:14px 18px">
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">Filtrar por:</span>
+          <div class="field" style="margin:0;min-width:180px">
+            <select id="chk-filtro-tc" onchange="renderChecklist()" style="font-size:12px;padding:7px 10px">
+              <option value="">Todos os TCs</option>
+            </select>
+          </div>
+          <div class="field" style="margin:0;min-width:150px">
+            <select id="chk-filtro-parcela" onchange="renderChecklist()" style="font-size:12px;padding:7px 10px">
+              <option value="">Todas as Parcelas</option>
+              <option value="01">Parcela 01</option>
+              <option value="02">Parcela 02</option>
+              <option value="03">Parcela 03</option>
+              <option value="04">Parcela 04</option>
+            </select>
+          </div>
+          <div class="field" style="margin:0;min-width:160px">
+            <select id="chk-filtro-tipo" onchange="renderChecklist()" style="font-size:12px;padding:7px 10px">
+              <option value="">Todos os Tipos</option>
+              <option value="CUSTEIO">Custeio</option>
+              <option value="CAPITAL">Capital</option>
+              <option value="ALEM_MUROS">Além dos Muros</option>
+              <option value="OBRAS">Obras</option>
+              <option value="CAPINA">Capina / Roçamento</option>
+            </select>
+          </div>
+          <button class="btn btn-ghost" style="font-size:12px;padding:7px 12px" onclick="limparFiltrosChecklist()">✕ Limpar</button>
+          <div id="chk-filtro-label" style="font-size:11px;color:var(--text-dim);margin-left:auto"></div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div>
+          <div id="checklist-area">
+            <div class="empty-state">
+              <div class="empty-icon">☑</div>
+              <div class="empty-title">Nenhuma despesa para checar</div>
+              <div class="empty-sub">Lance despesas na aba Despesas para gerar o checklist</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📋 Pendências Resumidas</div>
+            </div>
+            <div id="pendencias-lista">
+              <div style="font-size:13px;color:var(--text-muted)">Sem pendências</div>
+            </div>
+          </div>
+          <div class="card mt-16">
+            <div class="card-header">
+              <div class="card-title">📊 Progresso Geral</div>
+            </div>
+            <div id="progresso-docs">
+              <div style="font-size:13px;color:var(--text-muted)">0 de 0 documentos</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RELATORIO -->
+    <section class="section" id="section-relatorio">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Relatório — Anexo III</div>
+          <div class="page-subtitle">Execução Físico-Financeira</div>
+        </div>
+        <button class="btn btn-primary" onclick="gerarAnexoIII()">⬇ Gerar Anexo III</button>
+      </div>
+
+      <div class="card mb-20">
+        <div style="font-size:13px;font-weight:600;margin-bottom:14px">Configurações do Relatório</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Parcela</label>
+            <select id="rel-parcela">
+              <option value="01">Parcela 01</option>
+              <option value="02">Parcela 02</option>
+              <option value="03" selected>Parcela 03</option>
+              <option value="04">Parcela 04</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Tipo</label>
+            <select id="rel-tipo">
+              <option value="CUSTEIO">Custeio</option>
+              <option value="CAPITAL">Capital</option>
+              <option value="ALEM_MUROS">Além dos Muros</option>
+            </select>
+          </div>
+          <div class="field field-money">
+            <label>Saldo Anterior (R$)</label>
+            <input type="text" id="rel-saldo-ant" value="0,05" placeholder="0,00">
+          </div>
+          <div class="field field-money">
+            <label>Valor Creditado (R$)</label>
+            <input type="text" id="rel-creditado" value="28.246,00" placeholder="0,00">
+          </div>
+          <div class="field field-money">
+            <label>Rendimento Financeiro (R$)</label>
+            <input type="text" id="rel-rendimento" value="266,45" placeholder="0,00">
+          </div>
+          <div class="field">
+            <label>Data do Crédito</label>
+            <input type="text" id="rel-data-credito" value="15/12/2025">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title mb-16">Prévia do Relatório</div>
+        <div id="anexo3-preview" class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Credor</th>
+                <th>CNPJ</th>
+                <th>Comprovante</th>
+                <th class="text-right">Valor R$</th>
+              </tr>
+            </thead>
+            <tbody id="anexo3-tbody">
+              <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px">Lance despesas para visualizar</td></tr>
+            </tbody>
+            <tfoot>
+              <tr style="background:var(--surface2)">
+                <td colspan="4" style="padding:11px 14px;font-weight:600;font-size:13px">Total</td>
+                <td style="padding:11px 14px;font-family:'DM Mono',monospace;font-weight:600;color:var(--accent2);text-align:right" id="anexo3-total">R$ 0,00</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- GERAR DOCUMENTO -->
+    <section class="section" id="section-preview">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Gerar Documento</div>
+          <div class="page-subtitle">Prestação de contas para impressão</div>
+        </div>
+        <div class="gap-8">
+          <button class="btn btn-secondary" onclick="window.print()">🖨 Imprimir</button>
+          <button class="btn btn-primary" onclick="baixarTXT()">⬇ Baixar .txt</button>
+        </div>
+      </div>
+
+      <div class="card mb-16">
+        <div style="font-size:13px;font-weight:600;margin-bottom:14px">Dados da Deliberação (Anexo II)</div>
+        <div class="form-grid form-grid-3">
+          <div class="field">
+            <label>Dia da Reunião</label>
+            <input type="number" id="doc-dia" value="16" min="1" max="31">
+          </div>
+          <div class="field">
+            <label>Mês</label>
+            <select id="doc-mes">
+              <option value="janeiro">janeiro</option>
+              <option value="fevereiro">fevereiro</option>
+              <option value="março">março</option>
+              <option value="abril">abril</option>
+              <option value="maio">maio</option>
+              <option value="junho">junho</option>
+              <option value="julho">julho</option>
+              <option value="agosto">agosto</option>
+              <option value="setembro">setembro</option>
+              <option value="outubro">outubro</option>
+              <option value="novembro">novembro</option>
+              <option value="dezembro" selected>dezembro</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Ano</label>
+            <input type="number" id="doc-ano" value="2025">
+          </div>
+          <div class="field">
+            <label>Nº Parcela</label>
+            <input type="text" id="doc-parcela" value="TERCEIRA">
+          </div>
+          <div class="field">
+            <label>Período de Execução</label>
+            <input type="text" id="doc-periodo" value="OUT/2025 A DEZ/2025">
+          </div>
+          <div class="field">
+            <label>Nº TC</label>
+            <input type="text" id="doc-tc" value="225/2025">
+          </div>
+        </div>
+        <div style="margin-top:12px">
+          <button class="btn btn-success" onclick="gerarDocumento()">↺ Gerar Documento</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title mb-16">📄 Documento Gerado</div>
+        <div class="preview-box" id="doc-preview">
+          Clique em "Gerar Documento" para visualizar o texto da Deliberação do Conselho Fiscal.
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- MODAL: NOVO TC -->
+<div class="modal-overlay" id="modal-tc">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Cadastrar Termo de Compromisso</div>
+      <button class="modal-close" onclick="closeModal('modal-tc')">×</button>
+    </div>
+    <div class="form-grid">
+      <div class="field">
+        <label>Número do TC</label>
+        <input type="text" id="tc-numero" placeholder="225/2025">
+      </div>
+      <div class="field">
+        <label>Nome da Escola</label>
+        <input type="text" id="tc-escola" value="E.M. Albertina Alves do Nascimento" readonly style="opacity:0.7;cursor:not-allowed">
+      </div>
+      <div class="field">
+        <label>CNPJ da Caixa Escolar</label>
+        <input type="text" id="tc-cnpj" placeholder="15.547.261/0001-01">
+      </div>
+      <div class="field">
+        <label>Presidente</label>
+        <input type="text" id="tc-presidente" value="Jeferson César dos Santos" readonly style="opacity:0.7;cursor:not-allowed">
+      </div>
+      <div class="field">
+        <label>Data de Início</label>
+        <input type="date" id="tc-inicio" onchange="autoStatusTC()">
+      </div>
+      <div class="field">
+        <label>Data de Término</label>
+        <input type="date" id="tc-fim" onchange="autoStatusTC()">
+      </div>
+      <div class="field field-money">
+        <label>Valor Total (R$)</label>
+        <input type="text" id="tc-valor" placeholder="0,00">
+      </div>
+      <div class="field">
+        <label>Status <span style="font-size:10px;color:var(--text-dim)">(calculado automaticamente)</span></label>
+        <select id="tc-status">
+          <option value="ativo">Ativo</option>
+          <option value="encerrado">Encerrado</option>
+          <option value="a_vencer">A Vencer (≤30 dias)</option>
+          <option value="suspenso">Suspenso</option>
+        </select>
+      </div>
+      <div class="field form-full">
+        <label>Observações / Aditivos</label>
+        <textarea id="tc-obs" placeholder="Aditivos, observações relevantes..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-tc')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarTC()">Salvar TC</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: LANÇAR DESPESA -->
+<div class="modal-overlay" id="modal-despesa">
+  <div class="modal" style="width:780px">
+    <div class="modal-header">
+      <div class="modal-title">Lançar Despesa</div>
+      <button class="modal-close" onclick="closeModal('modal-despesa')">×</button>
+    </div>
+    <div class="form-grid">
+      <!-- TC / Aditivo vinculado -->
+      <div class="field form-full">
+        <label>TC / Aditivo vinculado <span style="color:var(--accent-red)">*</span></label>
+        <select id="d-tc-vinculo">
+          <option value="">— Selecione o TC ou Aditivo —</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Tipo de Despesa</label>
+        <select id="d-tipo" onchange="tipoChange()">
+          <option value="CUSTEIO">Custeio</option>
+          <option value="CAPITAL">Capital</option>
+          <option value="ALEM_MUROS">Além dos Muros</option>
+          <option value="OBRAS">Obras</option>
+          <option value="CAPINA">Capina / Roçamento</option>
+        </select>
+      </div>
+      <div class="field" id="field-subtipo" style="display:none">
+        <label>Subcategoria (Além dos Muros)</label>
+        <select id="d-subtipo">
+          <option value="servicos">Serviços (transporte, ingressos)</option>
+          <option value="materialidade">Materialidade (alimentação, lanche)</option>
+        </select>
+      </div>
+      <div class="field" id="field-parcela-col">
+        <label>Nº da Parcela</label>
+        <select id="d-parcela">
+          <option value="01">Parcela 01</option>
+          <option value="02">Parcela 02</option>
+          <option value="03" selected>Parcela 03</option>
+          <option value="04">Parcela 04</option>
+        </select>
+      </div>
+      <div class="field form-full">
+        <label>Nome do Credor (Empresa / Pessoa)</label>
+        <div style="position:relative">
+          <input type="text" id="d-credor" placeholder="Razão Social ou Nome Completo" oninput="filtrarCredores()" autocomplete="off">
+          <div id="credor-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:200;background:var(--surface2);border:1px solid var(--border);border-radius:8px;max-height:180px;overflow-y:auto;margin-top:2px"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>CNPJ ou CPF</label>
+        <input type="text" id="d-cnpj" placeholder="00.000.000/0001-00">
+      </div>
+      <div class="field">
+        <label>Nº da Nota Fiscal</label>
+        <input type="text" id="d-nf-num" placeholder="NF 001">
+      </div>
+      <div class="field">
+        <label>Data da Nota Fiscal</label>
+        <input type="date" id="d-nf-data">
+      </div>
+      <div class="field field-money">
+        <label>Valor (R$)</label>
+        <input type="text" id="d-valor" placeholder="0,00">
+      </div>
+      <div class="field form-full">
+        <label>Descrição / Objeto</label>
+        <input type="text" id="d-descricao" placeholder="Ex.: Material de papelaria, serviços de manutenção...">
+      </div>
+
+      <!-- ORÇAMENTOS -->
+      <div class="field">
+        <label>3 Orçamentos obtidos?</label>
+        <select id="d-orcamentos" onchange="togglePendenciaField('orcamentos')">
+          <option value="sim">Sim</option>
+          <option value="nao">Não</option>
+          <option value="na">N/A (entrega imediata)</option>
+        </select>
+      </div>
+      <div class="field" id="field-orcamentos-pend" style="display:none">
+        <label style="color:var(--accent3)">⚠ Justificativa / Pendência (Orçamentos)</label>
+        <input type="text" id="d-orcamentos-pend" placeholder="Descreva o motivo ou pendência...">
+      </div>
+
+      <!-- CERTIDÕES -->
+      <div class="field">
+        <label>Certidões do fornecedor OK?</label>
+        <select id="d-certidoes" onchange="togglePendenciaField('certidoes')">
+          <option value="sim">Sim — regulares</option>
+          <option value="nao">Não (pendente)</option>
+          <option value="na">N/A (entrega imediata ≤ 30 dias)</option>
+        </select>
+      </div>
+      <div class="field" id="field-certidoes-pend" style="display:none">
+        <label style="color:var(--accent-red)">⚠ Pendência de Certidões</label>
+        <input type="text" id="d-certidoes-pend" placeholder="Ex.: CND Federal vencida, CNDT pendente...">
+      </div>
+
+      <!-- CARTÃO CNPJ -->
+      <div class="field">
+        <label>Cartão CNPJ em dia?</label>
+        <select id="d-cartao-cnpj" onchange="togglePendenciaField('cartao-cnpj')">
+          <option value="sim">Sim</option>
+          <option value="nao">Não (pendente)</option>
+          <option value="na">N/A</option>
+        </select>
+      </div>
+      <div class="field" id="field-cartao-cnpj-pend" style="display:none">
+        <label style="color:var(--accent-red)">⚠ Pendência do Cartão CNPJ</label>
+        <input type="text" id="d-cartao-cnpj-pend" placeholder="Descreva a pendência...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-despesa')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarDespesa()">Lançar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: FORNECEDOR -->
+<div class="modal-overlay" id="modal-fornecedor">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Cadastrar Fornecedor / Tomador</div>
+      <button class="modal-close" onclick="closeModal('modal-fornecedor')">×</button>
+    </div>
+    <div class="form-grid">
+      <div class="field form-full">
+        <label>Razão Social / Nome Completo</label>
+        <input type="text" id="forn-nome" placeholder="Ex.: Comercial JL Móveis e Equipamentos Ltda">
+      </div>
+      <div class="field">
+        <label>CNPJ ou CPF</label>
+        <input type="text" id="forn-cnpj" placeholder="00.000.000/0001-00">
+      </div>
+      <div class="field">
+        <label>Principal Responsável</label>
+        <input type="text" id="forn-responsavel" placeholder="Nome do sócio ou responsável">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-fornecedor')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarFornecedor()">Salvar Fornecedor</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== STATE ====================
+function salvarFornecedor() {
+  const nome = document.getElementById('forn-nome').value.trim();
+  const cnpj = document.getElementById('forn-cnpj').value.trim();
+  const resp = document.getElementById('forn-responsavel').value.trim();
+  if (!nome) { alert('Informe o nome do fornecedor.'); return; }
+  if (!state.fornecedoresCad) state.fornecedoresCad = [];
+  state.fornecedoresCad.push({ id: Date.now(), nome, cnpj, responsavel: resp });
+  save();
+  closeModal('modal-fornecedor');
+  document.getElementById('forn-nome').value = '';
+  document.getElementById('forn-cnpj').value = '';
+  document.getElementById('forn-responsavel').value = '';
+  renderFornecedores();
+}
+
+function renderFornecedores() {
+  if (!state.fornecedoresCad) state.fornecedoresCad = [];
+  const tbody = document.getElementById('fornecedores-tbody');
+  if (!state.fornecedoresCad.length) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">🏢</div><div class="empty-title">Nenhum fornecedor cadastrado</div><div class="empty-sub">Clique em "Novo Fornecedor" para adicionar</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = state.fornecedoresCad.map((f, i) => `
+    <tr>
+      <td class="td-muted">${i+1}</td>
+      <td style="font-weight:500">${f.nome}</td>
+      <td class="td-mono td-muted">${f.cnpj||'—'}</td>
+      <td class="td-muted">${f.responsavel||'—'}</td>
+      <td><button class="action-btn del" onclick="removerFornecedor(${f.id})" title="Remover">✕</button></td>
+    </tr>
+  `).join('');
+}
+
+function removerFornecedor(id) {
+  if (!confirm('Remover fornecedor?')) return;
+  state.fornecedoresCad = (state.fornecedoresCad||[]).filter(f => f.id !== id);
+  save();
+  renderFornecedores();
+}
+
+function filtrarCredores() {
+  const q = document.getElementById('d-credor').value.toLowerCase();
+  const dd = document.getElementById('credor-dropdown');
+  const lista = (state.fornecedoresCad||[]).filter(f => f.nome.toLowerCase().includes(q));
+  if (!q || !lista.length) { dd.style.display = 'none'; return; }
+  dd.style.display = 'block';
+  dd.innerHTML = lista.map(f => `
+    <div onclick="selecionarCredor('${f.nome.replace(/'/g,"\\'")}','${(f.cnpj||'').replace(/'/g,"\\'")}') "
+      style="padding:9px 13px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);transition:background 0.1s"
+      onmouseover="this.style.background='var(--surface3)'" onmouseout="this.style.background=''">
+      <div style="font-weight:500">${f.nome}</div>
+      <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--accent)">${f.cnpj||''}</div>
+    </div>
+  `).join('');
+}
+
+function selecionarCredor(nome, cnpj) {
+  document.getElementById('d-credor').value = nome;
+  document.getElementById('d-cnpj').value = cnpj;
+  document.getElementById('credor-dropdown').style.display = 'none';
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#d-credor') && !e.target.closest('#credor-dropdown')) {
+    document.getElementById('credor-dropdown').style.display = 'none';
+  }
+});
+
+// ==================== TC STATUS AUTO ====================
+function calcStatusTC(inicio, fim) {
+  if (!fim) return 'ativo';
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const fimDate = new Date(fim + 'T00:00:00');
+  if (fimDate < hoje) return 'encerrado';
+  const diff = (fimDate - hoje) / (1000*60*60*24);
+  if (diff <= 30) return 'a_vencer';
+  return 'ativo';
+}
+
+function autoStatusTC() {
+  const inicio = document.getElementById('tc-inicio').value;
+  const fim = document.getElementById('tc-fim').value;
+  const status = calcStatusTC(inicio, fim);
+  document.getElementById('tc-status').value = status;
+}
+
+// ==================== POPULATE TC DROPDOWN no modal despesa ====================
+function populateTCDropdown() {
+  const sel = document.getElementById('d-tc-vinculo');
+  sel.innerHTML = '<option value="">— Selecione o TC ou Aditivo —</option>';
+  (state.tcs||[]).forEach(tc => {
+    const opt = document.createElement('option');
+    opt.value = tc.id;
+    opt.textContent = `TC ${tc.numero} — ${tc.escola}`;
+    sel.appendChild(opt);
+  });
+  // Pre-select active TC
+  if (state.tcAtivo) sel.value = state.tcAtivo;
+}
+
+// populateTCDropdown is called inside openModal below
+
+// ==================== PENDENCIA FIELDS ====================
+function togglePendenciaField(campo) {
+  const map = {
+    'orcamentos': { sel: 'd-orcamentos', pend: 'field-orcamentos-pend', trigger: 'nao' },
+    'certidoes':  { sel: 'd-certidoes',  pend: 'field-certidoes-pend',  trigger: 'nao' },
+    'cartao-cnpj':{ sel: 'd-cartao-cnpj',pend: 'field-cartao-cnpj-pend',trigger: 'nao' }
+  };
+  const m = map[campo]; if (!m) return;
+  const val = document.getElementById(m.sel).value;
+  const fieldEl = document.getElementById(m.pend);
+  if (fieldEl) fieldEl.style.display = (val === m.trigger) ? '' : 'none';
+}
+
+// ==================== OVERRIDE salvarDespesa com novos campos ====================
+function salvarDespesa() {
+  const tcVinculo = document.getElementById('d-tc-vinculo').value;
+  const d = {
+    tcVinculo,
+    tipo: document.getElementById('d-tipo').value,
+    subtipo: document.getElementById('d-subtipo').value,
+    parcela: document.getElementById('d-parcela').value,
+    credor: document.getElementById('d-credor').value,
+    cnpj: document.getElementById('d-cnpj').value,
+    nfNum: document.getElementById('d-nf-num').value,
+    nfData: document.getElementById('d-nf-data').value,
+    valor: document.getElementById('d-valor').value,
+    descricao: document.getElementById('d-descricao').value,
+    orcamentos: document.getElementById('d-orcamentos').value,
+    orcamentosPend: document.getElementById('d-orcamentos-pend') ? document.getElementById('d-orcamentos-pend').value : '',
+    certidoes: document.getElementById('d-certidoes').value,
+    certidoesPend: document.getElementById('d-certidoes-pend') ? document.getElementById('d-certidoes-pend').value : '',
+    cartaoCnpj: document.getElementById('d-cartao-cnpj').value,
+    cartaoCnpjPend: document.getElementById('d-cartao-cnpj-pend') ? document.getElementById('d-cartao-cnpj-pend').value : '',
+    id: Date.now()
+  };
+  if (!d.credor || !d.valor) { alert('Preencha ao menos o credor e o valor.'); return; }
+  if (!d.tcVinculo) { alert('Selecione o TC ou Aditivo vinculado.'); return; }
+  state.despesas.push(d);
+  addParcelaTab(d.parcela);
+  save();
+  closeModal('modal-despesa');
+  renderDespesas();
+  renderDashboard();
+  renderChecklist();
+  refreshPendenciaBadge();
+}
+
+// ==================== INIT EXTRAS (called after state is loaded) ====================
+function initExtras() {
+  if (!state.fornecedoresCad) state.fornecedoresCad = [];
+  renderFornecedores();
+  // Recalculate TC statuses on load
+  (state.tcs||[]).forEach(tc => {
+    const auto = calcStatusTC(tc.inicio, tc.fim);
+    if (tc.status !== 'suspenso') tc.status = auto;
+  });
+  updateSidebarStatus();
+}
+
+// Update sidebar badge color based on status
+function updateSidebarStatus() {
+  const tc = (state.tcs||[]).find(t => t.id === state.tcAtivo);
+  const numEl = document.getElementById('tc-sidebar-num');
+  const escolaEl = document.getElementById('tc-sidebar-escola');
+  const badge = document.getElementById('tc-sidebar-status');
+  if (!tc) {
+    numEl.textContent = 'Nenhum TC';
+    numEl.style.color = 'var(--text-dim)';
+    escolaEl.textContent = 'Cadastre um TC';
+    escolaEl.style.color = 'var(--text-dim)';
+    badge.style.display = 'none';
+    return;
+  }
+  numEl.textContent = 'TC ' + tc.numero;
+  numEl.style.color = '';
+  escolaEl.textContent = tc.escola.replace('E.M. ','').replace('Escola Municipal ','');
+  escolaEl.style.color = '';
+  badge.style.display = '';
+  const status = calcStatusTC(tc.inicio, tc.fim);
+  const map = {
+    ativo: ['Ativo', 'badge-green'],
+    a_vencer: ['A Vencer', 'badge-orange'],
+    encerrado: ['Encerrado', 'badge-red'],
+    suspenso: ['Suspenso', 'badge-purple']
+  };
+  const [label, cls] = map[status] || ['Ativo', 'badge-green'];
+  badge.textContent = label;
+  badge.className = 'tc-badge ' + cls;
+}
+// ==================== STATE (definição base) ====================
+let state = {
+  tcs: [],
+  despesas: [],
+  checkStates: {},
+  parcelaFiltro: 'todas',
+  editIndex: null,
+  tcAtivo: null
+};
+
+// Load from localStorage
+try {
+  const saved = localStorage.getItem('pc_state');
+  if (saved) state = JSON.parse(saved);
+} catch(e) {}
+
+function save() {
+  try { localStorage.setItem('pc_state', JSON.stringify(state)); } catch(e) {}
+}
+
+// ==================== NAVIGATION ====================
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('section-' + id).classList.add('active');
+  // set nav active
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'" + id + "'")) {
+      n.classList.add('active');
+    }
+  });
+  if (id === 'checklist') { populateChecklistTCFilter(); refreshChecklist(); }
+  if (id === 'relatorio') renderAnexo3();
+  if (id === 'dashboard') renderDashboard();
+}
+
+// ==================== MODALS ====================
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  if (id === 'modal-despesa') {
+    populateTCDropdown();
+    togglePendenciaField('orcamentos');
+    togglePendenciaField('certidoes');
+    togglePendenciaField('cartao-cnpj');
+  }
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  state.editIndex = null;
+}
+
+// ==================== TC ====================
+function salvarTC() {
+  const inicio = document.getElementById('tc-inicio').value;
+  const fim = document.getElementById('tc-fim').value;
+  const autoStatus = calcStatusTC ? calcStatusTC(inicio, fim) : (document.getElementById('tc-status').value);
+  const tc = {
+    numero: document.getElementById('tc-numero').value,
+    escola: 'E.M. Albertina Alves do Nascimento',
+    cnpj: document.getElementById('tc-cnpj').value,
+    presidente: 'Jeferson César dos Santos',
+    inicio,
+    fim,
+    valor: document.getElementById('tc-valor').value,
+    status: autoStatus,
+    obs: document.getElementById('tc-obs').value,
+    id: Date.now()
+  };
+  if (!tc.numero) { alert('Preencha o número do TC.'); return; }
+  state.tcs.push(tc);
+  if (state.tcAtivo === null) {
+    state.tcAtivo = tc.id;
+  }
+  save();
+  closeModal('modal-tc');
+  renderTCs();
+  renderDashboard();
+  updateSidebarStatus();
+}
+
+function renderTCs() {
+  const el = document.getElementById('tc-list');
+  if (!state.tcs.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📄</div><div class="empty-title">Nenhum TC cadastrado</div><div class="empty-sub">Adicione um Termo de Compromisso para começar</div><button class="btn btn-primary mt-16" onclick="openModal('modal-tc')">Adicionar TC</button></div>`;
+    return;
+  }
+  const statusInfo = {
+    ativo:     { label: 'Ativo',     cls: 'badge-green' },
+    a_vencer:  { label: 'A Vencer',  cls: 'badge-orange' },
+    encerrado: { label: 'Encerrado', cls: 'badge-red' },
+    suspenso:  { label: 'Suspenso',  cls: 'badge-purple' }
+  };
+  el.innerHTML = state.tcs.map((tc, i) => {
+    const st = tc.status !== 'suspenso' ? (typeof calcStatusTC === 'function' ? calcStatusTC(tc.inicio, tc.fim) : tc.status) : 'suspenso';
+    const si = statusInfo[st] || statusInfo.ativo;
+    return `
+    <div class="card mb-20" style="border-color:${state.tcAtivo===tc.id?'rgba(79,142,247,0.4)':'var(--border)'}">
+      <div class="card-header">
+        <div class="card-title">
+          <div class="card-title-icon" style="background:rgba(79,142,247,0.1);color:var(--accent)">📄</div>
+          TC ${tc.numero} — ${tc.escola}
+          <span class="tc-badge ${si.cls}" style="margin-left:8px">${si.label}</span>
+          ${state.tcAtivo===tc.id?'<span class="tc-badge badge-blue" style="margin-left:4px">Ativo</span>':''}
+        </div>
+        <div class="gap-8">
+          ${state.tcAtivo!==tc.id?`<button class="btn btn-ghost" style="font-size:12px" onclick="setTCAtivo(${tc.id})">Definir como ativo</button>`:''}
+          <button class="btn btn-ghost" style="font-size:12px;color:var(--accent-red)" onclick="removerTC(${i})">Remover</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;font-size:13px">
+        <div><div style="color:var(--text-dim);font-size:11px;margin-bottom:3px">CNPJ</div><div class="td-mono">${tc.cnpj||'—'}</div></div>
+        <div><div style="color:var(--text-dim);font-size:11px;margin-bottom:3px">Presidente</div><div>${tc.presidente||'—'}</div></div>
+        <div><div style="color:var(--text-dim);font-size:11px;margin-bottom:3px">Vigência</div><div>${fmtDate(tc.inicio)} → ${fmtDate(tc.fim)}</div></div>
+        <div><div style="color:var(--text-dim);font-size:11px;margin-bottom:3px">Valor Total</div><div style="font-family:'DM Mono',monospace;color:var(--accent2)">R$ ${tc.valor||'0,00'}</div></div>
+      </div>
+      ${tc.obs?`<div style="margin-top:12px;font-size:12px;color:var(--text-muted);background:var(--surface2);padding:10px;border-radius:7px">${tc.obs}</div>`:''}
+    </div>
+  `}).join('');
+}
+
+function setTCAtivo(id) {
+  state.tcAtivo = id;
+  save();
+  renderTCs();
+  updateSidebarStatus();
+}
+
+function removerTC(i) {
+  if (!confirm('Remover este TC?')) return;
+  state.tcs.splice(i, 1);
+  save();
+  renderTCs();
+}
+
+// ==================== DESPESAS ====================
+function tipoChange() {
+  const tipo = document.getElementById('d-tipo').value;
+  document.getElementById('field-subtipo').style.display = tipo === 'ALEM_MUROS' ? '' : 'none';
+}
+
+
+function addParcelaTab(p) {
+  const tabs = document.getElementById('parcela-tabs');
+  if (!tabs.querySelector(`[data-parcela="${p}"]`)) {
+    const tab = document.createElement('div');
+    tab.className = 'parcela-tab';
+    tab.dataset.parcela = p;
+    tab.textContent = 'Parcela ' + p;
+    tab.onclick = function() { filtrarParcela(p, this); };
+    tabs.appendChild(tab);
+  }
+}
+
+function filtrarParcela(p, el) {
+  state.parcelaFiltro = p;
+  document.querySelectorAll('.parcela-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderDespesas();
+}
+
+function renderDespesas() {
+  const tbody = document.getElementById('despesas-tbody');
+  const f = state.parcelaFiltro;
+  const list = f === 'todas' ? state.despesas : state.despesas.filter(d => d.parcela === f);
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">📊</div><div class="empty-title">Nenhuma despesa</div></div></td></tr>`;
+    document.getElementById('total-tabela').textContent = 'R$ 0,00';
+    return;
+  }
+  let total = 0;
+  tbody.innerHTML = list.map((d, i) => {
+    const v = parseMoney(d.valor);
+    total += v;
+    const tcVinc = d.tcVinculo ? (state.tcs||[]).find(t => String(t.id) === String(d.tcVinculo)) : null;
+    const tcLabel = tcVinc ? `TC ${tcVinc.numero}` : '—';
+    return `
+      <tr>
+        <td class="td-muted">${i+1}</td>
+        <td class="td-mono td-muted" style="font-size:11px;color:var(--accent)">${tcLabel}</td>
+        <td><span class="tipo-pill tipo-${d.tipo}">${tipoLabel(d.tipo)}</span></td>
+        <td class="td-muted">${d.parcela}</td>
+        <td style="font-weight:500">${d.credor}</td>
+        <td class="td-mono td-muted">${d.cnpj||'—'}</td>
+        <td class="td-muted">${d.nfNum||'—'}</td>
+        <td class="td-muted">${fmtDate(d.nfData)||'—'}</td>
+        <td class="td-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${d.descricao}">${d.descricao||'—'}</td>
+        <td class="td-value text-right" style="color:var(--accent2)">R$ ${d.valor}</td>
+        <td>
+          <button class="action-btn del" onclick="removerDespesa(${d.id})" title="Remover">✕</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+  document.getElementById('total-tabela').textContent = fmtMoney(total);
+}
+
+function removerDespesa(id) {
+  if (!confirm('Remover este lançamento?')) return;
+  state.despesas = state.despesas.filter(d => d.id !== id);
+  save();
+  renderDespesas();
+  renderDashboard();
+  renderChecklist();
+  refreshPendenciaBadge();
+}
+
+// ==================== CHECKLIST ====================
+function populateChecklistTCFilter() {
+  const sel = document.getElementById('chk-filtro-tc');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Todos os TCs</option>';
+  (state.tcs||[]).forEach(tc => {
+    const opt = document.createElement('option');
+    opt.value = tc.id;
+    opt.textContent = `TC ${tc.numero}`;
+    sel.appendChild(opt);
+  });
+  if (current) sel.value = current;
+}
+
+function limparFiltrosChecklist() {
+  document.getElementById('chk-filtro-tc').value = '';
+  document.getElementById('chk-filtro-parcela').value = '';
+  document.getElementById('chk-filtro-tipo').value = '';
+  renderChecklist();
+}
+
+function renderChecklist() {
+  populateChecklistTCFilter();
+  const filtroTC      = document.getElementById('chk-filtro-tc')?.value || '';
+  const filtroParcela = document.getElementById('chk-filtro-parcela')?.value || '';
+  const filtroTipo    = document.getElementById('chk-filtro-tipo')?.value || '';
+
+  // Filtrar despesas conforme seleção
+  let despesasFiltradas = state.despesas.filter(d => {
+    if (filtroTC      && String(d.tcVinculo) !== String(filtroTC)) return false;
+    if (filtroParcela && d.parcela !== filtroParcela) return false;
+    if (filtroTipo    && d.tipo    !== filtroTipo)    return false;
+    return true;
+  });
+
+  // Label do filtro ativo
+  const labelEl = document.getElementById('chk-filtro-label');
+  if (labelEl) {
+    const partes = [];
+    if (filtroTC) { const tc = (state.tcs||[]).find(t => String(t.id) === filtroTC); if (tc) partes.push(`TC ${tc.numero}`); }
+    if (filtroParcela) partes.push(`Parcela ${filtroParcela}`);
+    if (filtroTipo) partes.push({ CUSTEIO:'Custeio', CAPITAL:'Capital', ALEM_MUROS:'Além dos Muros', OBRAS:'Obras', CAPINA:'Capina' }[filtroTipo] || filtroTipo);
+    labelEl.textContent = partes.length ? `Exibindo: ${partes.join(' · ')} (${despesasFiltradas.length} despesa${despesasFiltradas.length !== 1 ? 's' : ''})` : '';
+  }
+
+  const el = document.getElementById('checklist-area');
+  if (!despesasFiltradas.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">☑</div><div class="empty-title">${state.despesas.length ? 'Nenhuma despesa para o filtro selecionado' : 'Nenhuma despesa'}</div><div class="empty-sub">${state.despesas.length ? 'Ajuste os filtros acima' : 'Lance despesas para gerar o checklist'}</div></div>`;
+    updatePendenciasSummary();
+    return;
+  }
+
+  let html = '';
+
+  // DOCS GERAIS — só mostrar quando sem filtros ativos (são gerais do TC, não de despesa específica)
+  const semFiltro = !filtroTC && !filtroParcela && !filtroTipo;
+  if (semFiltro) {
+    html += `<div class="check-section-title">Documentos Gerais (sempre obrigatórios)</div>`;
+    const gerais = [
+      { key: 'ata_conselho', label: 'Ata do Conselho Fiscal assinada (Deliberação — Anexo II)', sub: 'Assinatura de todos os membros da mesa e conselho fiscal' },
+      { key: 'extrato_cc', label: 'Extrato da Conta Corrente do período', sub: 'Conta bancária exclusiva do TC — período de execução' },
+      { key: 'extrato_inv', label: 'Extrato do Fundo de Investimento do período', sub: 'CAIXA FIC GIRO MPE RF REF DI LP ou equivalente' },
+      { key: 'anexo3', label: 'Relatório de Execução Físico-Financeira (Anexo III)', sub: 'Assinado pelo Presidente e Tesoureiro da Caixa Escolar' },
+    ];
+    gerais.forEach(g => {
+      const checked = !!state.checkStates[g.key];
+      html += checkItem(g.key, g.label, g.sub, '', checked, !checked ? 'pending' : '');
+    });
+  }
+
+  // POR FORNECEDOR (baseado nas despesas filtradas)
+  const fornecedores = {};
+  despesasFiltradas.forEach(d => {
+    const key = d.cnpj || d.credor;
+    if (!fornecedores[key]) {
+      fornecedores[key] = {
+        credor: d.credor, cnpj: d.cnpj,
+        certidoes: d.certidoes, certidoesPend: d.certidoesPend,
+        orcamentos: d.orcamentos, orcamentosPend: d.orcamentosPend,
+        cartaoCnpj: d.cartaoCnpj, cartaoCnpjPend: d.cartaoCnpjPend,
+        nfs: [], parcelas: new Set(), tcs: new Set(), tipos: new Set()
+      };
+    }
+    fornecedores[key].nfs.push({ num: d.nfNum, data: d.nfData, valor: d.valor, tipo: d.tipo });
+    fornecedores[key].parcelas.add(d.parcela);
+    fornecedores[key].tipos.add(d.tipo);
+    if (d.tcVinculo) {
+      const tc = (state.tcs||[]).find(t => String(t.id) === String(d.tcVinculo));
+      if (tc) fornecedores[key].tcs.add(`TC ${tc.numero}`);
+    }
+  });
+
+  const tipoLabel = t => ({ CUSTEIO:'Custeio', CAPITAL:'Capital', ALEM_MUROS:'Além dos Muros', OBRAS:'Obras', CAPINA:'Capina' }[t] || t);
+
+  html += `<div class="check-section-title">Documentos por Fornecedor</div>`;
+  Object.values(fornecedores).forEach((f, fi) => {
+    // Use a stable key based on credor/cnpj so checkboxes survive filter changes
+    const safeKey = (f.cnpj || f.credor).replace(/[^a-zA-Z0-9]/g,'_');
+    const keyNf   = `nf_${safeKey}`;
+    const keyCrc  = `crc_${safeKey}`;
+    const keyOrc  = `orc_${safeKey}`;
+    const keyCnpj = `cnpj_${safeKey}`;
+    const nfChecked   = !!state.checkStates[keyNf];
+    const crcChecked  = !!state.checkStates[keyCrc];
+    const orcChecked  = !!state.checkStates[keyOrc];
+    const cnpjChecked = !!state.checkStates[keyCnpj];
+    const needCert = f.certidoes !== 'na';
+    const needOrc  = f.orcamentos === 'sim';
+    const needCnpj = f.cartaoCnpj === 'nao';
+
+    const tcTags     = [...f.tcs].map(t => `<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(79,142,247,0.15);color:var(--accent);border:1px solid rgba(79,142,247,0.25)">${t}</span>`).join(' ');
+    const parcelaTags= [...f.parcelas].sort().map(p => `<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(56,217,169,0.12);color:var(--accent2);border:1px solid rgba(56,217,169,0.25)">Parc. ${p}</span>`).join(' ');
+    const tipoTags   = [...f.tipos].map(t => `<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(246,166,35,0.12);color:var(--accent3);border:1px solid rgba(246,166,35,0.25)">${tipoLabel(t)}</span>`).join(' ');
+
+    html += `<div style="background:var(--surface3);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px">`;
+    html += `<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px">`;
+    html += `<div style="font-size:12px;font-weight:600;color:var(--text)">🏢 ${f.credor}</div>`;
+    html += `<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">${tcTags} ${parcelaTags} ${tipoTags}</div>`;
+    html += `</div>`;
+    if (f.cnpj) html += `<div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--accent);margin-bottom:8px">${f.cnpj}</div>`;
+
+    const nfNums = f.nfs.map(n => n.num || '?').join(', ');
+    html += checkItem(keyNf, `Nota(s) Fiscal(is): ${nfNums}`, 'Cópia da NF com dados completos (emitida em nome da Caixa Escolar)', '', nfChecked, !nfChecked ? 'pending' : '');
+
+    if (needCert) {
+      html += checkItem(keyCrc, 'Certidões de Regularidade Fiscal', 'CRC válido OU certidões negativas (Mun., Estadual, Federal, FGTS, CNDT)', '', crcChecked, !crcChecked ? 'pending-yellow' : '');
+      if (f.certidoesPend) html += `<div style="margin:-6px 0 8px 32px;font-size:11.5px;color:var(--accent3)">⚠ ${f.certidoesPend}</div>`;
+    }
+    if (needOrc) {
+      html += checkItem(keyOrc, 'Três orçamentos / pesquisa de preços', 'Contendo: quantitativo, valor unitário, data, validade e CNPJ', '', orcChecked, !orcChecked ? 'pending-yellow' : '');
+      if (f.orcamentosPend) html += `<div style="margin:-6px 0 8px 32px;font-size:11.5px;color:var(--accent3)">⚠ ${f.orcamentosPend}</div>`;
+    }
+    if (needCnpj) {
+      html += checkItem(keyCnpj, 'Cartão CNPJ regularizado', 'Verificar situação cadastral na Receita Federal', '', cnpjChecked, !cnpjChecked ? 'pending-yellow' : '');
+      if (f.cartaoCnpjPend) html += `<div style="margin:-6px 0 8px 32px;font-size:11.5px;color:var(--accent3)">⚠ ${f.cartaoCnpjPend}</div>`;
+    }
+    html += `</div>`;
+  });
+
+  // CAPITAL específico
+  const temCapital = despesasFiltradas.some(d => d.tipo === 'CAPITAL');
+  if (temCapital) {
+    html += `<div class="check-section-title">Capital — Bens Permanentes</div>`;
+    const keyPat  = 'patrimonio';
+    const keyTerm = 'termo_doacao';
+    html += checkItem(keyPat,  'Comprovante de entrada no Almoxarifado / Patrimônio (SEAD)', 'Necessário para todos os bens permanentes adquiridos', '', !!state.checkStates[keyPat],  !state.checkStates[keyPat]  ? 'pending' : '');
+    html += checkItem(keyTerm, 'Termo de Doação da Caixa Escolar para a Unidade Escolar',    'Obrigatório para bens adquiridos com recursos do TC',   '', !!state.checkStates[keyTerm], !state.checkStates[keyTerm] ? 'pending' : '');
+  }
+
+  el.innerHTML = html;
+  updatePendenciasSummary();
+}
+
+function checkItem(key, label, sub, company, checked, cls) {
+  return `
+    <div class="check-item ${cls||''} ${checked?'done':''}" id="ci-${key}">
+      <input class="check-cb" type="checkbox" id="cb-${key}" ${checked?'checked':''} onchange="toggleCheck('${key}')">
+      <div>
+        <div class="check-label">${label}</div>
+        ${sub?`<div class="check-sub">${sub}</div>`:''}
+        ${company?`<div class="check-company">${company}</div>`:''}
+      </div>
+    </div>
+  `;
+}
+
+function toggleCheck(key) {
+  state.checkStates[key] = document.getElementById('cb-'+key).checked;
+  const ci = document.getElementById('ci-'+key);
+  if (state.checkStates[key]) { ci.classList.add('done'); ci.classList.remove('pending','pending-yellow'); }
+  else { ci.classList.remove('done'); }
+  save();
+  updatePendenciasSummary();
+  refreshPendenciaBadge();
+}
+
+function updatePendenciasSummary() {
+  const all = document.querySelectorAll('#checklist-area .check-cb');
+  const total = all.length;
+  const done = [...all].filter(c => c.checked).length;
+  const pending = total - done;
+
+  // progresso
+  document.getElementById('progresso-docs').innerHTML = `
+    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px">
+      <span style="color:var(--text-muted)">${done} de ${total} documentos</span>
+      <span style="color:var(--accent2);font-family:'DM Mono',monospace">${total?Math.round(done/total*100):0}%</span>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" style="width:${total?done/total*100:0}%;background:var(--accent2)"></div>
+    </div>
+  `;
+
+  // pendencias lista
+  const pendItems = [...document.querySelectorAll('#checklist-area .check-item:not(.done) .check-label')];
+  if (!pendItems.length) {
+    document.getElementById('pendencias-lista').innerHTML = `<div class="alert alert-success" style="margin:0"><span>✅</span><span>Todos os documentos estão OK!</span></div>`;
+  } else {
+    document.getElementById('pendencias-lista').innerHTML = pendItems.map(p =>
+      `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(240,80,96,0.06);border:1px solid rgba(240,80,96,0.15);border-radius:7px;margin-bottom:6px;font-size:12.5px;color:var(--text)"><span style="color:var(--accent-red)">●</span>${p.textContent}</div>`
+    ).join('');
+  }
+
+  // dash pendencias
+  if (!pendItems.length) {
+    document.getElementById('dash-pendencias').innerHTML = `<div class="empty-state" style="padding:24px"><div class="empty-icon">✅</div><div class="empty-sub">Sem pendências no momento</div></div>`;
+  } else {
+    document.getElementById('dash-pendencias').innerHTML = `<div style="font-size:12px;color:var(--accent-red);font-weight:600;margin-bottom:8px">${pending} pendência(s)</div>` + pendItems.slice(0,3).map(p =>
+      `<div style="font-size:12.5px;color:var(--text-muted);padding:5px 0;border-bottom:1px solid var(--border)">⚠ ${p.textContent}</div>`
+    ).join('') + (pendItems.length > 3 ? `<div style="font-size:12px;color:var(--text-dim);margin-top:6px">+${pendItems.length-3} mais...</div>` : '');
+  }
+}
+
+function refreshChecklist() {
+  renderChecklist();
+}
+
+function refreshPendenciaBadge() {
+  const all = document.querySelectorAll('#checklist-area .check-cb');
+  const pending = [...all].filter(c => !c.checked).length;
+  const badge = document.getElementById('pendencia-badge');
+  if (pending > 0) { badge.textContent = pending; badge.style.display = 'flex'; }
+  else { badge.style.display = 'none'; }
+}
+
+function imprimirPendencias() {
+  const pendItems = [...document.querySelectorAll('#checklist-area .check-item:not(.done) .check-label')];
+  if (!pendItems.length) { alert('Não há pendências!'); return; }
+  const content = pendItems.map((p, i) => `${i+1}. ${p.textContent}`).join('\n');
+  const w = window.open('', '', 'width=600,height=500');
+  w.document.write(`<pre style="font-family:monospace;font-size:14px;padding:20px">LISTA DE PENDÊNCIAS\n${'='.repeat(40)}\n\n${content}\n\nGerado em: ${new Date().toLocaleDateString('pt-BR')}</pre>`);
+  w.print();
+}
+
+// ==================== DASHBOARD ====================
+function renderDashboard() {
+  // stats
+  let custeio = 0, capital = 0, alem = 0;
+  let qtC = 0, qtK = 0, qtA = 0;
+  state.despesas.forEach(d => {
+    const v = parseMoney(d.valor);
+    if (d.tipo === 'CUSTEIO' || d.tipo === 'CAPINA' || d.tipo === 'OBRAS') { custeio += v; qtC++; }
+    else if (d.tipo === 'CAPITAL') { capital += v; qtK++; }
+    else if (d.tipo === 'ALEM_MUROS') { alem += v; qtA++; }
+  });
+  const total = custeio + capital + alem;
+
+  document.getElementById('stat-custeio').textContent = fmtMoney(custeio);
+  document.getElementById('stat-capital').textContent = fmtMoney(capital);
+  document.getElementById('stat-alem').textContent = fmtMoney(alem);
+  document.getElementById('stat-total').textContent = fmtMoney(total);
+  document.getElementById('stat-custeio-qt').textContent = qtC + ' lançamentos';
+  document.getElementById('stat-capital-qt').textContent = qtK + ' lançamentos';
+  document.getElementById('stat-alem-qt').textContent = qtA + ' lançamentos';
+  document.getElementById('stat-total-qt').textContent = state.despesas.length + ' lançamentos';
+
+  document.getElementById('saldo-gasto').textContent = fmtMoney(total);
+
+  // saldo parcela
+  const tcAtivo = state.tcs.find(t => t.id === state.tcAtivo);
+  if (tcAtivo) {
+    const parcPorParcela = state.despesas
+      .filter(d => state.parcelaFiltro === 'todas' || d.parcela === state.parcelaFiltro)
+      .reduce((s, d) => s + parseMoney(d.valor), 0);
+    // use total valor TC / nParcelas as estimate
+    const valorTC = parseMoney(tcAtivo.valor.replace('.','').replace(',','.'));
+    document.getElementById('saldo-recebido').textContent = fmtMoney(valorTC);
+    const saldo = valorTC - total;
+    document.getElementById('saldo-disponivel').textContent = fmtMoney(saldo < 0 ? 0 : saldo);
+    const pct = valorTC > 0 ? Math.min(total / valorTC * 100, 100) : 0;
+    document.getElementById('progress-bar').style.width = pct + '%';
+    document.getElementById('progress-label').textContent = Math.round(pct) + '% utilizado';
+  } else {
+    document.getElementById('saldo-recebido').textContent = 'R$ —';
+    document.getElementById('saldo-disponivel').textContent = 'R$ —';
+  }
+
+  // ultimos lançamentos
+  const ul = state.despesas.slice(-4).reverse();
+  if (ul.length) {
+    document.getElementById('dash-ultimos').innerHTML = ul.map(d => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-size:13px;font-weight:500">${d.credor}</div>
+          <div style="font-size:11px;color:var(--text-muted)">${tipoLabel(d.tipo)} · Parcela ${d.parcela}</div>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--accent2)">R$ ${d.valor}</div>
+      </div>
+    `).join('');
+  }
+}
+
+// ==================== RELATÓRIO ANEXO III ====================
+function renderAnexo3() {
+  const tipo = document.getElementById('rel-tipo').value;
+  const parcela = document.getElementById('rel-parcela').value;
+  const list = state.despesas.filter(d => d.tipo === tipo && d.parcela === parcela);
+  const tbody = document.getElementById('anexo3-tbody');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px">Nenhuma despesa do tipo ${tipoLabel(tipo)} na Parcela ${parcela}</td></tr>`;
+    document.getElementById('anexo3-total').textContent = 'R$ 0,00';
+    return;
+  }
+  let total = 0;
+  tbody.innerHTML = list.map((d, i) => {
+    const v = parseMoney(d.valor);
+    total += v;
+    return `<tr>
+      <td class="td-muted">${i+1}</td>
+      <td style="font-weight:500">${d.credor}</td>
+      <td class="td-mono td-muted">${d.cnpj||'—'}</td>
+      <td class="td-muted">${d.nfNum||'—'} ${d.nfData?'- '+fmtDate(d.nfData):''}</td>
+      <td class="td-value text-right" style="color:var(--accent2)">R$ ${d.valor}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('anexo3-total').textContent = fmtMoney(total);
+}
+
+function gerarAnexo3() {
+  const tipo = document.getElementById('rel-tipo').value;
+  const parcela = document.getElementById('rel-parcela').value;
+  const list = state.despesas.filter(d => d.tipo === tipo && d.parcela === parcela);
+  const saldoAnt = document.getElementById('rel-saldo-ant').value;
+  const creditado = document.getElementById('rel-creditado').value;
+  const rendimento = document.getElementById('rel-rendimento').value;
+  const dataCredito = document.getElementById('rel-data-credito').value;
+
+  const totalGasto = list.reduce((s, d) => s + parseMoney(d.valor), 0);
+  const totalReceita = parseMoney(saldoAnt) + parseMoney(creditado.replace('.','').replace(',','.')) + parseMoney(rendimento.replace('.','').replace(',','.'));
+  const saldo = totalReceita - totalGasto;
+
+  let txt = `PREFEITURA MUNICIPAL DE CONTAGEM\nSecretária Municipal de Educação\n\nANEXO III\nRELATÓRIO DE EXECUÇÃO FÍSICO-FINANCEIRO\n\nCaixa Escolar: ___________________________\nData do Crédito: ${dataCredito}   Nº da parcela: ${parcela}   Discriminação da verba: ${tipoLabel(tipo)}\n\n`;
+  txt += `RECEITA:\nSaldo anterior: R$ ${saldoAnt}\nValor Creditado: R$ ${creditado}\nRendimento de Aplicação Financeira: R$ ${rendimento}\nTotal de Receita: R$ ${fmtMoneyStr(totalReceita)}\n\n`;
+  txt += `DESPESAS:\nTotal de Despesas: R$ ${fmtMoneyStr(totalGasto)}\nSaldo: R$ ${fmtMoneyStr(saldo)}\n\n`;
+  txt += `Relação de Pagamentos:\n${'─'.repeat(80)}\n`;
+  list.forEach((d, i) => {
+    txt += `${String(i+1).padStart(2,' ')}. ${d.credor.padEnd(40,' ')}  ${(d.cnpj||'').padEnd(20,' ')}  ${d.nfNum||'—'}  R$ ${d.valor}\n`;
+  });
+  txt += `${'─'.repeat(80)}\nTotal: R$ ${fmtMoneyStr(totalGasto)}\n`;
+
+  const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `AnexoIII_Parcela${parcela}_${tipo}.txt`; a.click();
+}
+
+// ==================== GERAR DOCUMENTO ====================
+function gerarDocumento() {
+  const dia = document.getElementById('doc-dia').value;
+  const mes = document.getElementById('doc-mes').value;
+  const ano = document.getElementById('doc-ano').value;
+  const parcela = document.getElementById('doc-parcela').value;
+  const periodo = document.getElementById('doc-periodo').value;
+  const tcNum = document.getElementById('doc-tc').value;
+
+  const tcAtivo = state.tcs.find(t => t.id === state.tcAtivo);
+  const escola = tcAtivo ? tcAtivo.escola : '___________________________';
+  const presidente = tcAtivo ? tcAtivo.presidente : '___________________________';
+  const cnpjCE = tcAtivo ? tcAtivo.cnpj : '___________________________';
+
+  const custeio = state.despesas.filter(d => d.tipo === 'CUSTEIO' || d.tipo === 'CAPINA');
+  const capital = state.despesas.filter(d => d.tipo === 'CAPITAL');
+  const totalCusteio = custeio.reduce((s,d) => s + parseMoney(d.valor), 0);
+  const totalCapital = capital.reduce((s,d) => s + parseMoney(d.valor), 0);
+  const totalGeral = totalCusteio + totalCapital;
+
+  const creditado = document.getElementById('rel-creditado').value;
+  const rendimento = document.getElementById('rel-rendimento').value;
+  const saldoAnt = document.getElementById('rel-saldo-ant').value;
+
+  let acoes = {};
+  state.despesas.forEach(d => {
+    const key = d.tipo === 'CAPITAL' ? 'EQUIPAMENTOS/MOBILIÁRIO' :
+                d.tipo === 'ALEM_MUROS' ? 'ROTEIROS EDUCATIVOS/CULTURAIS' :
+                'MATERIAIS DE EXPEDIENTE/PAPELARIA';
+    if (!acoes[key]) acoes[key] = { periodo, valor: 0 };
+    acoes[key].valor += parseMoney(d.valor);
+  });
+
+  let linhasAcoes = Object.entries(acoes).map(([k, v]) =>
+    `${k.padEnd(55,' ')}  ${v.periodo.padEnd(20,' ')}  R$ ${fmtMoneyStr(v.valor)}`
+  ).join('\n');
+
+  let txt = ``;
+  txt += `                                    N° DO TC\n`;
+  txt += `             ANEXO II               ${tcNum}\n`;
+  txt += `     Deliberação do Conselho Fiscal  PARCELA ${parcela.padStart(2,'0')}\n\n`;
+  txt += `Aos ${dia} dias do mês de ${mes} do ano de ${ano}, reuniram-se os membros do\n`;
+  txt += `Conselho Fiscal da Caixa Escolar da ${escola}.\n\n`;
+  txt += `Pauta: Deliberação sobre a utilização de recurso referente ao repasse DA ${parcela.toUpperCase()} PARCELA\n`;
+  txt += `para CUSTEIO, no ano de ${ano}, para ações de Manutenção e Desenvolvimento do ensino - MDE,\n`;
+  txt += `em consonância com a proposta pedagógica da Escola, conforme estabelece o TERMO DE\n`;
+  txt += `COMPROMISSO ${tcNum}, assinado entre a Caixa Escolar ${(tcAtivo?.escola||'').toUpperCase()}\n`;
+  txt += `e a Prefeitura de Contagem, por intermédio da Secretaria Municipal de Educação.\n\n`;
+
+  const totalRecebido = parseMoney(saldoAnt) + parseMoney(creditado.replace('.','').replace(',','.')) + parseMoney(rendimento.replace('.','').replace(',','.'));
+  txt += `No primeiro momento da reunião, o(a) Presidente da Caixa Escolar apresentou o valor de\n`;
+  txt += `R$ ${fmtMoneyStr(totalRecebido).padEnd(15)} referente ao repasse da ${parcela.toUpperCase()} parcela, creditado,\n`;
+  txt += `no Banco CAIXA ECONÔMICA FEDERAL, acrescido do valor de R$ ${rendimento}\n`;
+  txt += `referente a rendimentos de aplicação financeira. A esse montante juntou-se o valor de\n`;
+  txt += `R$ ${saldoAnt} como saldo da parcela anterior.\n\n`;
+  txt += `No segundo momento, definiu-se a aplicação dos recursos nas seguintes ações de\n`;
+  txt += `Manutenção e Desenvolvimento de Ensino - MDE:\n\n`;
+  txt += `AÇÕES - MDE                                              PERÍODO DE EXECUÇÃO     VALOR\n`;
+  txt += `─────────────────────────────────────────────────────────────────────────────────────\n`;
+  txt += linhasAcoes + '\n';
+  txt += `─────────────────────────────────────────────────────────────────────────────────────\n`;
+  txt += `                                                                  TOTAL   R$ ${fmtMoneyStr(totalGeral)}\n\n`;
+  txt += `Nada mais a tratar a reunião foi encerrada, ata lavrada e assinada pelos presentes.\n\n\n`;
+  txt += `MESA DIRETORA DA CAIXA ESCOLAR\n`;
+  txt += `──────────────────────────────────────────────────────────────────────\n`;
+  txt += `Segmento          Nome                                   Assinatura\n`;
+  txt += `Presidente        ${presidente}\n`;
+  txt += `Tesoureiro        ___________________________\n`;
+  txt += `Secretário        ___________________________\n\n`;
+  txt += `CONSELHO FISCAL\n`;
+  txt += `Representante (1) ___________________________\n`;
+  txt += `Representante (2) ___________________________\n`;
+  txt += `Representante (3) ___________________________\n\n`;
+  txt += `Este documento consta de ______ páginas numeradas e rubricadas pelo(a) Presidente da Caixa Escolar.\n`;
+
+  document.getElementById('doc-preview').textContent = txt;
+}
+
+function baixarTXT() {
+  const txt = document.getElementById('doc-preview').textContent;
+  if (!txt || txt.startsWith('Clique')) { alert('Gere o documento primeiro.'); return; }
+  const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'Deliberacao_Conselho_Fiscal.txt'; a.click();
+}
+
+// ==================== EXPORT CSV ====================
+function exportarTabela() {
+  if (!state.despesas.length) { alert('Nenhuma despesa lançada.'); return; }
+  const headers = ['Tipo','Parcela','Credor','CNPJ/CPF','Nº NF','Data NF','Descrição','Valor (R$)'];
+  const rows = state.despesas.map(d => [
+    tipoLabel(d.tipo), d.parcela, d.credor, d.cnpj, d.nfNum, d.nfData, d.descricao, d.valor
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(c => `"${(c||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\ufeff'+csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'despesas_prestacao_contas.csv'; a.click();
+}
+
+// ==================== UTILS ====================
+function tipoLabel(tipo) {
+  return { CUSTEIO: 'Custeio', CAPITAL: 'Capital', ALEM_MUROS: 'Além dos Muros', OBRAS: 'Obras', CAPINA: 'Capina' }[tipo] || tipo;
+}
+
+function parseMoney(str) {
+  if (!str) return 0;
+  return parseFloat(str.toString().replace(/\./g,'').replace(',','.')) || 0;
+}
+
+function fmtMoney(v) {
+  return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function fmtMoneyStr(v) {
+  return v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  const parts = d.split('-');
+  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  return d;
+}
+
+// ==================== INIT ====================
+state.despesas.forEach(d => addParcelaTab(d.parcela));
+renderDespesas();
+renderTCs();
+renderDashboard();
+renderChecklist();
+refreshPendenciaBadge();
+initExtras();
+
+
+</script>
+</body>
+</html>
