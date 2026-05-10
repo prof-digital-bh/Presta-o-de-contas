@@ -748,17 +748,17 @@
 
     <nav class="nav-section">
       <div class="nav-label">Principal</div>
-      <div class="nav-item active" onclick="showSection('dashboard')">
-        <span class="nav-icon">◈</span> Dashboard
-      </div>
       <div class="nav-item" onclick="showSection('tc')">
         <span class="nav-icon">⊞</span> Termos de Compromisso
       </div>
       <div class="nav-item" onclick="showSection('despesas')">
         <span class="nav-icon">⊟</span> Despesas
       </div>
-      <div class="nav-item" onclick="showSection('fornecedores')">
-        <span class="nav-icon">🏢</span> Fornecedores
+      <div class="nav-item active" onclick="showSection('dashboard')">
+        <span class="nav-icon">◈</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="showSection('alertas')">
+        <span class="nav-icon">🔔</span> Alertas e Prazos <span id="alertas-badge" class="pendencia-count" style="display:none;background:var(--accent3)">0</span>
       </div>
     </nav>
 
@@ -767,17 +767,18 @@
       <div class="nav-item" onclick="showSection('checklist')" id="nav-checklist">
         <span class="nav-icon">☑</span> Checklist <span id="pendencia-badge" class="pendencia-count" style="display:none">0</span>
       </div>
-      <div class="nav-item" onclick="showSection('relatorio')">
-        <span class="nav-icon">◧</span> Relatório (Anexo III)
-      </div>
       <div class="nav-item" onclick="showSection('anexos')">
         <span class="nav-icon">📋</span> Gerar Anexos
       </div>
-      <div class="nav-item" onclick="showSection('preview')">
-        <span class="nav-icon">◫</span> Deliberação (Anexo II)
+      <div class="nav-item" onclick="showSection('links')">
+        <span class="nav-icon">🔗</span> Links Rápidos
       </div>
-      <div class="nav-item" onclick="showSection('alertas')">
-        <span class="nav-icon">🔔</span> Alertas e Prazos <span id="alertas-badge" class="pendencia-count" style="display:none;background:var(--accent3)">0</span>
+    </nav>
+
+    <nav class="nav-section">
+      <div class="nav-label">Cadastros</div>
+      <div class="nav-item" onclick="showSection('fornecedores')">
+        <span class="nav-icon">🏢</span> Fornecedores
       </div>
     </nav>
   </aside>
@@ -1254,8 +1255,10 @@
       </div>
 
       <!-- Tabs dos Anexos -->
-      <div class="parcela-tabs" id="anexo-tabs" style="margin-bottom:20px">
+      <div class="parcela-tabs" id="anexo-tabs" style="margin-bottom:20px;flex-wrap:wrap">
         <div class="parcela-tab active" onclick="mostrarAnexo('anx1',this)">Anexo I — Certidão</div>
+        <div class="parcela-tab" onclick="mostrarAnexo('anx2',this)">Anexo II — Deliberação</div>
+        <div class="parcela-tab" onclick="mostrarAnexo('anx3',this)">Anexo III — Rel. Financeiro</div>
         <div class="parcela-tab" onclick="mostrarAnexo('anx4',this)">Anexo IV — Guias Pagas</div>
         <div class="parcela-tab" onclick="mostrarAnexo('anx5',this)">Anexo V — Parecer CF</div>
         <div class="parcela-tab" onclick="mostrarAnexo('anx6',this)">Anexo VI — Doação</div>
@@ -1289,6 +1292,140 @@
           </div>
         </div>
         <div class="card"><div class="preview-box" id="prev-anx1">Clique em "Gerar" para visualizar.</div></div>
+      </div>
+
+      <!-- ANEXO II -->
+      <div id="anx2" class="anexo-panel" style="display:none">
+        <div class="card mb-16">
+          <div class="card-header"><div class="card-title">📋 Anexo II — Deliberação do Conselho Fiscal</div>
+            <div class="gap-8">
+              <button class="btn btn-secondary" onclick="imprimirAnexo('prev-anx2')">🖨 Imprimir</button>
+              <button class="btn btn-secondary" onclick="baixarTXT()">⬇ Baixar .txt</button>
+              <button class="btn btn-primary" onclick="gerarDocumento()">↺ Gerar</button>
+            </div>
+          </div>
+          <div class="alert alert-info"><span>ℹ</span><span>A Deliberação do Conselho Fiscal deve ser elaborada após o crédito do recurso na conta da Caixa Escolar e antes do início das despesas, registrando o planejamento e a aplicação dos valores recebidos.</span></div>
+          <div class="form-grid form-grid-3">
+            <div class="field">
+              <label>Dia da Reunião</label>
+              <input type="number" id="doc-dia" value="" min="1" max="31">
+            </div>
+            <div class="field">
+              <label>Mês</label>
+              <select id="doc-mes">
+                <option value="janeiro">janeiro</option>
+                <option value="fevereiro">fevereiro</option>
+                <option value="março">março</option>
+                <option value="abril">abril</option>
+                <option value="maio">maio</option>
+                <option value="junho">junho</option>
+                <option value="julho">julho</option>
+                <option value="agosto">agosto</option>
+                <option value="setembro">setembro</option>
+                <option value="outubro">outubro</option>
+                <option value="novembro">novembro</option>
+                <option value="dezembro" selected>dezembro</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Ano</label>
+              <input type="number" id="doc-ano" placeholder="aaaa">
+            </div>
+            <div class="field">
+              <label>Nº Parcela</label>
+              <input type="text" id="doc-parcela" value="">
+            </div>
+            <div class="field">
+              <label>Período de Execução</label>
+              <input type="text" id="doc-periodo" value="">
+            </div>
+            <div class="field">
+              <label>Nº TC</label>
+              <input type="text" id="doc-tc" value="">
+            </div>
+          </div>
+          <div style="margin-top:12px">
+            <button class="btn btn-success" onclick="gerarDocumento()">↺ Gerar Documento</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title mb-16">📄 Documento Gerado</div>
+          <div class="preview-box" id="prev-anx2">
+            Clique em "Gerar" para visualizar o texto da Deliberação do Conselho Fiscal.
+          </div>
+        </div>
+      </div>
+
+      <!-- ANEXO III -->
+      <div id="anx3" class="anexo-panel" style="display:none">
+        <div class="card mb-16">
+          <div class="card-header"><div class="card-title">📋 Anexo III — Relatório de Execução Físico-Financeiro</div>
+            <div class="gap-8">
+              <button class="btn btn-primary" onclick="gerarAnexoIII()">⬇ Gerar Anexo III</button>
+            </div>
+          </div>
+          <div class="alert alert-info"><span>ℹ</span><span>O Relatório de Execução Físico-Financeiro resume todos os recebimentos e despesas da Caixa Escolar no período. Deve ser apresentado em todas as prestações de contas.</span></div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Parcela</label>
+              <select id="rel-parcela">
+                <option value="01">Parcela 01</option>
+                <option value="02">Parcela 02</option>
+                <option value="03" selected>Parcela 03</option>
+                <option value="04">Parcela 04</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Tipo</label>
+              <select id="rel-tipo">
+                <option value="CUSTEIO">Custeio</option>
+                <option value="CAPITAL">Capital</option>
+                <option value="ALEM_MUROS">Além dos Muros</option>
+              </select>
+            </div>
+            <div class="field field-money">
+              <label>Saldo Anterior (R$)</label>
+              <input type="text" id="rel-saldo-ant" value="0,05" data-money placeholder="0,00">
+            </div>
+            <div class="field field-money">
+              <label>Valor Creditado (R$)</label>
+              <input type="text" id="rel-creditado" value="" placeholder="0,00" data-money>
+            </div>
+            <div class="field field-money">
+              <label>Rendimento Financeiro (R$)</label>
+              <input type="text" id="rel-rendimento" value="" placeholder="0,00" data-money>
+            </div>
+            <div class="field">
+              <label>Data do Crédito</label>
+              <input type="text" id="rel-data-credito" value="">
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title mb-16">Prévia do Relatório</div>
+          <div id="anexo3-preview" class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Credor</th>
+                  <th>CNPJ</th>
+                  <th>Comprovante</th>
+                  <th class="text-right">Valor R$</th>
+                </tr>
+              </thead>
+              <tbody id="anexo3-tbody">
+                <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px">Lance despesas para visualizar</td></tr>
+              </tbody>
+              <tfoot>
+                <tr style="background:var(--surface2)">
+                  <td colspan="4" style="padding:11px 14px;font-weight:600;font-size:13px">Total</td>
+                  <td style="padding:11px 14px;font-family:'DM Mono',monospace;font-weight:600;color:var(--accent2);text-align:right" id="anexo3-total">R$ 0,00</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
       </div>
 
       <!-- ANEXO IV -->
@@ -1443,29 +1580,77 @@
         <div class="card">
           <div class="card-header"><div class="card-title" style="color:var(--accent-red)">⏰ Prazos Críticos</div></div>
           <div style="display:flex;flex-direction:column;gap:10px;font-size:13px">
-            <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--accent-red)">
-              <div style="font-weight:600;margin-bottom:4px">Prestação de contas parcial</div>
-              <div style="color:var(--text-muted)">Deve ser apresentada em até <strong style="color:var(--accent3)">30 dias antes</strong> da liberação da parcela subsequente. (Art. 28, §1º)</div>
+            <div class="rec-card" style="background:var(--surface2);border-radius:8px;border-left:3px solid var(--accent-red);overflow:hidden">
+              <div class="rec-header" onclick="toggleRec(this)" style="padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+                <div><div style="font-weight:600;margin-bottom:3px">Prestação de contas parcial</div><div style="color:var(--text-muted);font-size:12px">Deve ser apresentada em até <strong style="color:var(--accent3)">30 dias antes</strong> da liberação da parcela subsequente. (Art. 28, §1º)</div></div>
+                <span class="rec-arrow" style="color:var(--text-dim);font-size:14px;margin-left:12px;flex-shrink:0">▸</span>
+              </div>
+              <div class="rec-detail" style="display:none;padding:12px;border-top:1px solid var(--border);background:var(--surface3)">
+                <div style="font-size:12px;font-weight:600;color:var(--accent2);margin-bottom:6px">📖 Explicação</div>
+                <div style="font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:10px">A prestação de contas parcial é obrigatória para liberar a parcela seguinte do TC. Ela deve ser entregue com antecedência de 30 dias para que a SEDUC/FUNEC tenha tempo de análise antes da data de repasse.</div>
+                <div style="font-size:12px;font-weight:600;color:var(--accent3);margin-bottom:6px">📌 Exemplo</div>
+                <div style="font-size:12px;color:var(--text-muted);background:var(--surface2);border-radius:6px;padding:10px;line-height:1.7">Se a 2ª parcela está prevista para <strong>15/08</strong>, a prestação de contas da 1ª parcela deve ser entregue até <strong>16/07</strong> (30 dias antes). Entregue depois disso, o repasse ficará bloqueado.</div>
+              </div>
             </div>
-            <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--accent-red)">
-              <div style="font-weight:600;margin-bottom:4px">Prestação de contas final</div>
-              <div style="color:var(--text-muted)">Deve ser entregue em até <strong style="color:var(--accent3)">30 dias após o término</strong> da vigência do TC. (Art. 28, §2º)</div>
+            <div class="rec-card" style="background:var(--surface2);border-radius:8px;border-left:3px solid var(--accent-red);overflow:hidden">
+              <div class="rec-header" onclick="toggleRec(this)" style="padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+                <div><div style="font-weight:600;margin-bottom:3px">Prestação de contas final</div><div style="color:var(--text-muted);font-size:12px">Deve ser entregue em até <strong style="color:var(--accent3)">30 dias após o término</strong> da vigência do TC. (Art. 28, §2º)</div></div>
+                <span class="rec-arrow" style="color:var(--text-dim);font-size:14px;margin-left:12px;flex-shrink:0">▸</span>
+              </div>
+              <div class="rec-detail" style="display:none;padding:12px;border-top:1px solid var(--border);background:var(--surface3)">
+                <div style="font-size:12px;font-weight:600;color:var(--accent2);margin-bottom:6px">📖 Explicação</div>
+                <div style="font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:10px">Ao encerrar a vigência do TC, mesmo que o objeto não tenha sido executado completamente, é obrigatório apresentar a prestação de contas final, com devolução do saldo remanescente.</div>
+                <div style="font-size:12px;font-weight:600;color:var(--accent3);margin-bottom:6px">📌 Exemplo</div>
+                <div style="font-size:12px;color:var(--text-muted);background:var(--surface2);border-radius:6px;padding:10px;line-height:1.7">TC com vigência até <strong>31/12/2025</strong>: a prestação de contas final deve ser entregue até <strong>30/01/2026</strong>. Se houver saldo na conta, ele deve ser restituído no mesmo prazo.</div>
+              </div>
             </div>
-            <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--accent3)">
-              <div style="font-weight:600;margin-bottom:4px">Devolução de saldo não utilizado</div>
-              <div style="color:var(--text-muted)">Saldo remanescente deve ser restituído ao Município em até <strong style="color:var(--accent3)">30 dias</strong> do encerramento do TC. (Art. 14, §único)</div>
+            <div class="rec-card" style="background:var(--surface2);border-radius:8px;border-left:3px solid var(--accent3);overflow:hidden">
+              <div class="rec-header" onclick="toggleRec(this)" style="padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+                <div><div style="font-weight:600;margin-bottom:3px">Devolução de saldo não utilizado</div><div style="color:var(--text-muted);font-size:12px">Saldo remanescente deve ser restituído ao Município em até <strong style="color:var(--accent3)">30 dias</strong> do encerramento do TC. (Art. 14, §único)</div></div>
+                <span class="rec-arrow" style="color:var(--text-dim);font-size:14px;margin-left:12px;flex-shrink:0">▸</span>
+              </div>
+              <div class="rec-detail" style="display:none;padding:12px;border-top:1px solid var(--border);background:var(--surface3)">
+                <div style="font-size:12px;font-weight:600;color:var(--accent2);margin-bottom:6px">📖 Explicação</div>
+                <div style="font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:10px">Qualquer valor que sobrou na conta bancária da Caixa Escolar ao final da vigência, incluindo rendimentos de aplicação financeira, deve ser devolvido ao Município. Saldos de parcelas podem ser reprogramados para a parcela seguinte (dentro da vigência), mas ao final do TC não há exceção.</div>
+                <div style="font-size:12px;font-weight:600;color:var(--accent3);margin-bottom:6px">📌 Exemplo</div>
+                <div style="font-size:12px;color:var(--text-muted);background:var(--surface2);border-radius:6px;padding:10px;line-height:1.7">TC encerrado em <strong>31/12/2025</strong> com saldo de R$ 430,00 + R$ 18,00 de rendimentos = <strong>R$ 448,00</strong> devem ser devolvidos via GEA (Guia Especial de Arrecadação) até <strong>30/01/2026</strong>.</div>
+              </div>
             </div>
-            <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--accent3)">
-              <div style="font-weight:600;margin-bottom:4px">Habilitação anual (documentos)</div>
-              <div style="color:var(--text-muted)">Documentação de habilitação deve ser entregue até o <strong style="color:var(--accent3)">último dia útil de janeiro</strong> do ano seguinte. (Manual, Módulo I)</div>
+            <div class="rec-card" style="background:var(--surface2);border-radius:8px;border-left:3px solid var(--accent3);overflow:hidden">
+              <div class="rec-header" onclick="toggleRec(this)" style="padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+                <div><div style="font-weight:600;margin-bottom:3px">Habilitação anual (documentos)</div><div style="color:var(--text-muted);font-size:12px">Documentação de habilitação deve ser entregue até o <strong style="color:var(--accent3)">último dia útil de janeiro</strong> do ano seguinte. (Manual, Módulo I)</div></div>
+                <span class="rec-arrow" style="color:var(--text-dim);font-size:14px;margin-left:12px;flex-shrink:0">▸</span>
+              </div>
+              <div class="rec-detail" style="display:none;padding:12px;border-top:1px solid var(--border);background:var(--surface3)">
+                <div style="font-size:12px;font-weight:600;color:var(--accent2);margin-bottom:6px">📖 Explicação</div>
+                <div style="font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:10px">Anualmente, a Caixa Escolar deve comprovar sua regularidade para continuar recebendo recursos. Sem a entrega desta documentação no prazo, a SEDUC não realizará novos repasses no ano corrente.</div>
+                <div style="font-size:12px;font-weight:600;color:var(--accent3);margin-bottom:6px">📌 Documentos exigidos</div>
+                <div style="font-size:12px;color:var(--text-muted);background:var(--surface2);border-radius:6px;padding:10px;line-height:1.8">✅ Estatuto Social registrado em cartório<br>✅ CNPJ atualizado na Receita Federal<br>✅ Ata de eleição da Diretoria registrada<br>✅ Regularidade fiscal (FGTS, INSS, Certidões)<br>✅ Declaração ECF, RAIS negativa, DCTF<br>✅ Demonstrativo Financeiro do ano anterior</div>
+              </div>
             </div>
-            <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--custeio)">
-              <div style="font-weight:600;margin-bottom:4px">Pedido de aditivo ao TC</div>
-              <div style="color:var(--text-muted)">Solicitar com antecedência mínima de <strong style="color:var(--accent3)">30 dias</strong> antes do término da vigência. (Manual, Módulo III)</div>
+            <div class="rec-card" style="background:var(--surface2);border-radius:8px;border-left:3px solid var(--custeio);overflow:hidden">
+              <div class="rec-header" onclick="toggleRec(this)" style="padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+                <div><div style="font-weight:600;margin-bottom:3px">Pedido de aditivo ao TC</div><div style="color:var(--text-muted);font-size:12px">Solicitar com antecedência mínima de <strong style="color:var(--accent3)">30 dias</strong> antes do término da vigência. (Manual, Módulo III)</div></div>
+                <span class="rec-arrow" style="color:var(--text-dim);font-size:14px;margin-left:12px;flex-shrink:0">▸</span>
+              </div>
+              <div class="rec-detail" style="display:none;padding:12px;border-top:1px solid var(--border);background:var(--surface3)">
+                <div style="font-size:12px;font-weight:600;color:var(--accent2);margin-bottom:6px">📖 Explicação</div>
+                <div style="font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:10px">Se o objeto do TC não será concluído antes do vencimento, é necessário solicitar Termo Aditivo de prorrogação. O pedido deve ser formalizado com justificativa escrita e enviado à Diretoria de Gestão de Parcerias da SEDUC com no mínimo 30 dias de antecedência.</div>
+                <div style="font-size:12px;font-weight:600;color:var(--accent3);margin-bottom:6px">📌 Exemplo</div>
+                <div style="font-size:12px;color:var(--text-muted);background:var(--surface2);border-radius:6px;padding:10px;line-height:1.7">TC vence em <strong>31/12/2025</strong> e a obra de reforma ainda está em andamento: protocole o pedido de aditivo até <strong>01/12/2025</strong>, com nota técnica justificando o prazo necessário e o percentual executado até ali.</div>
+              </div>
             </div>
-            <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--custeio)">
-              <div style="font-weight:600;margin-bottom:4px">Prazo para sanear irregularidades</div>
-              <div style="color:var(--text-muted)">Após notificação da SEDUC, a Caixa Escolar tem <strong style="color:var(--accent3)">15 dias</strong> para regularizar. (Art. 29)</div>
+            <div class="rec-card" style="background:var(--surface2);border-radius:8px;border-left:3px solid var(--custeio);overflow:hidden">
+              <div class="rec-header" onclick="toggleRec(this)" style="padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+                <div><div style="font-weight:600;margin-bottom:3px">Prazo para sanear irregularidades</div><div style="color:var(--text-muted);font-size:12px">Após notificação da SEDUC, a Caixa Escolar tem <strong style="color:var(--accent3)">15 dias</strong> para regularizar. (Art. 29)</div></div>
+                <span class="rec-arrow" style="color:var(--text-dim);font-size:14px;margin-left:12px;flex-shrink:0">▸</span>
+              </div>
+              <div class="rec-detail" style="display:none;padding:12px;border-top:1px solid var(--border);background:var(--surface3)">
+                <div style="font-size:12px;font-weight:600;color:var(--accent2);margin-bottom:6px">📖 Explicação</div>
+                <div style="font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:10px">Ao constatar irregularidade na prestação de contas, a SEDUC/FUNEC notifica a Caixa Escolar, que dispõe de 15 dias corridos para apresentar justificativas, documentos complementares ou corrigir os valores glosados. Ultrapassado esse prazo, pode ser aberta Tomada de Contas Especial.</div>
+                <div style="font-size:12px;font-weight:600;color:var(--accent3);margin-bottom:6px">📌 Exemplo</div>
+                <div style="font-size:12px;color:var(--text-muted);background:var(--surface2);border-radius:6px;padding:10px;line-height:1.7">SEDUC aponta em <strong>10/03</strong> que uma nota fiscal está sem o carimbo de recebimento e que falta um orçamento: a Caixa Escolar tem até <strong>25/03</strong> para entregar o documento corrigido ou apresentar justificativa formal.</div>
+              </div>
             </div>
           </div>
         </div>
@@ -1473,25 +1658,66 @@
         <div class="card">
           <div class="card-header"><div class="card-title" style="color:var(--accent3)">💰 Limites de Contratação</div></div>
           <div style="display:flex;flex-direction:column;gap:10px;font-size:13px">
-            <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--accent2)">
-              <div style="font-weight:600;margin-bottom:4px">Dispensado de procedimento competitivo</div>
-              <div style="color:var(--text-muted)">Fornecimento/serviços até <strong style="color:var(--accent2)">R$ 50.000,00</strong> e obras/reformas até <strong style="color:var(--accent2)">R$ 100.000,00</strong>. Exige ao menos 3 orçamentos. (Art. 17, I)</div>
+            <div class="rec-card" style="background:var(--surface2);border-radius:8px;border-left:3px solid var(--accent2);overflow:hidden">
+              <div class="rec-header" onclick="toggleRec(this)" style="padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+                <div><div style="font-weight:600;margin-bottom:3px">Dispensado de procedimento competitivo</div><div style="color:var(--text-muted);font-size:12px">Fornecimento/serviços até <strong style="color:var(--accent2)">R$ 50.000,00</strong> e obras/reformas até <strong style="color:var(--accent2)">R$ 100.000,00</strong>. Exige ao menos 3 orçamentos. (Art. 17, I)</div></div>
+                <span class="rec-arrow" style="color:var(--text-dim);font-size:14px;margin-left:12px;flex-shrink:0">▸</span>
+              </div>
+              <div class="rec-detail" style="display:none;padding:12px;border-top:1px solid var(--border);background:var(--surface3)">
+                <div style="font-size:12px;font-weight:600;color:var(--accent2);margin-bottom:6px">📖 Explicação</div>
+                <div style="font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:10px">Abaixo desses valores, a Caixa Escolar não precisa realizar procedimento competitivo formal (licitação), mas deve obter pelo menos 3 orçamentos de fornecedores distintos, documentados com CNPJ, data, validade e valor unitário, escolhendo sempre o de menor preço.</div>
+                <div style="font-size:12px;font-weight:600;color:var(--accent3);margin-bottom:6px">📌 Exemplo</div>
+                <div style="font-size:12px;color:var(--text-muted);background:var(--surface2);border-radius:6px;padding:10px;line-height:1.7">Compra de material escolar por R$ 8.000,00: obtenha orçamentos de 3 papelarias distintas (ex.: Papelaria Alpha — R$ 8.000, Papelaria Beta — R$ 8.300, Papelaria Gama — R$ 8.150). Contrate a <strong>Alpha (menor preço)</strong> e anexe os 3 orçamentos com CNPJ e data à prestação de contas.</div>
+              </div>
             </div>
-            <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--accent-red)">
-              <div style="font-weight:600;margin-bottom:4px">⛔ Fracionamento de despesas é VEDADO</div>
-              <div style="color:var(--text-muted)">Proibido dividir compras do mesmo objeto para fugir dos limites. Sujeito a irregularidade e glosa. (Art. 17, §2º)</div>
+            <div class="rec-card" style="background:var(--surface2);border-radius:8px;border-left:3px solid var(--accent-red);overflow:hidden">
+              <div class="rec-header" onclick="toggleRec(this)" style="padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+                <div><div style="font-weight:600;margin-bottom:3px">⛔ Fracionamento de despesas é VEDADO</div><div style="color:var(--text-muted);font-size:12px">Proibido dividir compras do mesmo objeto para fugir dos limites. Sujeito a irregularidade e glosa. (Art. 17, §2º)</div></div>
+                <span class="rec-arrow" style="color:var(--text-dim);font-size:14px;margin-left:12px;flex-shrink:0">▸</span>
+              </div>
+              <div class="rec-detail" style="display:none;padding:12px;border-top:1px solid var(--border);background:var(--surface3)">
+                <div style="font-size:12px;font-weight:600;color:var(--accent2);margin-bottom:6px">📖 Explicação</div>
+                <div style="font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:10px">É ilegal dividir uma despesa em várias notas fiscais menores para que cada uma fique abaixo do limite de dispensa. A SEDUC soma todas as compras do mesmo tipo/objeto para verificar o total real.</div>
+                <div style="font-size:12px;font-weight:600;color:var(--accent3);margin-bottom:6px">📌 Exemplo de fracionamento PROIBIDO</div>
+                <div style="font-size:12px;color:var(--text-muted);background:rgba(240,80,96,0.08);border-radius:6px;padding:10px;line-height:1.7;border:1px solid rgba(240,80,96,0.2)">🚫 Comprar R$ 30.000 de cadeiras em janeiro + R$ 28.000 de cadeiras em fevereiro do mesmo fornecedor = total R$ 58.000 → ultrapassa o limite e configura fracionamento proibido.</div>
+                <div style="font-size:12px;color:var(--text-muted);background:rgba(56,217,169,0.08);border-radius:6px;padding:10px;line-height:1.7;border:1px solid rgba(56,217,169,0.2);margin-top:8px">✅ Correto: identificar desde o início que a necessidade total é R$ 58.000, realizar procedimento competitivo completo e contratar em uma única etapa.</div>
+              </div>
             </div>
-            <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--accent)">
-              <div style="font-weight:600;margin-bottom:4px">Certidões dispensadas — entrega imediata</div>
-              <div style="color:var(--text-muted)">Compras com prazo de entrega única de até <strong style="color:var(--accent)">30 dias</strong>, sem obrigações futuras, dispensam certidões. (Art. 19, §1º)</div>
+            <div class="rec-card" style="background:var(--surface2);border-radius:8px;border-left:3px solid var(--accent);overflow:hidden">
+              <div class="rec-header" onclick="toggleRec(this)" style="padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+                <div><div style="font-weight:600;margin-bottom:3px">Certidões dispensadas — entrega imediata</div><div style="color:var(--text-muted);font-size:12px">Compras com prazo de entrega única de até <strong style="color:var(--accent)">30 dias</strong>, sem obrigações futuras, dispensam certidões. (Art. 19, §1º)</div></div>
+                <span class="rec-arrow" style="color:var(--text-dim);font-size:14px;margin-left:12px;flex-shrink:0">▸</span>
+              </div>
+              <div class="rec-detail" style="display:none;padding:12px;border-top:1px solid var(--border);background:var(--surface3)">
+                <div style="font-size:12px;font-weight:600;color:var(--accent2);margin-bottom:6px">📖 Explicação</div>
+                <div style="font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:10px">Em compras de mercadorias com entrega imediata (até 30 dias), sem assistência técnica futura ou obrigações continuadas, não é necessário exigir do fornecedor as certidões negativas de débitos.</div>
+                <div style="font-size:12px;font-weight:600;color:var(--accent3);margin-bottom:6px">📌 Exemplo</div>
+                <div style="font-size:12px;color:var(--text-muted);background:var(--surface2);border-radius:6px;padding:10px;line-height:1.7">Compra de resmas de papel com entrega em 5 dias, sem contrato de manutenção: <strong>não precisa</strong> de CND, FGTS ou CNDT do fornecedor. Basta nota fiscal e comprovante de pagamento.<br><br>Contratação de empresa de limpeza (serviço contínuo): <strong>exige</strong> certidões, pois há obrigação futura mensal.</div>
+              </div>
             </div>
-            <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--accent3)">
-              <div style="font-weight:600;margin-bottom:4px">CNAE compatível obrigatório</div>
-              <div style="color:var(--text-muted)">O CNPJ do fornecedor deve ter CNAE compatível com o material ou serviço contratado. (Art. 19, §2º)</div>
+            <div class="rec-card" style="background:var(--surface2);border-radius:8px;border-left:3px solid var(--accent3);overflow:hidden">
+              <div class="rec-header" onclick="toggleRec(this)" style="padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+                <div><div style="font-weight:600;margin-bottom:3px">CNAE compatível obrigatório</div><div style="color:var(--text-muted);font-size:12px">O CNPJ do fornecedor deve ter CNAE compatível com o material ou serviço contratado. (Art. 19, §2º)</div></div>
+                <span class="rec-arrow" style="color:var(--text-dim);font-size:14px;margin-left:12px;flex-shrink:0">▸</span>
+              </div>
+              <div class="rec-detail" style="display:none;padding:12px;border-top:1px solid var(--border);background:var(--surface3)">
+                <div style="font-size:12px;font-weight:600;color:var(--accent2);margin-bottom:6px">📖 Explicação</div>
+                <div style="font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:10px">O CNAE (Classificação Nacional de Atividades Econômicas) registrado no CNPJ do fornecedor deve ser compatível com o que está sendo comprado. Isso evita contratar empresa sem habilitação para o serviço. Verifique pelo Cartão CNPJ no site da Receita Federal.</div>
+                <div style="font-size:12px;font-weight:600;color:var(--accent3);margin-bottom:6px">📌 Exemplo</div>
+                <div style="font-size:12px;color:var(--text-muted);background:var(--surface2);border-radius:6px;padding:10px;line-height:1.7">Contratação de empresa de dedetização: o CNPJ deve ter CNAE <strong>8122-2/00</strong> (Imunização e controle de pragas). Se o CNAE for de comércio de alimentos, a contratação será glosada na prestação de contas.</div>
+              </div>
             </div>
-            <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--alem)">
-              <div style="font-weight:600;margin-bottom:4px">Prazo urgência (dispensa)</div>
-              <div style="color:var(--text-muted)">Contratações urgentes sem procedimento: máximo <strong style="color:var(--alem)">180 dias</strong>, sem prorrogação salvo interesse público justificado. (Art. 17, II)</div>
+            <div class="rec-card" style="background:var(--surface2);border-radius:8px;border-left:3px solid var(--alem);overflow:hidden">
+              <div class="rec-header" onclick="toggleRec(this)" style="padding:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+                <div><div style="font-weight:600;margin-bottom:3px">Prazo urgência (dispensa)</div><div style="color:var(--text-muted);font-size:12px">Contratações urgentes sem procedimento: máximo <strong style="color:var(--alem)">180 dias</strong>, sem prorrogação salvo interesse público. (Art. 17, II)</div></div>
+                <span class="rec-arrow" style="color:var(--text-dim);font-size:14px;margin-left:12px;flex-shrink:0">▸</span>
+              </div>
+              <div class="rec-detail" style="display:none;padding:12px;border-top:1px solid var(--border);background:var(--surface3)">
+                <div style="font-size:12px;font-weight:600;color:var(--accent2);margin-bottom:6px">📖 Explicação</div>
+                <div style="font-size:12px;color:var(--text-muted);line-height:1.7;margin-bottom:10px">Em situações urgentes e inadiáveis (ex.: vazamento, curto-circuito), a Caixa Escolar pode contratar sem procedimento competitivo. Mas o contrato não pode ultrapassar 180 dias e não pode ser prorrogado, salvo com justificativa de interesse público devidamente documentada.</div>
+                <div style="font-size:12px;font-weight:600;color:var(--accent3);margin-bottom:6px">📌 Exemplo</div>
+                <div style="font-size:12px;color:var(--text-muted);background:var(--surface2);border-radius:6px;padding:10px;line-height:1.7">Telhado danificado após chuva forte em março: contrate emergencialmente empresa de reforma. O contrato deve prever conclusão até setembro (180 dias). Documente: fotos do dano, justificativa da urgência, razão da escolha do fornecedor e justificativa de preço com base em tabela SINAPI.</div>
+              </div>
             </div>
           </div>
         </div>
@@ -1573,7 +1799,100 @@
       </div>
     </section>
 
+    <!-- LINKS RÁPIDOS -->
+    <section class="section" id="section-links">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Links Rápidos</div>
+          <div class="page-subtitle">Acesso rápido a prestações de contas e documentos importantes</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('modal-add-link')">+ Adicionar Link</button>
+      </div>
+
+      <div class="alert alert-info mb-20"><span>ℹ</span><span>Adicione links de acesso às prestações de contas, portais da SEDUC/FUNEC e outros documentos importantes. Clique em um link para abri-lo em painel de leitura.</span></div>
+
+      <!-- FILTRO POR CATEGORIA -->
+      <div class="card mb-20" style="padding:12px 16px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">Filtrar por categoria:</span>
+          <div class="parcela-tabs" id="links-filtro-tabs" style="margin:0;gap:6px;flex-wrap:wrap">
+            <div class="parcela-tab active" data-cat="" onclick="filtrarLinks('',this)">🔎 Todos</div>
+            <div class="parcela-tab" data-cat="prestacao" onclick="filtrarLinks('prestacao',this)">📄 Prestação de Contas</div>
+            <div class="parcela-tab" data-cat="portal" onclick="filtrarLinks('portal',this)">🌐 Portal / Sistema</div>
+            <div class="parcela-tab" data-cat="decreto" onclick="filtrarLinks('decreto',this)">📋 Decreto / Normativa</div>
+            <div class="parcela-tab" data-cat="planilha" onclick="filtrarLinks('planilha',this)">📊 Planilha / Relatório</div>
+            <div class="parcela-tab" data-cat="outro" onclick="filtrarLinks('outro',this)">🔗 Outro</div>
+          </div>
+          <div id="links-filtro-count" style="margin-left:auto;font-size:11px;color:var(--text-dim)"></div>
+        </div>
+      </div>
+
+      <div id="links-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px">
+        <!-- links preenchidos via JS -->
+        <div id="links-empty" class="empty-state" style="grid-column:1/-1;padding:48px">
+          <div class="empty-icon">🔗</div>
+          <div class="empty-title">Nenhum link cadastrado</div>
+          <div class="empty-sub">Clique em "+ Adicionar Link" para cadastrar prestações de contas, portais ou documentos</div>
+        </div>
+      </div>
+    </section>
+
   </main>
+</div>
+
+<!-- MODAL: LINK RÁPIDO READER -->
+<div class="modal-overlay" id="modal-link-reader" style="align-items:flex-start;padding:24px">
+  <div class="modal" style="width:900px;max-width:95vw;height:85vh;display:flex;flex-direction:column;padding:0;overflow:hidden">
+    <div class="modal-header" style="flex-shrink:0;padding:16px 20px">
+      <div>
+        <div class="modal-title" id="link-reader-title">Documento</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:3px" id="link-reader-url"></div>
+      </div>
+      <div class="gap-8">
+        <button class="btn btn-ghost" style="font-size:12px" onclick="openLinkExternal()" title="Abrir em nova aba">↗ Abrir</button>
+        <button class="modal-close" onclick="closeModal('modal-link-reader')">×</button>
+      </div>
+    </div>
+    <iframe id="link-reader-frame" style="flex:1;border:none;width:100%;background:#fff" src="about:blank"></iframe>
+  </div>
+</div>
+
+<!-- MODAL: ADICIONAR LINK -->
+<div class="modal-overlay" id="modal-add-link">
+  <div class="modal" style="width:520px">
+    <div class="modal-header">
+      <div class="modal-title">Adicionar Link</div>
+      <button class="modal-close" onclick="closeModal('modal-add-link')">×</button>
+    </div>
+    <div class="form-grid" style="grid-template-columns:1fr">
+      <div class="field">
+        <label>Título / Nome do documento <span style="color:var(--accent-red)">*</span></label>
+        <input type="text" id="link-titulo" placeholder="Ex.: Prestação de Contas 1ª Parcela 2025">
+      </div>
+      <div class="field">
+        <label>URL / Link <span style="color:var(--accent-red)">*</span></label>
+        <input type="url" id="link-url" placeholder="https://...">
+      </div>
+      <div class="field">
+        <label>Categoria</label>
+        <select id="link-categoria">
+          <option value="prestacao">📄 Prestação de Contas</option>
+          <option value="portal">🌐 Portal / Sistema</option>
+          <option value="decreto">📋 Decreto / Normativa</option>
+          <option value="planilha">📊 Planilha / Relatório</option>
+          <option value="outro">🔗 Outro</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Descrição (opcional)</label>
+        <input type="text" id="link-descricao" placeholder="Ex.: TC 225/2025 — Escola Albertina">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-add-link')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarLink()">Salvar Link</button>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL: NOVO TC -->
@@ -2125,6 +2444,7 @@ function showSection(id) {
   if (id === 'dashboard') renderDashboard();
   if (id === 'alertas') renderAlertas();
   if (id === 'anexos') { popularAnx6ComCapital(); }
+  if (id === 'links') renderLinks();
 }
 
 // ==================== MODALS ====================
@@ -2901,11 +3221,16 @@ function gerarDocumento() {
   txt += `Representante (3) ___________________________\n\n`;
   txt += `Este documento consta de ______ páginas numeradas e rubricadas pelo(a) Presidente da Caixa Escolar.\n`;
 
-  document.getElementById('doc-preview').textContent = txt;
+  const dpEl = document.getElementById('doc-preview');
+  const p2El = document.getElementById('prev-anx2');
+  if (dpEl) dpEl.textContent = txt;
+  if (p2El) p2El.textContent = txt;
 }
 
 function baixarTXT() {
-  const txt = document.getElementById('doc-preview').textContent;
+  const dpEl = document.getElementById('doc-preview');
+  const p2El = document.getElementById('prev-anx2');
+  const txt = (p2El && p2El.textContent && !p2El.textContent.startsWith('Clique')) ? p2El.textContent : (dpEl ? dpEl.textContent : '');
   if (!txt || txt.startsWith('Clique')) { alert('Gere o documento primeiro.'); return; }
   const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(blob);
@@ -3385,6 +3710,119 @@ function renderAlertas() {
     alertas.map(a => `<div class="alert ${colorMap[a.tipo]}" style="margin-bottom:8px"><span>${iconMap[a.tipo]}</span><span>${a.msg}</span></div>`).join('');
 }
 
+// ==================== TOGGLE RECOMENDAÇÃO ====================
+function toggleRec(headerEl) {
+  const detail = headerEl.nextElementSibling;
+  const arrow = headerEl.querySelector('.rec-arrow');
+  const isOpen = detail.style.display !== 'none';
+  detail.style.display = isOpen ? 'none' : 'block';
+  arrow.textContent = isOpen ? '▸' : '▾';
+}
+
+// ==================== LINKS RÁPIDOS ====================
+let linksData = JSON.parse(localStorage.getItem('ce_links') || '[]');
+
+function salvarLink() {
+  const titulo = document.getElementById('link-titulo').value.trim();
+  const url = document.getElementById('link-url').value.trim();
+  const cat = document.getElementById('link-categoria').value;
+  const desc = document.getElementById('link-descricao').value.trim();
+  if (!titulo || !url) { alert('Preencha o título e o link.'); return; }
+  linksData.push({ id: Date.now(), titulo, url, cat, desc });
+  localStorage.setItem('ce_links', JSON.stringify(linksData));
+  closeModal('modal-add-link');
+  document.getElementById('link-titulo').value = '';
+  document.getElementById('link-url').value = '';
+  document.getElementById('link-descricao').value = '';
+  renderLinks();
+}
+
+let linksFiltroAtivo = '';
+
+function filtrarLinks(cat, el) {
+  linksFiltroAtivo = cat;
+  document.querySelectorAll('#links-filtro-tabs .parcela-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderLinks();
+}
+
+function renderLinks() {
+  const grid = document.getElementById('links-grid');
+  const empty = document.getElementById('links-empty');
+  const countEl = document.getElementById('links-filtro-count');
+
+  // Remove existing cards
+  Array.from(grid.querySelectorAll('.link-card')).forEach(el => el.remove());
+
+  const filtered = linksFiltroAtivo
+    ? linksData.filter(l => l.cat === linksFiltroAtivo)
+    : linksData;
+
+  if (countEl) {
+    countEl.textContent = linksData.length
+      ? `${filtered.length} de ${linksData.length} link(s)`
+      : '';
+  }
+
+  if (!filtered.length) {
+    empty.style.display = '';
+    empty.querySelector('.empty-title').textContent = linksData.length
+      ? 'Nenhum link nesta categoria'
+      : 'Nenhum link cadastrado';
+    empty.querySelector('.empty-sub').textContent = linksData.length
+      ? 'Selecione outra categoria ou clique em "+ Adicionar Link"'
+      : 'Clique em "+ Adicionar Link" para cadastrar prestações de contas, portais ou documentos';
+    return;
+  }
+  empty.style.display = 'none';
+
+  const catIcon  = { prestacao: '📄', portal: '🌐', decreto: '📋', planilha: '📊', outro: '🔗' };
+  const catLabel = { prestacao: 'Prestação de Contas', portal: 'Portal / Sistema', decreto: 'Decreto / Normativa', planilha: 'Planilha / Relatório', outro: 'Outro' };
+
+  filtered.forEach(link => {
+    const card = document.createElement('div');
+    card.className = 'link-card';
+    card.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;cursor:pointer;transition:all 0.15s;position:relative';
+    card.innerHTML = `
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div style="font-size:22px;flex-shrink:0">${catIcon[link.cat] || '🔗'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${link.titulo}</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">${catLabel[link.cat] || 'Outro'}</div>
+          ${link.desc ? `<div style="font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${link.desc}</div>` : ''}
+        </div>
+        <button onclick="event.stopPropagation();removerLink(${link.id})" style="background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:16px;padding:2px 6px;border-radius:4px;flex-shrink:0" title="Remover">✕</button>
+      </div>
+      <div style="font-size:11px;color:var(--accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-top:1px solid var(--border);padding-top:8px">${link.url}</div>
+    `;
+    card.onclick = () => abrirLinkModal(link);
+    card.onmouseenter = () => { card.style.borderColor = 'var(--border-light)'; card.style.background = 'var(--surface2)'; };
+    card.onmouseleave = () => { card.style.borderColor = 'var(--border)'; card.style.background = 'var(--surface)'; };
+    grid.insertBefore(card, empty);
+  });
+}
+
+function removerLink(id) {
+  if (!confirm('Remover este link?')) return;
+  linksData = linksData.filter(l => l.id !== id);
+  localStorage.setItem('ce_links', JSON.stringify(linksData));
+  renderLinks();
+}
+
+let currentLinkUrl = '';
+function abrirLinkModal(link) {
+  currentLinkUrl = link.url;
+  document.getElementById('link-reader-title').textContent = link.titulo;
+  document.getElementById('link-reader-url').textContent = link.url;
+  const frame = document.getElementById('link-reader-frame');
+  frame.src = link.url;
+  openModal('modal-link-reader');
+}
+
+function openLinkExternal() {
+  if (currentLinkUrl) window.open(currentLinkUrl, '_blank');
+}
+
 // ==================== INIT ====================
 state.despesas.forEach(d => addParcelaTab(d.parcela));
 renderDespesas();
@@ -3397,6 +3835,7 @@ initExtras();
 addAnx4Row();
 addAnx6Row();
 renderAlertas();
+renderLinks();
 // Aplicar máscaras de moeda a todos os campos monetários estáticos
 initMoneyMasks();
 
