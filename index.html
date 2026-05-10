@@ -1827,7 +1827,7 @@
         </div>
       </div>
 
-      <div id="links-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px">
+      <div id="links-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px">
         <!-- links preenchidos via JS -->
         <div id="links-empty" class="empty-state" style="grid-column:1/-1;padding:48px">
           <div class="empty-icon">🔗</div>
@@ -1891,6 +1891,60 @@
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modal-add-link')">Cancelar</button>
       <button class="btn btn-primary" onclick="salvarLink()">Salvar Link</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EDITAR LINK -->
+<div class="modal-overlay" id="modal-edit-link">
+  <div class="modal" style="width:520px">
+    <div class="modal-header">
+      <div class="modal-title">Editar Link</div>
+      <button class="modal-close" onclick="closeModal('modal-edit-link')">×</button>
+    </div>
+    <input type="hidden" id="edit-link-id">
+    <div class="form-grid" style="grid-template-columns:1fr">
+      <div class="field">
+        <label>Título / Nome do documento <span style="color:var(--accent-red)">*</span></label>
+        <input type="text" id="edit-link-titulo" placeholder="Ex.: Prestação de Contas 1ª Parcela 2025">
+      </div>
+      <div class="field">
+        <label>URL / Link <span style="color:var(--accent-red)">*</span></label>
+        <input type="url" id="edit-link-url" placeholder="https://...">
+      </div>
+      <div class="field">
+        <label>Categoria</label>
+        <select id="edit-link-categoria">
+          <option value="prestacao">📄 Prestação de Contas</option>
+          <option value="portal">🌐 Portal / Sistema</option>
+          <option value="decreto">📋 Decreto / Normativa</option>
+          <option value="planilha">📊 Planilha / Relatório</option>
+          <option value="outro">🔗 Outro</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Descrição (opcional)</label>
+        <input type="text" id="edit-link-descricao" placeholder="Ex.: TC 225/2025 — Escola Albertina">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-edit-link')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarEdicaoLink()">Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CONFIRMAR EXCLUSÃO DE LINK -->
+<div class="modal-overlay" id="modal-confirm-delete">
+  <div class="modal" style="width:420px">
+    <div class="modal-header">
+      <div class="modal-title" style="font-size:17px">⚠ Confirmar Exclusão</div>
+      <button class="modal-close" onclick="cancelarRemoverLink()">×</button>
+    </div>
+    <p id="confirm-delete-msg" style="font-size:13.5px;color:var(--text-muted);line-height:1.6;margin-bottom:4px"></p>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cancelarRemoverLink()">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmarRemoverLink()">Sim, remover</button>
     </div>
   </div>
 </div>
@@ -3782,30 +3836,85 @@ function renderLinks() {
   filtered.forEach(link => {
     const card = document.createElement('div');
     card.className = 'link-card';
-    card.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;cursor:pointer;transition:all 0.15s;position:relative';
+    card.style.cssText = 'background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all 0.15s;position:relative';
     card.innerHTML = `
-      <div style="display:flex;align-items:flex-start;gap:10px">
-        <div style="font-size:22px;flex-shrink:0">${catIcon[link.cat] || '🔗'}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${link.titulo}</div>
-          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">${catLabel[link.cat] || 'Outro'}</div>
-          ${link.desc ? `<div style="font-size:12px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${link.desc}</div>` : ''}
-        </div>
-        <button onclick="event.stopPropagation();removerLink(${link.id})" style="background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:16px;padding:2px 6px;border-radius:4px;flex-shrink:0" title="Remover">✕</button>
+      <span style="font-size:16px;flex-shrink:0;opacity:0.7">${catIcon[link.cat] || '🔗'}</span>
+      <span style="flex:1;min-width:0;font-size:13px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${link.titulo}</span>
+      <div class="link-actions" style="display:flex;gap:2px;flex-shrink:0;opacity:0;transition:opacity 0.15s">
+        <button onclick="event.stopPropagation();editarLink(${link.id})" style="background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:13px;padding:3px 6px;border-radius:4px" title="Editar">✏️</button>
+        <button onclick="event.stopPropagation();removerLink(${link.id})" style="background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:14px;padding:3px 6px;border-radius:4px" title="Remover">✕</button>
       </div>
-      <div style="font-size:11px;color:var(--accent);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-top:1px solid var(--border);padding-top:8px">${link.url}</div>
+      <div class="link-tooltip" style="display:none;position:absolute;left:0;top:calc(100% + 6px);z-index:50;background:var(--surface3);border:1px solid var(--border-light);border-radius:9px;padding:10px 13px;min-width:220px;max-width:320px;box-shadow:0 6px 20px rgba(0,0,0,0.4);pointer-events:none">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.7px;color:var(--text-dim);margin-bottom:5px">${catLabel[link.cat] || 'Outro'}</div>
+        ${link.desc ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;line-height:1.5">${link.desc}</div>` : ''}
+        <div style="font-size:11px;color:var(--accent);word-break:break-all;line-height:1.4">${link.url}</div>
+      </div>
     `;
     card.onclick = () => abrirLinkModal(link);
-    card.onmouseenter = () => { card.style.borderColor = 'var(--border-light)'; card.style.background = 'var(--surface2)'; };
-    card.onmouseleave = () => { card.style.borderColor = 'var(--border)'; card.style.background = 'var(--surface)'; };
+    card.onmouseenter = () => {
+      card.style.borderColor = 'var(--border-light)';
+      card.style.background = 'var(--surface2)';
+      card.querySelector('.link-actions').style.opacity = '1';
+      card.querySelector('.link-tooltip').style.display = 'block';
+    };
+    card.onmouseleave = () => {
+      card.style.borderColor = 'var(--border)';
+      card.style.background = 'var(--surface)';
+      card.querySelector('.link-actions').style.opacity = '0';
+      card.querySelector('.link-tooltip').style.display = 'none';
+    };
     grid.insertBefore(card, empty);
   });
 }
 
 function removerLink(id) {
-  if (!confirm('Remover este link?')) return;
+  const link = linksData.find(l => l.id === id);
+  if (!link) return;
+  // Modal de confirmação customizado
+  const overlay = document.getElementById('modal-confirm-delete');
+  const msg = document.getElementById('confirm-delete-msg');
+  msg.textContent = `Deseja realmente remover "${link.titulo}"? Esta ação não pode ser desfeita.`;
+  overlay.dataset.pendingId = id;
+  overlay.classList.add('open');
+}
+
+function confirmarRemoverLink() {
+  const overlay = document.getElementById('modal-confirm-delete');
+  const id = Number(overlay.dataset.pendingId);
   linksData = linksData.filter(l => l.id !== id);
   localStorage.setItem('ce_links', JSON.stringify(linksData));
+  overlay.classList.remove('open');
+  renderLinks();
+}
+
+function cancelarRemoverLink() {
+  document.getElementById('modal-confirm-delete').classList.remove('open');
+}
+
+function editarLink(id) {
+  const link = linksData.find(l => l.id === id);
+  if (!link) return;
+  document.getElementById('edit-link-id').value = link.id;
+  document.getElementById('edit-link-titulo').value = link.titulo;
+  document.getElementById('edit-link-url').value = link.url;
+  document.getElementById('edit-link-categoria').value = link.cat;
+  document.getElementById('edit-link-descricao').value = link.desc || '';
+  openModal('modal-edit-link');
+}
+
+function salvarEdicaoLink() {
+  const id = Number(document.getElementById('edit-link-id').value);
+  const titulo = document.getElementById('edit-link-titulo').value.trim();
+  const url = document.getElementById('edit-link-url').value.trim();
+  const cat = document.getElementById('edit-link-categoria').value;
+  const desc = document.getElementById('edit-link-descricao').value.trim();
+  if (!titulo || !url) { alert('Preencha o título e o link.'); return; }
+  const idx = linksData.findIndex(l => l.id === id);
+  if (idx !== -1) {
+    linksData[idx] = { ...linksData[idx], titulo, url, cat, desc };
+    localStorage.setItem('ce_links', JSON.stringify(linksData));
+  }
+  closeModal('modal-edit-link');
   renderLinks();
 }
 
