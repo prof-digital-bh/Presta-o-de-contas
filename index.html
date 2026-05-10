@@ -789,6 +789,30 @@
         <button class="btn btn-primary" onclick="showSection('despesas'); openModal('modal-despesa')">+ Lançar Despesa</button>
       </div>
 
+      <!-- FILTROS DASHBOARD -->
+      <div class="card mb-20" style="padding:12px 18px">
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">Filtrar dashboard:</span>
+          <div class="field" style="margin:0;min-width:200px">
+            <select id="dash-filtro-tc" onchange="renderDashboard()" style="font-size:12px;padding:7px 10px">
+              <option value="">Todos os TCs / Aditivos</option>
+            </select>
+          </div>
+          <div class="field" style="margin:0;min-width:160px">
+            <select id="dash-filtro-tipo" onchange="renderDashboard()" style="font-size:12px;padding:7px 10px">
+              <option value="">Todos os Tipos</option>
+              <option value="CUSTEIO">Custeio</option>
+              <option value="CAPITAL">Capital</option>
+              <option value="ALEM_MUROS">Além dos Muros</option>
+              <option value="OBRAS">Obras</option>
+              <option value="CAPINA">Capina / Roçamento</option>
+            </select>
+          </div>
+          <button class="btn btn-ghost" style="font-size:12px;padding:7px 12px" onclick="limparFiltrosDash()">✕ Limpar</button>
+          <div id="dash-filtro-label" style="font-size:11px;color:var(--text-dim);margin-left:auto"></div>
+        </div>
+      </div>
+
       <div class="stats-grid">
         <div class="stat-card stat-custeio">
           <div class="stat-label">Custeio</div>
@@ -809,6 +833,19 @@
           <div class="stat-label">Total Gasto</div>
           <div class="stat-value" style="color:var(--text)" id="stat-total">R$ 0,00</div>
           <div class="stat-meta" id="stat-total-qt">0 lançamentos</div>
+        </div>
+      </div>
+
+      <!-- Saldo por TC/Aditivo -->
+      <div class="card mb-20" id="card-saldo-tcs">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon" style="background:rgba(56,217,169,0.15);color:var(--accent2)">$</div>
+            Saldo por TC / Aditivo
+          </div>
+        </div>
+        <div id="dash-saldo-tcs">
+          <div class="empty-state" style="padding:20px"><div class="empty-sub">Nenhum TC cadastrado</div></div>
         </div>
       </div>
 
@@ -1212,8 +1249,23 @@
       <button class="modal-close" onclick="closeModal('modal-tc')">×</button>
     </div>
     <div class="form-grid">
+      <!-- É aditivo? -->
+      <div class="field form-full" id="field-eh-aditivo">
+        <label>Este registro é um aditivo de outro TC?</label>
+        <select id="tc-eh-aditivo" onchange="toggleAditivoFields()">
+          <option value="nao">Não — é um TC principal</option>
+          <option value="sim">Sim — é um aditivo de TC existente</option>
+        </select>
+      </div>
+      <!-- TC pai (só aparece se for aditivo) -->
+      <div class="field form-full" id="field-tc-pai" style="display:none">
+        <label style="color:var(--accent3)">TC ao qual este aditivo pertence <span style="color:var(--accent-red)">*</span></label>
+        <select id="tc-pai-id">
+          <option value="">— Selecione o TC principal —</option>
+        </select>
+      </div>
       <div class="field">
-        <label>Número do TC</label>
+        <label id="label-tc-numero">Número do TC</label>
         <input type="text" id="tc-numero" placeholder="225/2025">
       </div>
       <div class="field">
@@ -1237,7 +1289,7 @@
         <input type="date" id="tc-fim" onchange="autoStatusTC()">
       </div>
       <div class="field field-money">
-        <label>Valor Total (R$)</label>
+        <label id="label-tc-valor">Valor Total (R$)</label>
         <input type="text" id="tc-valor" placeholder="0,00">
       </div>
       <div class="field">
@@ -1250,13 +1302,13 @@
         </select>
       </div>
       <div class="field form-full">
-        <label>Observações / Aditivos</label>
-        <textarea id="tc-obs" placeholder="Aditivos, observações relevantes..."></textarea>
+        <label>Observações</label>
+        <textarea id="tc-obs" placeholder="Observações relevantes..."></textarea>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modal-tc')">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarTC()">Salvar TC</button>
+      <button class="btn btn-primary" onclick="salvarTC()">Salvar</button>
     </div>
   </div>
 </div>
@@ -1269,13 +1321,42 @@
       <button class="modal-close" onclick="closeModal('modal-despesa')">×</button>
     </div>
     <div class="form-grid">
+
+      <!-- PASSO 1: CNPJ do fornecedor (com listagem) -->
+      <div class="field form-full">
+        <label style="color:var(--accent3)">① Selecione o Fornecedor pelo CNPJ/CPF <span style="color:var(--accent-red)">*</span></label>
+        <div style="position:relative">
+          <input type="text" id="d-cnpj-busca" placeholder="Digite CNPJ, CPF ou nome para buscar..." oninput="buscarFornecedorDespesa()" autocomplete="off" style="padding-right:36px">
+          <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:14px;pointer-events:none">🔍</span>
+          <div id="cnpj-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:300;background:var(--surface2);border:1px solid var(--border-light);border-radius:8px;max-height:220px;overflow-y:auto;margin-top:3px;box-shadow:0 8px 24px rgba(0,0,0,0.4)"></div>
+        </div>
+      </div>
+      <!-- Fornecedor selecionado (readonly, preenchido automaticamente) -->
+      <div class="field">
+        <label>CNPJ / CPF</label>
+        <input type="text" id="d-cnpj" placeholder="Preenchido ao selecionar" readonly style="opacity:0.75;background:var(--surface3)">
+      </div>
+      <div class="field">
+        <label>Nome do Credor</label>
+        <input type="text" id="d-credor" placeholder="Preenchido ao selecionar" readonly style="opacity:0.75;background:var(--surface3)">
+      </div>
+
       <!-- TC / Aditivo vinculado -->
       <div class="field form-full">
-        <label>TC / Aditivo vinculado <span style="color:var(--accent-red)">*</span></label>
+        <label style="color:var(--accent3)">② TC / Aditivo vinculado <span style="color:var(--accent-red)">*</span></label>
         <select id="d-tc-vinculo">
           <option value="">— Selecione o TC ou Aditivo —</option>
         </select>
       </div>
+      <!-- Saldo disponível do TC/Aditivo selecionado -->
+      <div class="field form-full" id="field-saldo-tc" style="display:none">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;gap:24px;align-items:center">
+          <div><div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px">Valor do TC/Aditivo</div><div style="font-family:'DM Mono',monospace;font-size:14px;color:var(--text)" id="saldo-tc-total">—</div></div>
+          <div><div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px">Já Gasto</div><div style="font-family:'DM Mono',monospace;font-size:14px;color:var(--accent-red)" id="saldo-tc-gasto">—</div></div>
+          <div><div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px">Saldo Disponível</div><div style="font-family:'DM Mono',monospace;font-size:14px;color:var(--accent2)" id="saldo-tc-disp">—</div></div>
+        </div>
+      </div>
+
       <div class="field">
         <label>Tipo de Despesa</label>
         <select id="d-tipo" onchange="tipoChange()">
@@ -1301,17 +1382,6 @@
           <option value="03" selected>Parcela 03</option>
           <option value="04">Parcela 04</option>
         </select>
-      </div>
-      <div class="field form-full">
-        <label>Nome do Credor (Empresa / Pessoa)</label>
-        <div style="position:relative">
-          <input type="text" id="d-credor" placeholder="Razão Social ou Nome Completo" oninput="filtrarCredores()" autocomplete="off">
-          <div id="credor-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:200;background:var(--surface2);border:1px solid var(--border);border-radius:8px;max-height:180px;overflow-y:auto;margin-top:2px"></div>
-        </div>
-      </div>
-      <div class="field">
-        <label>CNPJ ou CPF</label>
-        <input type="text" id="d-cnpj" placeholder="00.000.000/0001-00">
       </div>
       <div class="field">
         <label>Nº da Nota Fiscal</label>
@@ -1449,31 +1519,44 @@ function removerFornecedor(id) {
   renderFornecedores();
 }
 
-function filtrarCredores() {
-  const q = document.getElementById('d-credor').value.toLowerCase();
-  const dd = document.getElementById('credor-dropdown');
-  const lista = (state.fornecedoresCad||[]).filter(f => f.nome.toLowerCase().includes(q));
+function buscarFornecedorDespesa() {
+  const q = document.getElementById('d-cnpj-busca').value.toLowerCase();
+  const dd = document.getElementById('cnpj-dropdown');
+  const lista = (state.fornecedoresCad||[]).filter(f =>
+    f.cnpj.toLowerCase().includes(q) || f.nome.toLowerCase().includes(q)
+  );
   if (!q || !lista.length) { dd.style.display = 'none'; return; }
   dd.style.display = 'block';
   dd.innerHTML = lista.map(f => `
-    <div onclick="selecionarCredor('${f.nome.replace(/'/g,"\\'")}','${(f.cnpj||'').replace(/'/g,"\\'")}') "
-      style="padding:9px 13px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);transition:background 0.1s"
+    <div onclick="selecionarFornecedorDespesa('${f.nome.replace(/'/g,"\\'")}','${(f.cnpj||'').replace(/'/g,"\\'")}') "
+      style="padding:10px 13px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);transition:background 0.1s"
       onmouseover="this.style.background='var(--surface3)'" onmouseout="this.style.background=''">
+      <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--accent);margin-bottom:2px">${f.cnpj||'CPF não informado'}</div>
       <div style="font-weight:500">${f.nome}</div>
-      <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--accent)">${f.cnpj||''}</div>
+      ${f.responsavel?`<div style="font-size:11px;color:var(--text-muted)">${f.responsavel}</div>`:''}
     </div>
   `).join('');
 }
 
-function selecionarCredor(nome, cnpj) {
+function selecionarFornecedorDespesa(nome, cnpj) {
+  document.getElementById('d-cnpj-busca').value = cnpj + ' — ' + nome;
   document.getElementById('d-credor').value = nome;
   document.getElementById('d-cnpj').value = cnpj;
-  document.getElementById('credor-dropdown').style.display = 'none';
+  document.getElementById('cnpj-dropdown').style.display = 'none';
 }
 
+// mantendo compatibilidade
+function filtrarCredores() {}
+function selecionarCredor(nome, cnpj) { selecionarFornecedorDespesa(nome, cnpj); }
+
 document.addEventListener('click', function(e) {
+  if (!e.target.closest('#d-cnpj-busca') && !e.target.closest('#cnpj-dropdown')) {
+    const dd = document.getElementById('cnpj-dropdown');
+    if (dd) dd.style.display = 'none';
+  }
   if (!e.target.closest('#d-credor') && !e.target.closest('#credor-dropdown')) {
-    document.getElementById('credor-dropdown').style.display = 'none';
+    const dd = document.getElementById('credor-dropdown');
+    if (dd) dd.style.display = 'none';
   }
 });
 
@@ -1499,14 +1582,38 @@ function autoStatusTC() {
 function populateTCDropdown() {
   const sel = document.getElementById('d-tc-vinculo');
   sel.innerHTML = '<option value="">— Selecione o TC ou Aditivo —</option>';
-  (state.tcs||[]).forEach(tc => {
+  // Mostrar TCs principais e seus aditivos com hierarquia
+  (state.tcs||[]).filter(t => !t.tcPaiId).forEach(tc => {
     const opt = document.createElement('option');
     opt.value = tc.id;
     opt.textContent = `TC ${tc.numero} — ${tc.escola}`;
     sel.appendChild(opt);
+    // Aditivos deste TC
+    (state.tcs||[]).filter(a => a.tcPaiId === tc.id).forEach(adit => {
+      const optA = document.createElement('option');
+      optA.value = adit.id;
+      optA.textContent = `  └ Aditivo ${adit.numero} (TC ${tc.numero})`;
+      sel.appendChild(optA);
+    });
   });
   // Pre-select active TC
   if (state.tcAtivo) sel.value = state.tcAtivo;
+  sel.onchange = function() { mostrarSaldoTC(this.value); };
+}
+
+function mostrarSaldoTC(tcId) {
+  const el = document.getElementById('field-saldo-tc');
+  if (!tcId) { el.style.display = 'none'; return; }
+  const tc = (state.tcs||[]).find(t => String(t.id) === String(tcId));
+  if (!tc) { el.style.display = 'none'; return; }
+  const valorTC = parseMoney(tc.valor);
+  const gasto = state.despesas.filter(d => String(d.tcVinculo) === String(tcId)).reduce((s,d) => s + parseMoney(d.valor), 0);
+  const saldo = valorTC - gasto;
+  document.getElementById('saldo-tc-total').textContent = fmtMoney(valorTC);
+  document.getElementById('saldo-tc-gasto').textContent = fmtMoney(gasto);
+  document.getElementById('saldo-tc-disp').textContent = fmtMoney(saldo);
+  document.getElementById('saldo-tc-disp').style.color = saldo < 0 ? 'var(--accent-red)' : 'var(--accent2)';
+  el.style.display = '';
 }
 
 // populateTCDropdown is called inside openModal below
@@ -1644,6 +1751,19 @@ function openModal(id) {
     togglePendenciaField('orcamentos');
     togglePendenciaField('certidoes');
     togglePendenciaField('cartao-cnpj');
+    // reset fornecedor search
+    const bus = document.getElementById('d-cnpj-busca');
+    if (bus) bus.value = '';
+    document.getElementById('d-credor').value = '';
+    document.getElementById('d-cnpj').value = '';
+    document.getElementById('field-saldo-tc').style.display = 'none';
+    if (state.tcAtivo) mostrarSaldoTC(state.tcAtivo);
+  }
+  if (id === 'modal-tc') {
+    popularTCPaiSelect();
+    // reset aditivo toggle
+    document.getElementById('tc-eh-aditivo').value = 'nao';
+    toggleAditivoFields();
   }
 }
 
@@ -1653,9 +1773,40 @@ function closeModal(id) {
 }
 
 // ==================== TC ====================
+function toggleAditivoFields() {
+  const ehAditivo = document.getElementById('tc-eh-aditivo').value === 'sim';
+  document.getElementById('field-tc-pai').style.display = ehAditivo ? '' : 'none';
+  document.getElementById('label-tc-numero').textContent = ehAditivo ? 'Número do Aditivo' : 'Número do TC';
+  document.getElementById('label-tc-valor').textContent = ehAditivo ? 'Valor do Aditivo (R$)' : 'Valor Total (R$)';
+}
+
+function popularTCPaiSelect() {
+  const sel = document.getElementById('tc-pai-id');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Selecione o TC principal —</option>';
+  (state.tcs||[]).filter(t => !t.tcPaiId).forEach(tc => {
+    const opt = document.createElement('option');
+    opt.value = tc.id;
+    opt.textContent = `TC ${tc.numero} — ${tc.escola}`;
+    sel.appendChild(opt);
+  });
+}
+
+function abrirModalAditivo(tcPaiId) {
+  document.getElementById('tc-eh-aditivo').value = 'sim';
+  toggleAditivoFields();
+  popularTCPaiSelect();
+  document.getElementById('tc-pai-id').value = tcPaiId;
+  document.getElementById('modal-tc').querySelector('.modal-title').textContent = 'Cadastrar Aditivo';
+  openModal('modal-tc');
+}
+
 function salvarTC() {
   const inicio = document.getElementById('tc-inicio').value;
   const fim = document.getElementById('tc-fim').value;
+  const ehAditivo = document.getElementById('tc-eh-aditivo').value === 'sim';
+  const tcPaiId = ehAditivo ? parseInt(document.getElementById('tc-pai-id').value) : null;
+  if (ehAditivo && !tcPaiId) { alert('Selecione o TC ao qual este aditivo pertence.'); return; }
   const autoStatus = calcStatusTC ? calcStatusTC(inicio, fim) : (document.getElementById('tc-status').value);
   const tc = {
     numero: document.getElementById('tc-numero').value,
@@ -1667,23 +1818,32 @@ function salvarTC() {
     valor: document.getElementById('tc-valor').value,
     status: autoStatus,
     obs: document.getElementById('tc-obs').value,
+    tcPaiId: ehAditivo ? tcPaiId : null,
+    ehAditivo,
     id: Date.now()
   };
-  if (!tc.numero) { alert('Preencha o número do TC.'); return; }
+  if (!tc.numero) { alert('Preencha o número do TC ou Aditivo.'); return; }
   state.tcs.push(tc);
-  if (state.tcAtivo === null) {
+  if (state.tcAtivo === null && !ehAditivo) {
     state.tcAtivo = tc.id;
   }
   save();
+  // reset modal
+  document.getElementById('tc-eh-aditivo').value = 'nao';
+  toggleAditivoFields();
+  document.getElementById('modal-tc').querySelector('.modal-title').textContent = 'Cadastrar Termo de Compromisso';
   closeModal('modal-tc');
   renderTCs();
   renderDashboard();
   updateSidebarStatus();
+  populateTCDropdown();
 }
 
 function renderTCs() {
   const el = document.getElementById('tc-list');
-  if (!state.tcs.length) {
+  const tcs = state.tcs || [];
+  const principais = tcs.filter(t => !t.tcPaiId);
+  if (!tcs.length) {
     el.innerHTML = `<div class="empty-state"><div class="empty-icon">📄</div><div class="empty-title">Nenhum TC cadastrado</div><div class="empty-sub">Adicione um Termo de Compromisso para começar</div><button class="btn btn-primary mt-16" onclick="openModal('modal-tc')">Adicionar TC</button></div>`;
     return;
   }
@@ -1693,9 +1853,12 @@ function renderTCs() {
     encerrado: { label: 'Encerrado', cls: 'badge-red' },
     suspenso:  { label: 'Suspenso',  cls: 'badge-purple' }
   };
-  el.innerHTML = state.tcs.map((tc, i) => {
+  el.innerHTML = principais.map((tc, i) => {
+    const realIdx = tcs.indexOf(tc);
     const st = tc.status !== 'suspenso' ? (typeof calcStatusTC === 'function' ? calcStatusTC(tc.inicio, tc.fim) : tc.status) : 'suspenso';
     const si = statusInfo[st] || statusInfo.ativo;
+    const aditivos = tcs.filter(a => a.tcPaiId === tc.id);
+    const totalAdit = aditivos.reduce((s,a) => s + parseMoney(a.valor), 0);
     return `
     <div class="card mb-20" style="border-color:${state.tcAtivo===tc.id?'rgba(79,142,247,0.4)':'var(--border)'}">
       <div class="card-header">
@@ -1707,15 +1870,33 @@ function renderTCs() {
         </div>
         <div class="gap-8">
           ${state.tcAtivo!==tc.id?`<button class="btn btn-ghost" style="font-size:12px" onclick="setTCAtivo(${tc.id})">Definir como ativo</button>`:''}
-          <button class="btn btn-ghost" style="font-size:12px;color:var(--accent-red)" onclick="removerTC(${i})">Remover</button>
+          <button class="btn btn-ghost" style="font-size:12px;color:var(--accent2)" onclick="abrirModalAditivo(${tc.id})">+ Aditivo</button>
+          <button class="btn btn-ghost" style="font-size:12px;color:var(--accent-red)" onclick="removerTC(${realIdx})">Remover</button>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;font-size:13px">
         <div><div style="color:var(--text-dim);font-size:11px;margin-bottom:3px">CNPJ</div><div class="td-mono">${tc.cnpj||'—'}</div></div>
         <div><div style="color:var(--text-dim);font-size:11px;margin-bottom:3px">Presidente</div><div>${tc.presidente||'—'}</div></div>
         <div><div style="color:var(--text-dim);font-size:11px;margin-bottom:3px">Vigência</div><div>${fmtDate(tc.inicio)} → ${fmtDate(tc.fim)}</div></div>
-        <div><div style="color:var(--text-dim);font-size:11px;margin-bottom:3px">Valor Total</div><div style="font-family:'DM Mono',monospace;color:var(--accent2)">R$ ${tc.valor||'0,00'}</div></div>
+        <div><div style="color:var(--text-dim);font-size:11px;margin-bottom:3px">Valor Original</div><div style="font-family:'DM Mono',monospace;color:var(--accent2)">R$ ${tc.valor||'0,00'}</div></div>
       </div>
+      ${aditivos.length ? `<div style="margin-top:12px;background:rgba(246,166,35,0.05);border:1px solid rgba(246,166,35,0.2);border-radius:8px;padding:10px 14px">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--accent3);margin-bottom:8px;font-weight:600">Aditivos vinculados</div>
+        ${aditivos.map(a => {
+          const aIdx = tcs.indexOf(a);
+          return `<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05);align-items:center">
+            <span style="color:var(--text)">↳ ${a.numero}</span>
+            <div class="gap-8">
+              <span style="font-family:'DM Mono',monospace;color:var(--accent3)">+ R$ ${a.valor||'0,00'}</span>
+              <button class="action-btn del" onclick="removerTC(${aIdx})" title="Remover aditivo">✕</button>
+            </div>
+          </div>`;
+        }).join('')}
+        <div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 0 0;font-weight:600">
+          <span style="color:var(--text-muted)">Valor Total (TC + Aditivos)</span>
+          <span style="font-family:'DM Mono',monospace;color:var(--accent2)">R$ ${fmtMoneyStr(parseMoney(tc.valor) + totalAdit)}</span>
+        </div>
+      </div>` : ''}
       ${tc.obs?`<div style="margin-top:12px;font-size:12px;color:var(--text-muted);background:var(--surface2);padding:10px;border-radius:7px">${tc.obs}</div>`:''}
     </div>
   `}).join('');
@@ -1813,11 +1994,17 @@ function populateChecklistTCFilter() {
   if (!sel) return;
   const current = sel.value;
   sel.innerHTML = '<option value="">Todos os TCs</option>';
-  (state.tcs||[]).forEach(tc => {
+  (state.tcs||[]).filter(t => !t.tcPaiId).forEach(tc => {
     const opt = document.createElement('option');
     opt.value = tc.id;
     opt.textContent = `TC ${tc.numero}`;
     sel.appendChild(opt);
+    (state.tcs||[]).filter(a => a.tcPaiId === tc.id).forEach(a => {
+      const optA = document.createElement('option');
+      optA.value = a.id;
+      optA.textContent = `  └ Aditivo ${a.numero}`;
+      sel.appendChild(optA);
+    });
   });
   if (current) sel.value = current;
 }
@@ -1847,7 +2034,7 @@ function renderChecklist() {
   const labelEl = document.getElementById('chk-filtro-label');
   if (labelEl) {
     const partes = [];
-    if (filtroTC) { const tc = (state.tcs||[]).find(t => String(t.id) === filtroTC); if (tc) partes.push(`TC ${tc.numero}`); }
+    if (filtroTC) { const tc = (state.tcs||[]).find(t => String(t.id) === filtroTC); if (tc) partes.push(tc.ehAditivo ? `Aditivo ${tc.numero}` : `TC ${tc.numero}`); }
     if (filtroParcela) partes.push(`Parcela ${filtroParcela}`);
     if (filtroTipo) partes.push({ CUSTEIO:'Custeio', CAPITAL:'Capital', ALEM_MUROS:'Além dos Muros', OBRAS:'Obras', CAPINA:'Capina' }[filtroTipo] || filtroTipo);
     labelEl.textContent = partes.length ? `Exibindo: ${partes.join(' · ')} (${despesasFiltradas.length} despesa${despesasFiltradas.length !== 1 ? 's' : ''})` : '';
@@ -2043,11 +2230,60 @@ function imprimirPendencias() {
 }
 
 // ==================== DASHBOARD ====================
+function limparFiltrosDash() {
+  const ftc = document.getElementById('dash-filtro-tc');
+  const ftipo = document.getElementById('dash-filtro-tipo');
+  if (ftc) ftc.value = '';
+  if (ftipo) ftipo.value = '';
+  renderDashboard();
+}
+
+function populateDashTCFilter() {
+  const sel = document.getElementById('dash-filtro-tc');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todos os TCs / Aditivos</option>';
+  (state.tcs||[]).filter(t => !t.tcPaiId).forEach(tc => {
+    const opt = document.createElement('option');
+    opt.value = tc.id;
+    opt.textContent = `TC ${tc.numero}`;
+    sel.appendChild(opt);
+    (state.tcs||[]).filter(a => a.tcPaiId === tc.id).forEach(a => {
+      const optA = document.createElement('option');
+      optA.value = a.id;
+      optA.textContent = `  └ Aditivo ${a.numero}`;
+      sel.appendChild(optA);
+    });
+  });
+  if (cur) sel.value = cur;
+}
+
 function renderDashboard() {
+  populateDashTCFilter();
+
+  const filtroTC   = document.getElementById('dash-filtro-tc')?.value || '';
+  const filtroTipo = document.getElementById('dash-filtro-tipo')?.value || '';
+
+  // Label do filtro ativo
+  const labelEl = document.getElementById('dash-filtro-label');
+  if (labelEl) {
+    const partes = [];
+    if (filtroTC) { const tc = (state.tcs||[]).find(t => String(t.id) === filtroTC); if (tc) partes.push(tc.ehAditivo ? `Aditivo ${tc.numero}` : `TC ${tc.numero}`); }
+    if (filtroTipo) partes.push({CUSTEIO:'Custeio',CAPITAL:'Capital',ALEM_MUROS:'Além dos Muros',OBRAS:'Obras',CAPINA:'Capina'}[filtroTipo] || filtroTipo);
+    labelEl.textContent = partes.length ? `Filtrando por: ${partes.join(' · ')}` : '';
+  }
+
+  // Filtrar despesas
+  let despFilt = state.despesas.filter(d => {
+    if (filtroTC   && String(d.tcVinculo) !== String(filtroTC)) return false;
+    if (filtroTipo && d.tipo !== filtroTipo) return false;
+    return true;
+  });
+
   // stats
   let custeio = 0, capital = 0, alem = 0;
   let qtC = 0, qtK = 0, qtA = 0;
-  state.despesas.forEach(d => {
+  despFilt.forEach(d => {
     const v = parseMoney(d.valor);
     if (d.tipo === 'CUSTEIO' || d.tipo === 'CAPINA' || d.tipo === 'OBRAS') { custeio += v; qtC++; }
     else if (d.tipo === 'CAPITAL') { capital += v; qtK++; }
@@ -2062,22 +2298,20 @@ function renderDashboard() {
   document.getElementById('stat-custeio-qt').textContent = qtC + ' lançamentos';
   document.getElementById('stat-capital-qt').textContent = qtK + ' lançamentos';
   document.getElementById('stat-alem-qt').textContent = qtA + ' lançamentos';
-  document.getElementById('stat-total-qt').textContent = state.despesas.length + ' lançamentos';
-
+  document.getElementById('stat-total-qt').textContent = despFilt.length + ' lançamentos';
   document.getElementById('saldo-gasto').textContent = fmtMoney(total);
 
-  // saldo parcela
+  // saldo parcela (TC ativo)
   const tcAtivo = state.tcs.find(t => t.id === state.tcAtivo);
   if (tcAtivo) {
-    const parcPorParcela = state.despesas
-      .filter(d => state.parcelaFiltro === 'todas' || d.parcela === state.parcelaFiltro)
-      .reduce((s, d) => s + parseMoney(d.valor), 0);
-    // use total valor TC / nParcelas as estimate
-    const valorTC = parseMoney(tcAtivo.valor.replace('.','').replace(',','.'));
-    document.getElementById('saldo-recebido').textContent = fmtMoney(valorTC);
-    const saldo = valorTC - total;
+    const valorTC = parseMoney(tcAtivo.valor);
+    // soma aditivos ao TC ativo
+    const totalAditivos = (state.tcs||[]).filter(a => a.tcPaiId === tcAtivo.id).reduce((s,a) => s + parseMoney(a.valor), 0);
+    const valorTotal = valorTC + totalAditivos;
+    document.getElementById('saldo-recebido').textContent = fmtMoney(valorTotal);
+    const saldo = valorTotal - total;
     document.getElementById('saldo-disponivel').textContent = fmtMoney(saldo < 0 ? 0 : saldo);
-    const pct = valorTC > 0 ? Math.min(total / valorTC * 100, 100) : 0;
+    const pct = valorTotal > 0 ? Math.min(total / valorTotal * 100, 100) : 0;
     document.getElementById('progress-bar').style.width = pct + '%';
     document.getElementById('progress-label').textContent = Math.round(pct) + '% utilizado';
   } else {
@@ -2085,18 +2319,73 @@ function renderDashboard() {
     document.getElementById('saldo-disponivel').textContent = 'R$ —';
   }
 
+  // Saldo por TC/Aditivo
+  const saldoEl = document.getElementById('dash-saldo-tcs');
+  if (saldoEl) {
+    const tcs = (state.tcs||[]);
+    if (!tcs.length) {
+      saldoEl.innerHTML = '<div class="empty-state" style="padding:20px"><div class="empty-sub">Nenhum TC cadastrado</div></div>';
+    } else {
+      // Agrupar: TCs principais com seus aditivos
+      const principais = tcs.filter(t => !t.tcPaiId);
+      let html = '<div style="display:flex;flex-direction:column;gap:10px">';
+      principais.forEach(tc => {
+        const aditivos = tcs.filter(a => a.tcPaiId === tc.id);
+        const valorBase = parseMoney(tc.valor);
+        const gastoTC = state.despesas.filter(d => String(d.tcVinculo) === String(tc.id)).reduce((s,d) => s+parseMoney(d.valor), 0);
+        const totalAdit = aditivos.reduce((s,a) => s + parseMoney(a.valor), 0);
+        const valorTCTotal = valorBase + totalAdit;
+        const gastoTotal = gastoTC + aditivos.reduce((s,a) => {
+          return s + state.despesas.filter(d => String(d.tcVinculo) === String(a.id)).reduce((ss,d) => ss+parseMoney(d.valor), 0);
+        }, 0);
+        const saldoTC = valorTCTotal - gastoTotal;
+        const pctTC = valorTCTotal > 0 ? Math.min(gastoTotal / valorTCTotal * 100, 100) : 0;
+        const ativo = state.tcAtivo === tc.id;
+        html += `<div style="background:var(--surface2);border:1px solid ${ativo?'rgba(79,142,247,0.4)':'var(--border)'};border-radius:10px;padding:12px 14px">`;
+        html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">`;
+        html += `<div style="font-size:13px;font-weight:600">TC ${tc.numero}${ativo?' <span style="font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(79,142,247,0.15);color:var(--accent)">Ativo</span>':''}</div>`;
+        html += `<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:${saldoTC<0?'var(--accent-red)':'var(--accent2)'}">Saldo: ${fmtMoney(saldoTC)}</div>`;
+        html += `</div>`;
+        html += `<div style="display:flex;gap:20px;font-size:12px;margin-bottom:8px">`;
+        html += `<span style="color:var(--text-muted)">Valor: <span style="font-family:\'DM Mono\',monospace;color:var(--text)">${fmtMoney(valorTCTotal)}</span></span>`;
+        html += `<span style="color:var(--text-muted)">Gasto: <span style="font-family:\'DM Mono\',monospace;color:var(--accent-red)">${fmtMoney(gastoTotal)}</span></span>`;
+        if (aditivos.length) html += `<span style="color:var(--text-muted)">${aditivos.length} aditivo(s)</span>`;
+        html += `</div>`;
+        html += `<div style="background:var(--surface);border-radius:20px;height:4px;overflow:hidden"><div style="height:100%;border-radius:20px;background:${pctTC>85?'var(--accent-red)':'linear-gradient(90deg,var(--accent),var(--accent2))'};width:${pctTC}%"></div></div>`;
+        // Aditivos
+        if (aditivos.length) {
+          html += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">`;
+          aditivos.forEach(a => {
+            const gastoA = state.despesas.filter(d => String(d.tcVinculo) === String(a.id)).reduce((s,d) => s+parseMoney(d.valor), 0);
+            const saldoA = parseMoney(a.valor) - gastoA;
+            html += `<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;color:var(--text-muted)">`;
+            html += `<span>↳ Aditivo ${a.numero}</span>`;
+            html += `<span>R$ ${a.valor} | Gasto: ${fmtMoney(gastoA)} | <span style="color:${saldoA<0?'var(--accent-red)':'var(--accent2)'}">Saldo: ${fmtMoney(saldoA)}</span></span>`;
+            html += `</div>`;
+          });
+          html += `</div>`;
+        }
+        html += `</div>`;
+      });
+      html += '</div>';
+      saldoEl.innerHTML = html;
+    }
+  }
+
   // ultimos lançamentos
   const ul = state.despesas.slice(-4).reverse();
   if (ul.length) {
-    document.getElementById('dash-ultimos').innerHTML = ul.map(d => `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+    document.getElementById('dash-ultimos').innerHTML = ul.map(d => {
+      const tcVinc = d.tcVinculo ? (state.tcs||[]).find(t => String(t.id) === String(d.tcVinculo)) : null;
+      const tcLbl = tcVinc ? (tcVinc.ehAditivo ? `Aditivo ${tcVinc.numero}` : `TC ${tcVinc.numero}`) : '';
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
         <div>
           <div style="font-size:13px;font-weight:500">${d.credor}</div>
-          <div style="font-size:11px;color:var(--text-muted)">${tipoLabel(d.tipo)} · Parcela ${d.parcela}</div>
+          <div style="font-size:11px;color:var(--text-muted)">${tipoLabel(d.tipo)} · Parcela ${d.parcela}${tcLbl?' · '+tcLbl:''}</div>
         </div>
         <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--accent2)">R$ ${d.valor}</div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
   }
 }
 
