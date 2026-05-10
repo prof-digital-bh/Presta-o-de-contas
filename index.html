@@ -2015,14 +2015,21 @@
 
 <!-- MODAL: LINK RÁPIDO READER -->
 <div class="modal-overlay" id="modal-link-reader" style="align-items:flex-start;padding:24px">
-  <div class="modal" style="width:900px;max-width:95vw;height:85vh;display:flex;flex-direction:column;padding:0;overflow:hidden">
-    <div class="modal-header" style="flex-shrink:0;padding:16px 20px">
-      <div>
-        <div class="modal-title" id="link-reader-title">Documento</div>
-        <div style="font-size:11px;color:var(--text-dim);margin-top:3px" id="link-reader-url"></div>
+  <div class="modal" id="link-reader-box" style="width:900px;max-width:95vw;height:85vh;display:flex;flex-direction:column;padding:0;overflow:hidden">
+    <div class="modal-header" style="flex-shrink:0;padding:12px 16px">
+      <div style="flex:1;min-width:0">
+        <div class="modal-title" id="link-reader-title" style="font-size:14px">Documento</div>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="link-reader-url"></div>
       </div>
-      <div class="gap-8">
-        <button class="btn btn-ghost" style="font-size:12px" onclick="openLinkExternal()" title="Abrir em nova aba">↗ Abrir</button>
+      <div class="gap-8" style="flex-shrink:0;align-items:center">
+        <!-- Controles de tamanho -->
+        <div style="display:flex;gap:2px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:3px">
+          <button onclick="setReaderSize('sm')" id="rsz-sm" title="Pequeno" style="background:none;border:none;cursor:pointer;padding:3px 8px;border-radius:5px;font-size:11px;color:var(--text-muted);transition:all 0.15s">S</button>
+          <button onclick="setReaderSize('md')" id="rsz-md" title="Médio" style="background:var(--surface3);border:none;cursor:pointer;padding:3px 8px;border-radius:5px;font-size:11px;color:var(--text);transition:all 0.15s">M</button>
+          <button onclick="setReaderSize('lg')" id="rsz-lg" title="Grande" style="background:none;border:none;cursor:pointer;padding:3px 8px;border-radius:5px;font-size:11px;color:var(--text-muted);transition:all 0.15s">L</button>
+          <button onclick="setReaderSize('xl')" id="rsz-xl" title="Tela cheia" style="background:none;border:none;cursor:pointer;padding:3px 8px;border-radius:5px;font-size:11px;color:var(--text-muted);transition:all 0.15s">XL</button>
+        </div>
+        <button class="btn btn-ghost" style="font-size:12px" onclick="openLinkExternal()">↗ Abrir</button>
         <button class="modal-close" onclick="closeModal('modal-link-reader')">×</button>
       </div>
     </div>
@@ -4218,6 +4225,30 @@ async function salvarEdicaoLink() {
 }
 
 let currentLinkUrl = '';
+
+const READER_SIZES = {
+  sm: { width: '580px',  height: '70vh', pad: '12px' },
+  md: { width: '900px',  height: '85vh', pad: '24px' },
+  lg: { width: '1200px', height: '90vh', pad: '16px' },
+  xl: { width: '98vw',   height: '96vh', pad: '8px'  },
+};
+
+function setReaderSize(s) {
+  const box = document.getElementById('link-reader-box');
+  const overlay = document.getElementById('modal-link-reader');
+  const sz = READER_SIZES[s] || READER_SIZES.md;
+  box.style.width    = sz.width;
+  box.style.maxWidth = '98vw';
+  box.style.height   = sz.height;
+  overlay.style.padding = sz.pad;
+  // highlight active button
+  ['sm','md','lg','xl'].forEach(k => {
+    const btn = document.getElementById('rsz-' + k);
+    if (!btn) return;
+    btn.style.background = k === s ? 'var(--surface3)' : 'none';
+    btn.style.color      = k === s ? 'var(--text)'     : 'var(--text-muted)';
+  });
+}
 function abrirLinkModal(link) {
   currentLinkUrl = link.url;
   document.getElementById('link-reader-title').textContent = link.titulo;
