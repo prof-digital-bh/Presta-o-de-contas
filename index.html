@@ -770,8 +770,14 @@
       <div class="nav-item" onclick="showSection('relatorio')">
         <span class="nav-icon">◧</span> Relatório (Anexo III)
       </div>
+      <div class="nav-item" onclick="showSection('anexos')">
+        <span class="nav-icon">📋</span> Gerar Anexos
+      </div>
       <div class="nav-item" onclick="showSection('preview')">
-        <span class="nav-icon">◫</span> Gerar Documento
+        <span class="nav-icon">◫</span> Deliberação (Anexo II)
+      </div>
+      <div class="nav-item" onclick="showSection('alertas')">
+        <span class="nav-icon">🔔</span> Alertas e Prazos <span id="alertas-badge" class="pendencia-count" style="display:none;background:var(--accent3)">0</span>
       </div>
     </nav>
   </aside>
@@ -1127,19 +1133,19 @@
           </div>
           <div class="field field-money">
             <label>Saldo Anterior (R$)</label>
-            <input type="text" id="rel-saldo-ant" value="0,05" placeholder="0,00">
+            <input type="text" id="rel-saldo-ant" value="0,05" data-money placeholder="0,00">
           </div>
           <div class="field field-money">
             <label>Valor Creditado (R$)</label>
-            <input type="text" id="rel-creditado" value="28.246,00" placeholder="0,00">
+            <input type="text" id="rel-creditado" value="" placeholder="0,00" data-money placeholder="0,00">
           </div>
           <div class="field field-money">
             <label>Rendimento Financeiro (R$)</label>
-            <input type="text" id="rel-rendimento" value="266,45" placeholder="0,00">
+            <input type="text" id="rel-rendimento" value="" placeholder="0,00" data-money placeholder="0,00">
           </div>
           <div class="field">
             <label>Data do Crédito</label>
-            <input type="text" id="rel-data-credito" value="15/12/2025">
+            <input type="text" id="rel-data-credito" value="">
           </div>
         </div>
       </div>
@@ -1189,7 +1195,7 @@
         <div class="form-grid form-grid-3">
           <div class="field">
             <label>Dia da Reunião</label>
-            <input type="number" id="doc-dia" value="16" min="1" max="31">
+            <input type="number" id="doc-dia" value="" min="1" max="31">
           </div>
           <div class="field">
             <label>Mês</label>
@@ -1210,19 +1216,19 @@
           </div>
           <div class="field">
             <label>Ano</label>
-            <input type="number" id="doc-ano" value="2025">
+            <input type="number" id="doc-ano" placeholder="aaaa">
           </div>
           <div class="field">
             <label>Nº Parcela</label>
-            <input type="text" id="doc-parcela" value="TERCEIRA">
+            <input type="text" id="doc-parcela" value="">
           </div>
           <div class="field">
             <label>Período de Execução</label>
-            <input type="text" id="doc-periodo" value="OUT/2025 A DEZ/2025">
+            <input type="text" id="doc-periodo" value="">
           </div>
           <div class="field">
             <label>Nº TC</label>
-            <input type="text" id="doc-tc" value="225/2025">
+            <input type="text" id="doc-tc" value="">
           </div>
         </div>
         <div style="margin-top:12px">
@@ -1235,6 +1241,335 @@
         <div class="preview-box" id="doc-preview">
           Clique em "Gerar Documento" para visualizar o texto da Deliberação do Conselho Fiscal.
         </div>
+      </div>
+    </section>
+
+    <!-- GERAR ANEXOS -->
+    <section class="section" id="section-anexos">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Gerar Anexos</div>
+          <div class="page-subtitle">Documentos oficiais da prestação de contas — Prefeitura de Contagem</div>
+        </div>
+      </div>
+
+      <!-- Tabs dos Anexos -->
+      <div class="parcela-tabs" id="anexo-tabs" style="margin-bottom:20px">
+        <div class="parcela-tab active" onclick="mostrarAnexo('anx1',this)">Anexo I — Certidão</div>
+        <div class="parcela-tab" onclick="mostrarAnexo('anx4',this)">Anexo IV — Guias Pagas</div>
+        <div class="parcela-tab" onclick="mostrarAnexo('anx5',this)">Anexo V — Parecer CF</div>
+        <div class="parcela-tab" onclick="mostrarAnexo('anx6',this)">Anexo VI — Doação</div>
+        <div class="parcela-tab" onclick="mostrarAnexo('anx7',this)">Anexo VII — Trabalho Campo</div>
+        <div class="parcela-tab" onclick="mostrarAnexo('anx8',this)">Anexo VIII — Recebimento</div>
+      </div>
+
+      <!-- ANEXO I -->
+      <div id="anx1" class="anexo-panel">
+        <div class="card mb-16">
+          <div class="card-header"><div class="card-title">📄 Anexo I — Certidão de Execução do Objeto</div>
+            <div class="gap-8">
+              <button class="btn btn-secondary" onclick="imprimirAnexo('prev-anx1')">🖨 Imprimir</button>
+              <button class="btn btn-primary" onclick="gerarAnexo1()">↺ Gerar</button>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field"><label>Nº da Parcela</label>
+              <select id="anx1-parcela"><option value="1ª">1ª Parcela</option><option value="2ª">2ª Parcela</option><option value="3ª" selected>3ª Parcela</option><option value="4ª">4ª Parcela</option><option value="Única">Parcela Única</option></select></div>
+            <div class="field"><label>Categoria</label>
+              <select id="anx1-cat"><option value="CUSTEIO">Custeio</option><option value="CAPITAL">Capital</option></select></div>
+            <div class="field"><label>Ações desenvolvidas</label>
+              <select id="anx1-acao">
+                <option value="MANUTENCAO">Despesas com a Manutenção do Funcionamento Escolar</option>
+                <option value="CAPITAL">Despesas com Aquisição de Bens Móveis de Capital ou Reforma, Manutenção, Reforma e Requalificação</option>
+              </select></div>
+            <div class="field"><label>Dia</label><input type="number" id="anx1-dia" value="" min="1" max="31"></div>
+            <div class="field"><label>Mês</label>
+              <select id="anx1-mes"><option>janeiro</option><option>fevereiro</option><option>março</option><option>abril</option><option>maio</option><option>junho</option><option>julho</option><option>agosto</option><option>setembro</option><option>outubro</option><option>novembro</option><option selected>dezembro</option></select></div>
+            <div class="field"><label>Ano</label><input type="number" id="anx1-ano" placeholder="aaaa"></div>
+          </div>
+        </div>
+        <div class="card"><div class="preview-box" id="prev-anx1">Clique em "Gerar" para visualizar.</div></div>
+      </div>
+
+      <!-- ANEXO IV -->
+      <div id="anx4" class="anexo-panel" style="display:none">
+        <div class="card mb-16">
+          <div class="card-header"><div class="card-title">📋 Anexo IV — Relação de Guias Pagas</div>
+            <div class="gap-8">
+              <button class="btn btn-secondary" onclick="imprimirAnexo('prev-anx4')">🖨 Imprimir</button>
+              <button class="btn btn-primary" onclick="gerarAnexo4()">↺ Gerar</button>
+            </div>
+          </div>
+          <div class="alert alert-info"><span>ℹ</span><span>Informe as guias de INSS, ISSQN, DARF retidos nas notas fiscais de serviço. Para compras de material (sem retenção), deixe em branco.</span></div>
+          <div id="anx4-linhas">
+            <div style="display:grid;grid-template-columns:2fr 1fr 2fr 1fr 1fr;gap:8px;margin-bottom:6px;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;padding:0 4px">
+              <span>Guia (INSS, ISSQN, DARF)</span><span>Data</span><span>Nota Fiscal Referente</span><span>Valor Guia</span><span>Valor NF</span>
+            </div>
+            <div id="anx4-rows"></div>
+          </div>
+          <button class="btn btn-ghost mt-16" onclick="addAnx4Row()">+ Adicionar Linha</button>
+          <div class="form-grid mt-16" style="grid-template-columns:1fr 1fr 1fr">
+            <div class="field"><label>Dia</label><input type="number" id="anx4-dia" value=""></div>
+            <div class="field"><label>Mês</label><select id="anx4-mes"><option>janeiro</option><option>fevereiro</option><option>março</option><option>abril</option><option>maio</option><option>junho</option><option>julho</option><option>agosto</option><option>setembro</option><option>outubro</option><option>novembro</option><option selected>dezembro</option></select></div>
+            <div class="field"><label>Ano</label><input type="number" id="anx4-ano" placeholder="aaaa"></div>
+          </div>
+        </div>
+        <div class="card"><div class="preview-box" id="prev-anx4">Clique em "Gerar" para visualizar.</div></div>
+      </div>
+
+      <!-- ANEXO V -->
+      <div id="anx5" class="anexo-panel" style="display:none">
+        <div class="card mb-16">
+          <div class="card-header"><div class="card-title">📋 Anexo V — Parecer do Conselho Fiscal</div>
+            <div class="gap-8">
+              <button class="btn btn-secondary" onclick="imprimirAnexo('prev-anx5')">🖨 Imprimir</button>
+              <button class="btn btn-primary" onclick="gerarAnexo5()">↺ Gerar</button>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field"><label>Data do Crédito (dd/mm/aaaa)</label><input type="text" id="anx5-datacred" value=""></div>
+            <div class="field"><label>Categoria da verba</label>
+              <select id="anx5-cat"><option value="custeio">custeio</option><option value="capital">capital</option></select></div>
+            <div class="field"><label>Resultado</label>
+              <select id="anx5-resultado">
+                <option value="aprovada">Aprovada</option>
+                <option value="aprovada com ressalvas">Aprovada com Ressalvas</option>
+                <option value="reprovada">Reprovada</option>
+              </select></div>
+            <div class="field form-full"><label>Ressalvas / Observações (opcional)</label><input type="text" id="anx5-ressalva" placeholder="Ex.: NF sem carimbo de recebimento..."></div>
+            <div class="field"><label>Dia</label><input type="number" id="anx5-dia" value=""></div>
+            <div class="field"><label>Mês</label><select id="anx5-mes"><option>janeiro</option><option>fevereiro</option><option>março</option><option>abril</option><option>maio</option><option>junho</option><option>julho</option><option>agosto</option><option>setembro</option><option>outubro</option><option>novembro</option><option selected>dezembro</option></select></div>
+            <div class="field"><label>Ano</label><input type="number" id="anx5-ano" placeholder="aaaa"></div>
+          </div>
+        </div>
+        <div class="card"><div class="preview-box" id="prev-anx5">Clique em "Gerar" para visualizar.</div></div>
+      </div>
+
+      <!-- ANEXO VI -->
+      <div id="anx6" class="anexo-panel" style="display:none">
+        <div class="card mb-16">
+          <div class="card-header"><div class="card-title">📋 Anexo VI — Termo de Doação (Bens de Capital)</div>
+            <div class="gap-8">
+              <button class="btn btn-secondary" onclick="imprimirAnexo('prev-anx6')">🖨 Imprimir</button>
+              <button class="btn btn-primary" onclick="gerarAnexo6()">↺ Gerar</button>
+            </div>
+          </div>
+          <div class="alert alert-warn"><span>⚠</span><span>Obrigatório para <strong>todos os bens de Capital</strong> adquiridos. Devem ser tombados em nome do Município imediatamente após a aquisição.</span></div>
+          <div id="anx6-itens-wrap">
+            <div style="display:grid;grid-template-columns:1fr 60px 80px 1fr 100px 100px;gap:8px;margin-bottom:6px;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px">
+              <span>Discriminação do Bem</span><span>Qtd</span><span>Unid.</span><span>Nº Doc (NF)</span><span>Valor Unit.</span><span>Valor Total</span>
+            </div>
+            <div id="anx6-rows"></div>
+          </div>
+          <button class="btn btn-ghost mt-16" onclick="addAnx6Row()">+ Adicionar Item</button>
+          <div class="form-grid mt-16" style="grid-template-columns:1fr 1fr 1fr">
+            <div class="field"><label>Dia</label><input type="number" id="anx6-dia" value=""></div>
+            <div class="field"><label>Mês</label><select id="anx6-mes"><option>janeiro</option><option>fevereiro</option><option>março</option><option>abril</option><option>maio</option><option>junho</option><option>julho</option><option>agosto</option><option>setembro</option><option>outubro</option><option>novembro</option><option selected>dezembro</option></select></div>
+            <div class="field"><label>Ano</label><input type="number" id="anx6-ano" placeholder="aaaa"></div>
+          </div>
+        </div>
+        <div class="card"><div class="preview-box" id="prev-anx6">Clique em "Gerar" para visualizar.</div></div>
+      </div>
+
+      <!-- ANEXO VII -->
+      <div id="anx7" class="anexo-panel" style="display:none">
+        <div class="card mb-16">
+          <div class="card-header"><div class="card-title">📋 Anexo VII — Formulário Trabalho de Campo</div>
+            <div class="gap-8">
+              <button class="btn btn-secondary" onclick="imprimirAnexo('prev-anx7')">🖨 Imprimir</button>
+              <button class="btn btn-primary" onclick="gerarAnexo7()">↺ Gerar</button>
+            </div>
+          </div>
+          <div class="alert alert-info"><span>ℹ</span><span>Necessário apenas em despesas de "Além dos Muros" (roteiros educativos/culturais).</span></div>
+          <div class="form-grid">
+            <div class="field"><label>Nº de Estudantes</label><input type="number" id="anx7-alunos" placeholder="Ex.: 120"></div>
+            <div class="field"><label>Data da Atividade</label><input type="date" id="anx7-data"></div>
+            <div class="field form-full"><label>Destino</label><input type="text" id="anx7-destino" placeholder="Ex.: Museu de Ciências Naturais BH"></div>
+            <div class="field"><label>Horário de Saída</label><input type="time" id="anx7-saida"></div>
+            <div class="field"><label>Horário de Chegada</label><input type="time" id="anx7-chegada"></div>
+            <div class="field field-money"><label>Custo Total (R$)</label><input type="text" id="anx7-custo" placeholder="0,00" data-money></div>
+            <div class="field form-full"><label>Tema do Projeto</label><input type="text" id="anx7-tema" placeholder="Ex.: Biodiversidade e Sustentabilidade"></div>
+            <div class="field form-full"><label>Objetivos</label><textarea id="anx7-obj" placeholder="Descreva os objetivos pedagógicos..."></textarea></div>
+            <div class="field form-full"><label>Ações Desenvolvidas</label><textarea id="anx7-acoes" placeholder="Descreva as atividades realizadas..."></textarea></div>
+            <div class="field form-full"><label>Áreas de Conhecimento</label><input type="text" id="anx7-areas" placeholder="Ex.: Ciências, Geografia, Artes"></div>
+          </div>
+        </div>
+        <div class="card"><div class="preview-box" id="prev-anx7">Clique em "Gerar" para visualizar.</div></div>
+      </div>
+
+      <!-- ANEXO VIII -->
+      <div id="anx8" class="anexo-panel" style="display:none">
+        <div class="card mb-16">
+          <div class="card-header"><div class="card-title">📋 Anexo VIII — Termo de Recebimento Definitivo</div>
+            <div class="gap-8">
+              <button class="btn btn-secondary" onclick="imprimirAnexo('prev-anx8')">🖨 Imprimir</button>
+              <button class="btn btn-primary" onclick="gerarAnexo8()">↺ Gerar</button>
+            </div>
+          </div>
+          <div class="alert alert-warn"><span>⚠</span><span>Obrigatório para serviços de <strong>reforma, manutenção, reparo e requalificação</strong> de imóveis. Deve ser assinado pelo Engenheiro da SEDUC/FUNEC.</span></div>
+          <div class="form-grid">
+            <div class="field"><label>Nº do Contrato</label><input type="text" id="anx8-contrato" placeholder="Ex.: 001/2025"></div>
+            <div class="field"><label>Objeto do Contrato</label><input type="text" id="anx8-objeto" placeholder="Ex.: Reforma da rede hidráulica"></div>
+            <div class="field form-full"><label>Nome da Empresa Contratada</label><input type="text" id="anx8-empresa" placeholder="Razão Social da empresa"></div>
+            <div class="field"><label>Data do Recebimento Provisório</label><input type="date" id="anx8-dataprov"></div>
+            <div class="field"><label>Engenheiro SEDUC/FUNEC</label><input type="text" id="anx8-eng" placeholder="Nome do engenheiro responsável"></div>
+            <div class="field"><label>Gestor do Contrato (Caixa Escolar)</label><input type="text" id="anx8-gestor" placeholder="Nome do responsável na escola"></div>
+            <div class="field"><label>Fiscal do Contrato</label><input type="text" id="anx8-fiscal" placeholder="Nome do fiscal"></div>
+            <div class="field"><label>Dia</label><input type="number" id="anx8-dia" value=""></div>
+            <div class="field"><label>Mês</label><select id="anx8-mes"><option>janeiro</option><option>fevereiro</option><option>março</option><option>abril</option><option>maio</option><option>junho</option><option>julho</option><option>agosto</option><option>setembro</option><option>outubro</option><option>novembro</option><option selected>dezembro</option></select></div>
+            <div class="field"><label>Ano</label><input type="number" id="anx8-ano" placeholder="aaaa"></div>
+          </div>
+        </div>
+        <div class="card"><div class="preview-box" id="prev-anx8">Clique em "Gerar" para visualizar.</div></div>
+      </div>
+    </section>
+
+    <!-- ALERTAS E PRAZOS -->
+    <section class="section" id="section-alertas">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Alertas e Prazos</div>
+          <div class="page-subtitle">Regras do Decreto 1134/2024 e Manual SEDUC/FUNEC relevantes ao seu processo</div>
+        </div>
+        <button class="btn btn-secondary" onclick="renderAlertas()">↺ Atualizar</button>
+      </div>
+
+      <!-- Alertas automáticos com base nos dados -->
+      <div id="alertas-automaticos" class="mb-20"></div>
+
+      <!-- Regras fixas do Decreto / Manual organizadas por tema -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+        <div class="card">
+          <div class="card-header"><div class="card-title" style="color:var(--accent-red)">⏰ Prazos Críticos</div></div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:13px">
+            <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--accent-red)">
+              <div style="font-weight:600;margin-bottom:4px">Prestação de contas parcial</div>
+              <div style="color:var(--text-muted)">Deve ser apresentada em até <strong style="color:var(--accent3)">30 dias antes</strong> da liberação da parcela subsequente. (Art. 28, §1º)</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--accent-red)">
+              <div style="font-weight:600;margin-bottom:4px">Prestação de contas final</div>
+              <div style="color:var(--text-muted)">Deve ser entregue em até <strong style="color:var(--accent3)">30 dias após o término</strong> da vigência do TC. (Art. 28, §2º)</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--accent3)">
+              <div style="font-weight:600;margin-bottom:4px">Devolução de saldo não utilizado</div>
+              <div style="color:var(--text-muted)">Saldo remanescente deve ser restituído ao Município em até <strong style="color:var(--accent3)">30 dias</strong> do encerramento do TC. (Art. 14, §único)</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--accent3)">
+              <div style="font-weight:600;margin-bottom:4px">Habilitação anual (documentos)</div>
+              <div style="color:var(--text-muted)">Documentação de habilitação deve ser entregue até o <strong style="color:var(--accent3)">último dia útil de janeiro</strong> do ano seguinte. (Manual, Módulo I)</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--custeio)">
+              <div style="font-weight:600;margin-bottom:4px">Pedido de aditivo ao TC</div>
+              <div style="color:var(--text-muted)">Solicitar com antecedência mínima de <strong style="color:var(--accent3)">30 dias</strong> antes do término da vigência. (Manual, Módulo III)</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--custeio)">
+              <div style="font-weight:600;margin-bottom:4px">Prazo para sanear irregularidades</div>
+              <div style="color:var(--text-muted)">Após notificação da SEDUC, a Caixa Escolar tem <strong style="color:var(--accent3)">15 dias</strong> para regularizar. (Art. 29)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title" style="color:var(--accent3)">💰 Limites de Contratação</div></div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:13px">
+            <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--accent2)">
+              <div style="font-weight:600;margin-bottom:4px">Dispensado de procedimento competitivo</div>
+              <div style="color:var(--text-muted)">Fornecimento/serviços até <strong style="color:var(--accent2)">R$ 50.000,00</strong> e obras/reformas até <strong style="color:var(--accent2)">R$ 100.000,00</strong>. Exige ao menos 3 orçamentos. (Art. 17, I)</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--accent-red)">
+              <div style="font-weight:600;margin-bottom:4px">⛔ Fracionamento de despesas é VEDADO</div>
+              <div style="color:var(--text-muted)">Proibido dividir compras do mesmo objeto para fugir dos limites. Sujeito a irregularidade e glosa. (Art. 17, §2º)</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--accent)">
+              <div style="font-weight:600;margin-bottom:4px">Certidões dispensadas — entrega imediata</div>
+              <div style="color:var(--text-muted)">Compras com prazo de entrega única de até <strong style="color:var(--accent)">30 dias</strong>, sem obrigações futuras, dispensam certidões. (Art. 19, §1º)</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--accent3)">
+              <div style="font-weight:600;margin-bottom:4px">CNAE compatível obrigatório</div>
+              <div style="color:var(--text-muted)">O CNPJ do fornecedor deve ter CNAE compatível com o material ou serviço contratado. (Art. 19, §2º)</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--alem)">
+              <div style="font-weight:600;margin-bottom:4px">Prazo urgência (dispensa)</div>
+              <div style="color:var(--text-muted)">Contratações urgentes sem procedimento: máximo <strong style="color:var(--alem)">180 dias</strong>, sem prorrogação salvo interesse público justificado. (Art. 17, II)</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title" style="color:var(--accent2)">📎 Documentos Obrigatórios por Compra</div></div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+            <div style="background:var(--surface2);border-radius:8px;padding:12px">
+              <div style="font-weight:600;margin-bottom:6px;color:var(--custeio)">📦 Toda compra/serviço</div>
+              <div style="color:var(--text-muted);line-height:1.8">
+                ✅ Nota Fiscal original em nome da Caixa Escolar<br>
+                ✅ Comprovante de pagamento (TED/DOC/transferência digital)<br>
+                ✅ Carimbo "PAGUE-SE" com data e assinatura do Presidente<br>
+                ✅ Carimbo "CERTIFICAMOS QUE O MATERIAL/SERVIÇO FOI RECEBIDO" — 2 servidores<br>
+                ✅ Mínimo 3 orçamentos (com CNPJ, data, validade, valor unitário)<br>
+                ✅ Cartão CNPJ (CNAE) de cada fornecedor orçado
+              </div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:12px">
+              <div style="font-weight:600;margin-bottom:6px;color:var(--capital)">🏗️ Reforma/Manutenção (acresce)</div>
+              <div style="color:var(--text-muted);line-height:1.8">
+                ✅ ART ou RRT do responsável técnico<br>
+                ✅ Certidões de fornecedor (CRC/CND/FGTS/CNDT)<br>
+                ✅ Medição atestada pela Diretoria de Manutenção — SEDUC<br>
+                ✅ Guias de impostos (federal, estadual, municipal)<br>
+                ✅ Termo de Recebimento Definitivo (Anexo VIII)
+              </div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:12px">
+              <div style="font-weight:600;margin-bottom:6px;color:var(--capital)">🖥️ Bens de Capital (acresce)</div>
+              <div style="color:var(--text-muted);line-height:1.8">
+                ✅ Termo de Doação (Anexo VI) — obrigatório<br>
+                ✅ Incorporação patrimonial imediata (Inventário)
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title" style="color:var(--accent-red)">⛔ O que é VEDADO à Caixa Escolar</div></div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;color:var(--text-muted);line-height:1.9">
+            <div style="background:rgba(240,80,96,0.06);border-radius:8px;padding:12px;border:1px solid rgba(240,80,96,0.15)">
+              🚫 Adquirir ou alugar imóveis<br>
+              🚫 Adquirir veículos<br>
+              🚫 Realizar reformas sem aprovação prévia da SEDUC/FUNEC<br>
+              🚫 Pagar salários ou complementar remuneração de servidores públicos<br>
+              🚫 Conceder empréstimos, avais, fianças ou cauções<br>
+              🚫 Usar recursos para finalidade diferente do TC<br>
+              🚫 Realizar despesas antes da celebração ou após o término do TC<br>
+              🚫 Pagar multas ou juros por atraso com recursos do TC<br>
+              🚫 Efetuar pagamentos em espécie<br>
+              🚫 Manter cheques em branco assinados pelo Presidente/Tesoureiro<br>
+              🚫 Fracionar despesas para fugir dos limites<br>
+              🚫 Receber mercadorias/serviços sem comprovante fiscal<br>
+              🚫 Realizar pagamento antecipado<br>
+              🚫 Movimentar recursos para pagamento antes da emissão das NFs
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-header"><div class="card-title" style="color:var(--accent)">ℹ️ Aplicação dos Recursos — Conta Bancária</div></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:13px">
+            <div style="background:var(--surface2);border-radius:8px;padding:12px">
+              <div style="font-weight:600;margin-bottom:4px;color:var(--accent2)">📈 Aplicação financeira obrigatória</div>
+              <div style="color:var(--text-muted)">Recursos não utilizados imediatamente devem ser aplicados em <strong>fundo de curto prazo</strong> em instituição financeira oficial enquanto não utilizados. (Art. 10, §5º)</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:12px">
+              <div style="font-weight:600;margin-bottom:4px;color:var(--accent2)">🏦 Prioridade de uso</div>
+              <div style="color:var(--text-muted)">Em caso de coincidência de fontes (federal + municipal), os recursos federais (PDDE) devem ser usados <strong>primeiro</strong>. Recursos municipais, depois. (Art. 15)</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:12px">
+              <div style="font-weight:600;margin-bottom:4px;color:var(--accent2)">📊 Rendimentos</div>
+              <div style="color:var(--text-muted)">Rendimentos da aplicação financeira são <strong>receita do TC</strong> e devem constar no Anexo III. Podem ser usados no mesmo objeto do TC. (Art. 12)</div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -1290,7 +1625,7 @@
       </div>
       <div class="field field-money">
         <label id="label-tc-valor">Valor Total (R$)</label>
-        <input type="text" id="tc-valor" placeholder="0,00">
+        <input type="text" id="tc-valor" placeholder="0,00" data-money>
       </div>
       <div class="field">
         <label>Status <span style="font-size:10px;color:var(--text-dim)">(calculado automaticamente)</span></label>
@@ -1393,7 +1728,7 @@
       </div>
       <div class="field field-money">
         <label>Valor (R$)</label>
-        <input type="text" id="d-valor" placeholder="0,00">
+        <input type="text" id="d-valor" placeholder="0,00" data-money>
       </div>
       <div class="field form-full">
         <label>Descrição / Objeto</label>
@@ -1711,21 +2046,68 @@ function updateSidebarStatus() {
 let state = {
   tcs: [],
   despesas: [],
+  fornecedoresCad: [],
   checkStates: {},
   parcelaFiltro: 'todas',
   editIndex: null,
   tcAtivo: null
 };
 
-// Load from localStorage
+// Load from localStorage — ignora dados de demonstração (despesas sem tcVinculo real)
 try {
   const saved = localStorage.getItem('pc_state');
-  if (saved) state = JSON.parse(saved);
+  if (saved) {
+    const parsed = JSON.parse(saved);
+    // Se havia dados de demo (despesas com credores de exemplo), limpa tudo
+    const temDemo = (parsed.despesas||[]).some(d =>
+      ['COMERCIAL JL MOCEIS','FONTEPEL','FC ATACADIST','MP PRODUTOS','AGAPE'].some(n => (d.credor||'').toUpperCase().includes(n))
+    );
+    if (temDemo) {
+      localStorage.removeItem('pc_state');
+    } else {
+      state = { ...state, ...parsed };
+    }
+  }
 } catch(e) {}
 
 function save() {
   try { localStorage.setItem('pc_state', JSON.stringify(state)); } catch(e) {}
 }
+
+// ==================== MÁSCARA DE MOEDA ====================
+function maskMoney(input) {
+  input.addEventListener('input', function() {
+    let v = this.value.replace(/\D/g, '');
+    if (!v) { this.value = ''; return; }
+    // Garante mínimo 3 dígitos (para ter centavos)
+    v = v.padStart(3, '0');
+    const intPart = v.slice(0, -2).replace(/^0+/, '') || '0';
+    const decPart = v.slice(-2);
+    // Formatar parte inteira com pontos de milhar
+    const intFormatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    this.value = intFormatted + ',' + decPart;
+  });
+  input.addEventListener('blur', function() {
+    if (!this.value) return;
+    let v = this.value.replace(/\D/g, '');
+    if (!v) { this.value = ''; return; }
+    v = v.padStart(3, '0');
+    const intPart = v.slice(0, -2).replace(/^0+/, '') || '0';
+    const decPart = v.slice(-2);
+    const intFormatted = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    this.value = intFormatted + ',' + decPart;
+  });
+  input.addEventListener('focus', function() {
+    // Ao focar, move cursor para o fim
+    const len = this.value.length;
+    setTimeout(() => this.setSelectionRange(len, len), 0);
+  });
+}
+
+function initMoneyMasks() {
+  document.querySelectorAll('.field-money input, input[data-money]').forEach(maskMoney);
+}
+
 
 // ==================== NAVIGATION ====================
 function showSection(id) {
@@ -1741,6 +2123,8 @@ function showSection(id) {
   if (id === 'checklist') { populateChecklistTCFilter(); refreshChecklist(); }
   if (id === 'relatorio') renderAnexo3();
   if (id === 'dashboard') renderDashboard();
+  if (id === 'alertas') renderAlertas();
+  if (id === 'anexos') { popularAnx6ComCapital(); }
 }
 
 // ==================== MODALS ====================
@@ -2566,6 +2950,441 @@ function fmtDate(d) {
   return d;
 }
 
+// ==================== CONSTANTES FIXAS ====================
+const ESCOLA = 'E.M. ALBERTINA ALVES DO NASCIMENTO';
+const CAIXA_ESCOLAR = 'ALBERTINA ALVES NASCIMENTO';
+const CNPJ_CE = '15.547.261/0001-01';
+const PRESIDENTE = 'JEFERSON CESAR DOS SANTOS';
+const TESOUREIRO = 'ANA PAULA AGUIAR SILVA';
+const SECRETARIO = 'MARIA AZEVEDO MARTINS TORRES DE CARVALHO';
+const CF1 = 'ANGEL CASSIO LOPES DE OLIVEIRA';
+const CF2 = 'DOMINGOS AILTON SANTOS';
+const CF3 = 'VANESSA MARIA AUGUSTO DO NASCIMENTO';
+const PREFEITURA = 'PREFEITURA MUNICIPAL DE CONTAGEM\nSecretaria Municipal de Educação';
+const ENDERECO_SEDUC = 'Rua Coimbra, nº 100 — Bairro Santa Cruz Industrial — Contagem/MG — CEP 32.340-010';
+
+function getTCAtivo() {
+  return (state.tcs||[]).find(t => t.id === state.tcAtivo);
+}
+function getTCNumero() {
+  const tc = getTCAtivo(); return tc ? tc.numero : '___/____';
+}
+
+// ==================== NAVEGAÇÃO ANEXOS ====================
+function mostrarAnexo(id, el) {
+  document.querySelectorAll('.anexo-panel').forEach(p => p.style.display = 'none');
+  document.getElementById(id).style.display = '';
+  document.querySelectorAll('#anexo-tabs .parcela-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ==================== IMPRIMIR ANEXO ====================
+function imprimirAnexo(previewId) {
+  const txt = document.getElementById(previewId).textContent;
+  if (!txt || txt.startsWith('Clique')) { alert('Gere o documento primeiro.'); return; }
+  const w = window.open('', '', 'width=800,height=700');
+  w.document.write(`<html><head><title>Documento</title><style>
+    body{font-family:'Courier New',monospace;font-size:12px;padding:30px;line-height:1.7;color:#000;background:#fff}
+    pre{white-space:pre-wrap;word-wrap:break-word}
+    @media print{body{padding:15px}}
+  </style></head><body><pre>${txt}</pre></body></html>`);
+  w.document.close();
+  setTimeout(() => w.print(), 300);
+}
+
+// ==================== ANEXO I — CERTIDÃO DE EXECUÇÃO ====================
+function gerarAnexo1() {
+  const parcela = document.getElementById('anx1-parcela').value;
+  const cat = document.getElementById('anx1-cat').value;
+  const acao = document.getElementById('anx1-acao').value;
+  const dia = document.getElementById('anx1-dia').value;
+  const mes = document.getElementById('anx1-mes').value;
+  const ano = document.getElementById('anx1-ano').value;
+  const acaoText = acao === 'MANUTENCAO'
+    ? '(X) DESPESAS COM A MANUTENÇÃO DO FUNCIONAMENTO ESCOLAR\n( ) DESPESAS COM AQUISIÇÃO DE BENS MÓVEIS DE CAPITAL OU REFORMA, MANUTENÇÃO, REFORMA E REQUALIFICAÇÃO.'
+    : '( ) DESPESAS COM A MANUTENÇÃO DO FUNCIONAMENTO ESCOLAR\n(X) DESPESAS COM AQUISIÇÃO DE BENS MÓVEIS DE CAPITAL OU REFORMA, MANUTENÇÃO, REFORMA E REQUALIFICAÇÃO.';
+  let txt = `                              ANEXO I
+                    CERTIDÃO DE EXECUÇÃO DO OBJETO
+
+Caixa Escolar: ${CAIXA_ESCOLAR}
+Endereço: ${ESCOLA} — Contagem/MG
+N.º do Termo de Compromisso: ${getTCNumero()}
+N.º da Parcela: ( ) ____ª Parcela   (X) ${parcela}   ( ) Parcela Única
+Categoria: ${cat === 'CUSTEIO' ? '(X) CUSTEIO   ( ) CAPITAL' : '( ) CUSTEIO   (X) CAPITAL'}
+
+AÇÕES DESENVOLVIDAS NA MANUTENÇÃO DO DESENVOLVIMENTO DO ENSINO:
+${acaoText}
+
+CERTIFICO PARA FINS DE PRESTAÇÃO DE CONTAS JUNTO À PREFEITURA MUNICIPAL
+DE CONTAGEM QUE OS OBJETIVOS DO TERMO DE COMPROMISSO SUPRACITADO
+FORAM ALCANÇADOS.
+
+Contagem, ${dia} de ${mes} de ${ano}.
+
+
+_____________________________________________
+Presidente da Caixa Escolar
+
+Nome: ${PRESIDENTE}
+CPF: ___________________________`;
+  document.getElementById('prev-anx1').textContent = txt;
+}
+
+// ==================== ANEXO IV — GUIAS PAGAS ====================
+let anx4RowCount = 0;
+function addAnx4Row() {
+  anx4RowCount++;
+  const id = 'anx4r' + anx4RowCount;
+  const div = document.createElement('div');
+  div.id = id;
+  div.style.cssText = 'display:grid;grid-template-columns:2fr 1fr 2fr 1fr 1fr;gap:8px;margin-bottom:6px';
+  div.innerHTML = `
+    <input type="text" placeholder="Ex.: INSS retido / ISSQN" style="font-size:12px">
+    <input type="date" style="font-size:12px">
+    <input type="text" placeholder="NF 001 — Fornecedor X" style="font-size:12px">
+    <input type="text" placeholder="0,00" data-money style="font-family:'DM Mono',monospace;font-size:12px;color:var(--accent2)">
+    <div style="display:flex;gap:4px"><input type="text" placeholder="0,00" data-money style="font-family:'DM Mono',monospace;font-size:12px;color:var(--accent2)"><button onclick="document.getElementById('${id}').remove()" style="background:none;border:none;color:var(--accent-red);cursor:pointer;padding:0 4px">✕</button></div>`;
+  document.getElementById('anx4-rows').appendChild(div);
+  div.querySelectorAll('[data-money]').forEach(maskMoney);
+}
+
+function gerarAnexo4() {
+  const rows = [...document.querySelectorAll('#anx4-rows > div')];
+  const dia = document.getElementById('anx4-dia').value;
+  const mes = document.getElementById('anx4-mes').value;
+  const ano = document.getElementById('anx4-ano').value;
+  let linhas = '';
+  let total = 0;
+  rows.forEach((row, i) => {
+    const inputs = row.querySelectorAll('input');
+    const guia = inputs[0].value || '—';
+    const data = inputs[1].value ? fmtDate(inputs[1].value) : '—';
+    const nf = inputs[2].value || '—';
+    const vGuia = inputs[3].value || '0,00';
+    const vNF = inputs[4].value || '0,00';
+    total += parseMoney(vGuia);
+    linhas += `${String(i+1).padStart(2,' ')}. ${guia.padEnd(30,' ')}  ${data.padEnd(12,' ')}  ${nf.padEnd(20,' ')}  R$ ${vGuia.padStart(10,' ')}  R$ ${vNF.padStart(10,' ')}\n`;
+  });
+  let txt = `                              ANEXO IV
+                        RELAÇÃO DE GUIAS PAGAS
+
+Caixa Escolar: ${CAIXA_ESCOLAR}          CNPJ: ${CNPJ_CE}
+Termo de Compromisso: ${getTCNumero()}
+
+${'─'.repeat(90)}
+Nº  Guia (INSS, ISSQN)                Data          Nota Fiscal            Valor Guia    Valor NF
+${'─'.repeat(90)}
+${linhas || '    (Nenhuma guia informada)\n'}${'─'.repeat(90)}
+Total de despesas: R$ ${fmtMoneyStr(total)}
+
+Contagem, ${dia} de ${mes} de ${ano}.
+
+
+_________________________________          _________________________________
+Presidente da Caixa Escolar                  Responsável pelo preenchimento
+${PRESIDENTE}                    (Nome, matrícula e assinatura)`;
+  document.getElementById('prev-anx4').textContent = txt;
+}
+
+// ==================== ANEXO V — PARECER DO CONSELHO FISCAL ====================
+function gerarAnexo5() {
+  const datacred = document.getElementById('anx5-datacred').value;
+  const cat = document.getElementById('anx5-cat').value;
+  const resultado = document.getElementById('anx5-resultado').value;
+  const ressalva = document.getElementById('anx5-ressalva').value;
+  const dia = document.getElementById('anx5-dia').value;
+  const mes = document.getElementById('anx5-mes').value;
+  const ano = document.getElementById('anx5-ano').value;
+  const tcNum = getTCNumero();
+  let txt = `                              ANEXO V
+                        PARECER DO CONSELHO FISCAL
+
+Os membros do Conselho Fiscal da Caixa Escolar ${CAIXA_ESCOLAR}, após análise
+detalhada da prestação de contas dos recursos financeiros recebidos pela referida entidade
+em ${datacred}, com origem na Prefeitura de Contagem e destinados a (${cat}),
+constatam que a aplicação dos recursos foi realizada em conformidade com a proposta
+pedagógica da Unidade Escolar ${ESCOLA}.
+
+Diante dessa constatação, o Conselho Fiscal ${resultado === 'aprovada' ? 'APROVA, por unanimidade' : resultado === 'aprovada com ressalvas' ? 'APROVA COM RESSALVAS' : 'NÃO APROVA'}, a prestação de contas,
+considerando que os recursos foram utilizados de forma adequada e em alinhamento com os
+objetivos estabelecidos.${ressalva ? '\n\nRessalvas/Observações: ' + ressalva : ''}
+
+Segue abaixo a relação de assinaturas dos membros do Conselho Fiscal, conforme disposto
+no Estatuto registrado em cartório na cidade de Contagem:
+
+Contagem, ${dia} de ${mes} de ${ano}.
+
+_________________________________          _________________________________
+${PRESIDENTE}                                   ${TESOUREIRO}
+Presidente                                         Tesoureiro
+
+
+MEMBROS DO CONSELHO FISCAL:
+
+_________________________________          ________________________________
+${CF1}
+Assinatura                                         Segmento: ________________
+
+_________________________________          ________________________________
+${CF2}
+Assinatura                                         Segmento: ________________
+
+_________________________________          ________________________________
+${CF3}
+Assinatura                                         Segmento: ________________`;
+  document.getElementById('prev-anx5').textContent = txt;
+}
+
+// ==================== ANEXO VI — TERMO DE DOAÇÃO ====================
+let anx6RowCount = 0;
+function addAnx6Row(data, qtd, unid, disc, ndoc, vUnit, vTot) {
+  anx6RowCount++;
+  const id = 'anx6r' + anx6RowCount;
+  const div = document.createElement('div');
+  div.id = id;
+  div.style.cssText = 'display:grid;grid-template-columns:1fr 60px 80px 1fr 100px 100px;gap:8px;margin-bottom:6px;align-items:center';
+  div.innerHTML = `
+    <input type="text" value="${disc||''}" placeholder="Ex.: Cadeira ergonômica" style="font-size:12px">
+    <input type="number" value="${qtd||1}" min="1" style="font-size:12px">
+    <input type="text" value="${unid||'un'}" style="font-size:12px">
+    <input type="text" value="${ndoc||''}" placeholder="NF 001" style="font-size:12px">
+    <input type="text" value="${vUnit||''}" placeholder="0,00" data-money style="font-family:'DM Mono',monospace;font-size:12px;color:var(--accent2)">
+    <div style="display:flex;gap:4px"><input type="text" value="${vTot||''}" placeholder="0,00" data-money style="font-family:'DM Mono',monospace;font-size:12px;color:var(--accent2)"><button onclick="document.getElementById('${id}').remove()" style="background:none;border:none;color:var(--accent-red);cursor:pointer;padding:0 4px">✕</button></div>`;
+  document.getElementById('anx6-rows').appendChild(div);
+  div.querySelectorAll('[data-money]').forEach(maskMoney);
+}
+
+function gerarAnexo6() {
+  const rows = [...document.querySelectorAll('#anx6-rows > div')];
+  const dia = document.getElementById('anx6-dia').value;
+  const mes = document.getElementById('anx6-mes').value;
+  const ano = document.getElementById('anx6-ano').value;
+  const hoje = `${dia}/${mes}/${ano}`;
+  let itens = '';
+  let total = 0;
+  rows.forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const disc = inputs[0].value || '—';
+    const qtd = inputs[1].value || '1';
+    const unid = inputs[2].value || 'un';
+    const ndoc = inputs[3].value || '—';
+    const vUnit = inputs[4].value || '0,00';
+    const vTot = inputs[5].value || '0,00';
+    total += parseMoney(vTot);
+    itens += `${hoje.padEnd(12,' ')}  ${qtd.padEnd(5,' ')}  ${unid.padEnd(6,' ')}  ${disc.padEnd(30,' ')}  ${ndoc.padEnd(12,' ')}  R$ ${vUnit.padStart(9,' ')}  R$ ${vTot.padStart(9,' ')}\n`;
+  });
+  let txt = `SECRETARIA MUNICIPAL DE EDUCAÇÃO E CULTURA DE CONTAGEM
+Gerência das Caixas Escolares — Diretoria de Gestão de Parcerias, Termos de
+Compromisso e Convênios — Superintendência de Planejamento, Orçamento e Finanças
+${ENDERECO_SEDUC}
+
+                              ANEXO VI
+                           TERMO DE DOAÇÃO
+
+Pelo presente instrumento a Caixa Escolar ${CAIXA_ESCOLAR} da Unidade
+Escolar ${ESCOLA}, faz, em conformidade com a legislação aplicável ao Termo
+de Compromisso de nº ${getTCNumero()} e demais normas pertinentes à matéria,
+a doação do(s) bem(ns) conforme discriminado(s) abaixo, adquirido(s) com recursos
+do referido Programa de Manutenção e Desenvolvimento da Educação Básica para que
+seja(m) tombado(s) e incorporado(s) ao patrimônio público e destinado(s) à escola
+acima identificada, à qual cabe a responsabilidade pela guarda e conservação.
+
+${'─'.repeat(95)}
+Data          Qtd   Unid.   Discriminação                    Nº Doc.          Val. Unit.    Val. Total
+${'─'.repeat(95)}
+${itens || '(Nenhum item adicionado)\n'}${'─'.repeat(95)}
+                                                              TOTAL:         R$ ${fmtMoneyStr(total)}
+
+Contagem, ${dia} de ${mes} de ${ano}.
+
+
+_____________________________________________    _____________________________________________
+${PRESIDENTE}                              (Nome, matrícula e assinatura do responsável)
+Presidente da Caixa Escolar                             pelo preenchimento
+(Nome, carimbo e assinatura)`;
+  document.getElementById('prev-anx6').textContent = txt;
+}
+
+// Pré-popular Anexo VI com despesas de Capital cadastradas
+function popularAnx6ComCapital() {
+  const caps = state.despesas.filter(d => d.tipo === 'CAPITAL');
+  if (!caps.length) return;
+  document.getElementById('anx6-rows').innerHTML = '';
+  anx6RowCount = 0;
+  caps.forEach(d => addAnx6Row('', 1, 'un', d.descricao || d.credor, d.nfNum || '', '', d.valor));
+}
+
+// ==================== ANEXO VII — TRABALHO DE CAMPO ====================
+function gerarAnexo7() {
+  const alunos = document.getElementById('anx7-alunos').value;
+  const data = document.getElementById('anx7-data').value ? fmtDate(document.getElementById('anx7-data').value) : '___/___/______';
+  const dest = document.getElementById('anx7-destino').value || '___________________________';
+  const saida = document.getElementById('anx7-saida').value || '___:___';
+  const chegada = document.getElementById('anx7-chegada').value || '___:___';
+  const custo = document.getElementById('anx7-custo').value || '0,00';
+  const tema = document.getElementById('anx7-tema').value || '___________________________';
+  const obj = document.getElementById('anx7-obj').value || '___________________________';
+  const acoes = document.getElementById('anx7-acoes').value || '___________________________';
+  const areas = document.getElementById('anx7-areas').value || '___________________________';
+  let txt = `SECRETARIA MUNICIPAL DE EDUCAÇÃO E CULTURA DE CONTAGEM
+Gerência das Caixas Escolares — Diretoria de Gestão de Parcerias, Termos de
+Compromisso e Convênios — Superintendência de Planejamento, Orçamento e Finanças
+${ENDERECO_SEDUC}
+
+                              ANEXO VII
+                    FORMULÁRIO TRABALHO DE CAMPO
+
+1 — IDENTIFICAÇÃO
+${'─'.repeat(80)}
+ESCOLA: ${ESCOLA}
+
+A. NÍVEL E MODALIDADE DE ENSINO:
+( ) Educação Infantil   (X) Ensino Fundamental   ( ) Educação de Jovens e Adultos (EJA)
+
+B. Nº DE ESTUDANTES/CRIANÇAS: ${alunos || '____'}                 DATA: ${data}
+C. DESTINO: ${dest}
+D. HORÁRIO DE SAÍDA: ${saida}
+E. HORÁRIO DE CHEGADA: ${chegada}
+F. CUSTO (VALOR EM REAL): R$ ${custo}
+
+2 — DETALHAMENTOS DO PROJETO
+${'─'.repeat(80)}
+A. TEMA: ${tema}
+
+B. OBJETIVOS:
+${obj}
+
+C. AÇÕES DESENVOLVIDAS:
+${acoes}
+
+D. ÁREAS DE CONHECIMENTO ENVOLVIDAS: ${areas}
+
+
+${'─'.repeat(50)}
+CARIMBO E ASSINATURA DO PEDAGOGO DA ESCOLA`;
+  document.getElementById('prev-anx7').textContent = txt;
+}
+
+// ==================== ANEXO VIII — TERMO DE RECEBIMENTO ====================
+function gerarAnexo8() {
+  const contrato = document.getElementById('anx8-contrato').value || '___/____';
+  const objeto = document.getElementById('anx8-objeto').value || '___________________________';
+  const empresa = document.getElementById('anx8-empresa').value || '___________________________';
+  const dataprov = document.getElementById('anx8-dataprov').value ? fmtDate(document.getElementById('anx8-dataprov').value) : '__/__/____';
+  const eng = document.getElementById('anx8-eng').value || '___________________________';
+  const gestor = document.getElementById('anx8-gestor').value || '___________________________';
+  const fiscal = document.getElementById('anx8-fiscal').value || '___________________________';
+  const dia = document.getElementById('anx8-dia').value;
+  const mes = document.getElementById('anx8-mes').value;
+  const ano = document.getElementById('anx8-ano').value;
+  let txt = `                              ANEXO VIII
+                      TERMO DE RECEBIMENTO DEFINITIVO
+
+Termo de Recebimento Definitivo do Contrato nº ${contrato}, referente à execução
+dos serviços de reforma, manutenção, reparo e requalificação de imóveis da
+${ESCOLA}, tendo como objeto a prestação de serviços de: "${objeto}".
+
+Contratante: Caixa Escolar ${CAIXA_ESCOLAR}
+Contratada: ${empresa}
+
+Em conformidade com o Termo de Recebimento Provisório emitido em ${dataprov}, e após
+o prazo estipulado, constatou-se que o objeto contratado está em conformidade.
+
+Contagem, ${dia} de ${mes} de ${ano}.
+
+
+_____________________________________________
+${eng}
+Engenheiro SEDUC/FUNEC
+Diretoria de Manutenção e Infraestrutura da Rede Física
+
+
+_____________________________________________
+${gestor}
+Gestor do Contrato — Caixa Escolar ${CAIXA_ESCOLAR}
+
+
+_____________________________________________
+${fiscal}
+Fiscal do Contrato — Caixa Escolar ${CAIXA_ESCOLAR}
+
+
+_____________________________________________
+(Assinatura da Empresa Contratada)`;
+  document.getElementById('prev-anx8').textContent = txt;
+}
+
+// ==================== ALERTAS AUTOMÁTICOS ====================
+function renderAlertas() {
+  const el = document.getElementById('alertas-automaticos');
+  if (!el) return;
+  const alertas = [];
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const tcs = state.tcs || [];
+
+  tcs.filter(t => !t.tcPaiId).forEach(tc => {
+    if (!tc.fim) return;
+    const fim = new Date(tc.fim + 'T00:00:00');
+    const diffDias = Math.round((fim - hoje) / (1000*60*60*24));
+
+    if (diffDias < 0) {
+      alertas.push({ tipo: 'red', msg: `TC ${tc.numero} — VENCIDO há ${Math.abs(diffDias)} dia(s). Apresente a prestação de contas final em até 30 dias após o encerramento.` });
+    } else if (diffDias <= 30) {
+      alertas.push({ tipo: 'orange', msg: `TC ${tc.numero} — Vence em ${diffDias} dia(s) (${fmtDate(tc.fim)}). Solicite aditivo se necessário com antecedência mínima de 30 dias.` });
+    } else if (diffDias <= 60) {
+      alertas.push({ tipo: 'blue', msg: `TC ${tc.numero} — Vence em ${diffDias} dia(s) (${fmtDate(tc.fim)}). Planeje a prestação de contas parcial.` });
+    }
+
+    // Verificar gastos acima de 50k por fornecedor (alerta de fracionamento ou procedimento competitivo)
+    const fornMap = {};
+    state.despesas.filter(d => String(d.tcVinculo) === String(tc.id)).forEach(d => {
+      const key = d.cnpj || d.credor;
+      if (!fornMap[key]) fornMap[key] = { nome: d.credor, total: 0 };
+      fornMap[key].total += parseMoney(d.valor);
+    });
+    Object.values(fornMap).forEach(f => {
+      if (f.total > 50000) {
+        alertas.push({ tipo: 'orange', msg: `⚠ TC ${tc.numero} — Fornecedor "${f.nome}": total acumulado R$ ${fmtMoneyStr(f.total)} ultrapassa R$ 50.000. Verifique se foi realizado procedimento competitivo conforme Art. 16 do Decreto 1134/2024.` });
+      }
+    });
+  });
+
+  // Verificar bens de Capital sem Anexo VI marcado
+  const capitals = state.despesas.filter(d => d.tipo === 'CAPITAL');
+  if (capitals.length > 0) {
+    alertas.push({ tipo: 'blue', msg: `📦 Há ${capitals.length} despesa(s) de Capital registrada(s). Lembre-se: gere o Anexo VI (Termo de Doação) e incorpore os bens ao patrimônio municipal imediatamente.` });
+  }
+
+  // Verificar obras sem Anexo VIII
+  const obras = state.despesas.filter(d => d.tipo === 'OBRAS');
+  if (obras.length > 0) {
+    alertas.push({ tipo: 'blue', msg: `🏗️ Há ${obras.length} despesa(s) de Obras/Reforma registrada(s). Certifique-se de gerar o Anexo VIII (Termo de Recebimento Definitivo) e obter ART/RRT do responsável técnico.` });
+  }
+
+  // Janeiro reminder
+  const mesAtual = hoje.getMonth(); // 0=jan
+  if (mesAtual === 0) {
+    alertas.push({ tipo: 'orange', msg: `📅 Janeiro: Entregue os documentos de habilitação anual da Caixa Escolar à SEDUC até o último dia útil deste mês.` });
+  }
+
+  // Update badge
+  const badge = document.getElementById('alertas-badge');
+  const urgentes = alertas.filter(a => a.tipo === 'red' || a.tipo === 'orange').length;
+  if (badge) {
+    if (urgentes > 0) { badge.textContent = urgentes; badge.style.display = 'flex'; }
+    else { badge.style.display = 'none'; }
+  }
+
+  if (!alertas.length) {
+    el.innerHTML = `<div class="alert alert-success"><span>✅</span><span>Nenhum alerta automático no momento. Continue acompanhando os prazos regularmente.</span></div>`;
+    return;
+  }
+  const colorMap = { red: 'alert-warn', orange: 'alert-warn', blue: 'alert-info' };
+  const iconMap = { red: '🚨', orange: '⚠', blue: 'ℹ' };
+  el.innerHTML = `<div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.8px">Alertas Automáticos (${alertas.length})</div>` +
+    alertas.map(a => `<div class="alert ${colorMap[a.tipo]}" style="margin-bottom:8px"><span>${iconMap[a.tipo]}</span><span>${a.msg}</span></div>`).join('');
+}
+
 // ==================== INIT ====================
 state.despesas.forEach(d => addParcelaTab(d.parcela));
 renderDespesas();
@@ -2574,6 +3393,12 @@ renderDashboard();
 renderChecklist();
 refreshPendenciaBadge();
 initExtras();
+// Inicializar linhas padrão dos anexos
+addAnx4Row();
+addAnx6Row();
+renderAlertas();
+// Aplicar máscaras de moeda a todos os campos monetários estáticos
+initMoneyMasks();
 
 
 </script>
