@@ -895,7 +895,11 @@
     </nav>
 
     <div style="margin-top:auto;padding:12px">
-      <div id="login-user-info" style="font-size:11px;color:var(--text-dim);padding:8px 12px;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+      <div style="padding:10px 12px;margin-bottom:4px">
+        <div style="font-size:12px;font-weight:600;color:var(--text)">Prof. Everton Correa Alves</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:2px">Prestador de Contas</div>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:8px;padding-top:8px;border-top:1px solid var(--border);line-height:1.5;opacity:0.7">Criado e desenvolvido por<br><span style="color:var(--text-muted)">Prof. Everton Correa Alves</span></div>
+      </div>
       <div class="nav-item" onclick="fazerLogout()" style="color:var(--accent-red)">
         <span class="nav-icon">⎋</span> Sair
       </div>
@@ -4078,8 +4082,6 @@ const appShell = document.querySelector('.app-shell');
 function mostrarApp(user) {
   loginScreen.classList.remove('visible');
   appShell.classList.add('authed');
-  const info = document.getElementById('login-user-info');
-  if (info) info.textContent = user.email;
 }
 
 function mostrarLogin() {
