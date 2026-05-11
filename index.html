@@ -889,6 +889,33 @@
   }
   .prestacao-block-detail.open { display: block; }
 
+  /* SITUAÇÃO DA PRESTAÇÃO */
+  .sit-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .sit-analise    { background: rgba(79,142,247,0.15); color: var(--accent);     border: 1px solid rgba(79,142,247,0.3); }
+  .sit-aprovada   { background: rgba(56,217,169,0.15); color: var(--accent2);    border: 1px solid rgba(56,217,169,0.3); }
+  .sit-ajuste     { background: rgba(246,166,35,0.15); color: var(--accent3);    border: 1px solid rgba(246,166,35,0.3); }
+  .sit-ressalvas  { background: rgba(181,123,238,0.15);color: var(--alem);       border: 1px solid rgba(181,123,238,0.3); }
+  .sit-reprovada  { background: rgba(240,80,96,0.15);  color: var(--accent-red); border: 1px solid rgba(240,80,96,0.3); }
+  .sit-sem        { background: var(--surface2); color: var(--text-dim); border: 1px solid var(--border); }
+
+  /* TABELA DE DISTRIBUIÇÃO DE PARCELAS */
+  .parcela-dist-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:10px; }
+  .parcela-dist-table th { padding:6px 8px; font-size:10px; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-dim); background:var(--surface3); border-bottom:1px solid var(--border); text-align:left; }
+  .parcela-dist-table td { padding:6px 8px; border-bottom:1px solid rgba(255,255,255,0.04); vertical-align:middle; }
+  .parcela-dist-table input[type=text] { background:var(--surface3); border:1px solid var(--border); border-radius:5px; padding:4px 7px; font-size:12px; color:var(--accent2); font-family:'DM Mono',monospace; width:110px; }
+  .parcela-dist-table input[type=text]:focus { border-color:var(--accent); outline:none; }
+  .parcela-dist-table select { background:var(--surface3); border:1px solid var(--border); border-radius:5px; padding:4px 7px; font-size:11px; color:var(--text); width:100%; }
+
   /* PRINT STYLES */
   @media print {
     .sidebar, .page-header .btn, .action-btn, .modal-overlay { display: none !important; }
@@ -1108,11 +1135,11 @@
 
       <div class="card">
         <div class="card-header">
-          <div class="card-title">Saldo da Parcela</div>
+          <div class="card-title">Saldo da Parcela <span id="saldo-parcela-nota" style="font-size:10px;color:var(--text-dim);font-weight:400;margin-left:4px"></span></div>
         </div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
           <div>
-            <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Valor Recebido</div>
+            <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Valor Previsto</div>
             <div style="font-family:'DM Mono',monospace;font-size:16px;color:var(--text)" id="saldo-recebido">R$ 0,00</div>
           </div>
           <div>
@@ -2192,8 +2219,50 @@
   </div>
 </div>
 
-<!-- MODAL: NOVO TC -->
-<div class="modal-overlay" id="modal-tc">
+<!-- MODAL: DISTRIBUIÇÃO DE VALORES POR PARCELA -->
+<div class="modal-overlay" id="modal-parcela-valores">
+  <div class="modal" style="width:780px">
+    <div class="modal-header">
+      <div class="modal-title">📊 Distribuição de Valores por Parcela</div>
+      <button class="modal-close" onclick="closeModal('modal-parcela-valores')">×</button>
+    </div>
+    <div class="alert alert-info" style="margin-bottom:16px"><span>ℹ</span><span>Registre o valor disponível em cada parcela e categoria para que o dashboard calcule os saldos corretamente. Sem isso, o saldo exibido será sempre o valor total do TC.</span></div>
+    <input type="hidden" id="pv-tc-id">
+    <div id="pv-tc-label" style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:14px"></div>
+
+    <!-- Tabela de distribuição -->
+    <div style="overflow-x:auto">
+      <table class="parcela-dist-table" id="pv-table">
+        <thead>
+          <tr>
+            <th>Parcela</th>
+            <th>Custeio (R$)</th>
+            <th>Capital (R$)</th>
+            <th>Além dos Muros (R$)</th>
+            <th>Obras (R$)</th>
+            <th>Capina (R$)</th>
+            <th>Situação da Prestação</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="pv-tbody">
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+      <button class="btn btn-ghost" style="font-size:12px" onclick="adicionarLinhaPV()">+ Adicionar Parcela</button>
+      <span style="font-size:11px;color:var(--text-dim)">Os valores são salvos automaticamente ao clicar em "Salvar"</span>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-parcela-valores')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarParcelaValores()">💾 Salvar Distribuição</button>
+    </div>
+  </div>
+</div>
+
+
   <div class="modal">
     <div class="modal-header">
       <div class="modal-title">Cadastrar Termo de Compromisso</div>
@@ -2795,7 +2864,9 @@ let state = {
   checkStates: {},
   parcelaFiltro: 'todas',
   editIndex: null,
-  tcAtivo: null
+  tcAtivo: null,
+  parcelaValores: [],    // [{id, tcId, parcela, custeio, capital, alem, obras, capina}]
+  parcelaSituacoes: []   // [{id, tcId, parcela, situacao}]
 };
 
 // save() é mantido como no-op para compatibilidade — persistência agora é pelo Supabase
@@ -2892,13 +2963,17 @@ async function carregarDados() {
     { data: despesasData },
     { data: fornsData },
     { data: checksData },
-    { data: confsData }
+    { data: confsData },
+    { data: pvData },
+    { data: psData }
   ] = await Promise.all([
     supa.from('tcs').select('*').order('criado_em'),
     supa.from('despesas').select('*').order('criado_em'),
     supa.from('fornecedores').select('*').order('criado_em'),
     supa.from('checklist_states').select('*'),
-    supa.from('configuracoes').select('*')
+    supa.from('configuracoes').select('*'),
+    supa.from('parcela_valores').select('*').order('parcela'),
+    supa.from('parcela_situacoes').select('*')
   ]);
 
   state.tcs = (tcsData || []).map(rowToTc);
@@ -2910,6 +2985,22 @@ async function carregarDados() {
     if (r.chave === 'tc_ativo') state.tcAtivo = r.valor ? Number(r.valor) : null;
     if (r.chave === 'parcela_filtro') state.parcelaFiltro = r.valor || 'todas';
   });
+  state.parcelaValores = (pvData || []).map(r => ({
+    id: r.id,
+    tcId: r.tc_id,
+    parcela: r.parcela,
+    custeio: r.custeio || '0,00',
+    capital: r.capital || '0,00',
+    alem: r.alem_muros || '0,00',
+    obras: r.obras || '0,00',
+    capina: r.capina || '0,00'
+  }));
+  state.parcelaSituacoes = (psData || []).map(r => ({
+    id: r.id,
+    tcId: r.tc_id,
+    parcela: r.parcela,
+    situacao: r.situacao || ''
+  }));
 }
 
 // ==================== MÁSCARA DE MOEDA ====================
@@ -3098,6 +3189,7 @@ function renderTCs() {
         <div class="gap-8">
           ${state.tcAtivo!==tc.id?`<button class="btn btn-ghost" style="font-size:12px" onclick="setTCAtivo(${tc.id})">Definir como ativo</button>`:''}
           <button class="btn btn-ghost" style="font-size:12px;color:var(--accent2)" onclick="abrirModalAditivo(${tc.id})">+ Aditivo</button>
+          <button class="btn btn-ghost" style="font-size:12px;color:var(--alem)" onclick="abrirModalParcelaValores(${tc.id})">📊 Parcelas</button>
           <button class="btn btn-ghost" style="font-size:12px;color:var(--accent)" onclick="editarTC(${realIdx})">✏️ Editar</button>
           <button class="btn btn-ghost" style="font-size:12px;color:var(--accent-red)" onclick="removerTC(${realIdx})">Remover</button>
         </div>
@@ -3127,6 +3219,30 @@ function renderTCs() {
         </div>
       </div>` : ''}
       ${tc.obs?`<div style="margin-top:12px;font-size:12px;color:var(--text-muted);background:var(--surface2);padding:10px;border-radius:7px">${tc.obs}</div>`:''}
+      ${(()=>{
+        // Show parcela distribution + situacao summary
+        const pvRows = (state.parcelaValores||[]).filter(r => String(r.tcId)===String(tc.id));
+        const allItems2 = [tc, ...aditivos];
+        const allPvRows = allItems2.flatMap(item => (state.parcelaValores||[]).filter(r => String(r.tcId)===String(item.id)));
+        const allSitRows = allItems2.flatMap(item => (state.parcelaSituacoes||[]).filter(r => String(r.tcId)===String(item.id)));
+        if (!allPvRows.length && !allSitRows.length) return `<div style="margin-top:10px;padding:8px 12px;background:rgba(246,166,35,0.05);border:1px solid rgba(246,166,35,0.2);border-radius:7px;font-size:11px;color:var(--accent3)">⚠ Nenhuma distribuição de valores por parcela cadastrada. Clique em <strong>📊 Parcelas</strong> para registrar.</div>`;
+        const parcelas = [...new Set([...allPvRows.map(r=>r.parcela), ...allSitRows.map(r=>r.parcela)])].sort();
+        const parNomes = {'01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única'};
+        return `<div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+          <span style="font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-dim)">Parcelas:</span>
+          ${parcelas.map(p => {
+            const pvR = allPvRows.find(r=>r.parcela===p);
+            const sitR = allSitRows.find(r=>r.parcela===p);
+            const sit = sitR ? sitR.situacao : '';
+            const total = pvR ? parseMoney(pvR.custeio)+parseMoney(pvR.capital)+parseMoney(pvR.alem)+parseMoney(pvR.obras)+parseMoney(pvR.capina) : 0;
+            return `<div style="display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px 10px">
+              <span style="font-size:11px;font-weight:600;color:var(--text-muted)">${parNomes[p]||p}</span>
+              ${total>0?`<span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--accent2)">${fmtMoney(total)}</span>`:''}
+              ${sit?`<span class="sit-pill ${sitCls(sit)}" style="padding:1px 7px;font-size:10px">${sitLabel(sit)}</span>`:'<span style="font-size:10px;color:var(--text-dim)">sem situação</span>'}
+            </div>`;
+          }).join('')}
+        </div>`;
+      })()}
     </div>
   `}).join('');
 }
@@ -3685,35 +3801,65 @@ function renderDashboard() {
   document.getElementById('stat-total-qt').textContent = despFilt.length + ' lançamentos';
   document.getElementById('saldo-gasto').textContent = fmtMoney(total);
 
-  // saldo parcela (TC ativo)
+  // saldo parcela — uses distributed values if configured, otherwise TC total
   const tcAtivo = state.tcs.find(t => t.id === state.tcAtivo);
   if (tcAtivo) {
     const valorTC = parseMoney(tcAtivo.valor);
     const totalAditivos = (state.tcs||[]).filter(a => a.tcPaiId === tcAtivo.id).reduce((s,a) => s + parseMoney(a.valor), 0);
     const valorTotal = valorTC + totalAditivos;
-    document.getElementById('saldo-recebido').textContent = fmtMoney(valorTotal);
-    const saldo = valorTotal - total;
-    document.getElementById('saldo-disponivel').textContent = fmtMoney(saldo < 0 ? 0 : saldo);
-    const pct = valorTotal > 0 ? Math.min(total / valorTotal * 100, 100) : 0;
+
+    // If a parcela filter and distributed values exist → use sum of previsto for that parcela
+    let previsto = valorTotal;
+    let notaEl = document.getElementById('saldo-parcela-nota');
+    if (filtroParcela) {
+      // Sum distributed for this parcela across TC + aditivos
+      const allTcIds = [tcAtivo, ...(state.tcs||[]).filter(a => a.tcPaiId === tcAtivo.id)].map(t => t.id);
+      const pvRows = (state.parcelaValores||[]).filter(pv => allTcIds.some(id => String(id)===String(pv.tcId)) && pv.parcela === filtroParcela);
+      if (pvRows.length) {
+        previsto = pvRows.reduce((s,pv) => s + parseMoney(pv.custeio) + parseMoney(pv.capital) + parseMoney(pv.alem) + parseMoney(pv.obras) + parseMoney(pv.capina), 0);
+        if (notaEl) notaEl.textContent = `(distribuição da ${filtroParcela}ª parcela)`;
+      } else {
+        if (notaEl) notaEl.textContent = '(valor total do TC — cadastre distribuição para mais precisão)';
+      }
+    } else if (filtroTC) {
+      const tcFilt = (state.tcs||[]).find(t => String(t.id) === filtroTC);
+      if (tcFilt) {
+        previsto = parseMoney(tcFilt.valor);
+        if (notaEl) notaEl.textContent = '';
+      }
+    } else {
+      if (notaEl) notaEl.textContent = '';
+    }
+
+    document.getElementById('saldo-recebido').textContent = fmtMoney(previsto);
+    const saldo = previsto - total;
+    document.getElementById('saldo-disponivel').textContent = fmtMoney(saldo);
+    document.getElementById('saldo-disponivel').style.color = saldo < 0 ? 'var(--accent-red)' : 'var(--accent2)';
+    const pct = previsto > 0 ? Math.min(total / previsto * 100, 100) : 0;
     document.getElementById('progress-bar').style.width = pct + '%';
+    document.getElementById('progress-bar').style.background = pct > 90 ? 'var(--accent-red)' : 'linear-gradient(90deg,var(--accent),var(--accent2))';
     document.getElementById('progress-label').textContent = Math.round(pct) + '% utilizado';
   } else {
     document.getElementById('saldo-recebido').textContent = 'R$ —';
     document.getElementById('saldo-disponivel').textContent = 'R$ —';
   }
 
-  // ── Saldo por TC/Aditivo — ACCORDION com breakdown por parcela/tipo ──
+  // ── Saldo por TC/Aditivo — ACCORDION com breakdown por parcela/tipo e saldo real ──
   const saldoEl = document.getElementById('dash-saldo-tcs');
   if (saldoEl) {
     const tcs = (state.tcs||[]);
     if (!tcs.length) {
       saldoEl.innerHTML = '<div class="empty-state" style="padding:20px"><div class="empty-sub">Nenhum TC cadastrado</div></div>';
     } else {
-      const principais = tcs.filter(t => !t.tcPaiId);
+      const principais = filtroTC
+        ? tcs.filter(t => String(t.id) === filtroTC || (t.tcPaiId && String(t.tcPaiId) === filtroTC))
+        : tcs.filter(t => !t.tcPaiId);
       let html = '<div style="display:flex;flex-direction:column;gap:8px">';
       principais.forEach((tc, tcIdx) => {
         const aditivos = tcs.filter(a => a.tcPaiId === tc.id);
-        const allItems = [tc, ...aditivos]; // TC + seus aditivos
+        const allItems = filtroTC
+          ? [tcs.find(t => String(t.id) === filtroTC) || tc]
+          : [tc, ...aditivos];
         const valorBase = parseMoney(tc.valor);
         const totalAdit = aditivos.reduce((s,a) => s + parseMoney(a.valor), 0);
         const valorTCTotal = valorBase + totalAdit;
@@ -3724,12 +3870,18 @@ function renderDashboard() {
         const ativo = state.tcAtivo === tc.id;
         const accId = `acc-tc-${tc.id}`;
 
+        // Verify if any parcela distribution exists for this TC or its additives
+        const temDistribuicao = allItems.some(item =>
+          (state.parcelaValores||[]).some(pv => String(pv.tcId) === String(item.id))
+        );
+
         // Header accordion
         html += `<div class="accordion-item">`;
         html += `<div class="accordion-header" id="hdr-${accId}" onclick="toggleAccordion('${accId}')" style="border-color:${ativo?'rgba(79,142,247,0.4)':'var(--border)'}">`;
         html += `<div class="acc-title">`;
         html += `<span style="font-size:13px;font-weight:600;color:var(--text)">TC ${tc.numero}${ativo?' <span style="font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(79,142,247,0.15);color:var(--accent)">Ativo</span>':''}</span>`;
         html += `<span style="font-size:11px;color:var(--text-muted)">${fmtMoney(valorTCTotal)} total${aditivos.length ? ` · ${aditivos.length} aditivo(s)` : ''}</span>`;
+        if (!temDistribuicao) html += `<span style="font-size:10px;background:rgba(246,166,35,0.15);color:var(--accent3);border:1px solid rgba(246,166,35,0.3);border-radius:10px;padding:1px 7px">⚠ Sem distribuição por parcela</span>`;
         html += `</div>`;
         html += `<div style="display:flex;align-items:center;gap:12px">`;
         html += `<span style="font-family:'DM Mono',monospace;font-size:13px;color:${saldoTC<0?'var(--accent-red)':'var(--accent2)'}">Saldo: ${fmtMoney(saldoTC)}</span>`;
@@ -3739,10 +3891,10 @@ function renderDashboard() {
         // Accordion body
         html += `<div class="accordion-body" id="body-${accId}">`;
         html += `<div class="acc-inner">`;
-        // Progress bar
+        // Progress bar geral
         html += `<div style="background:var(--surface);border-radius:20px;height:4px;overflow:hidden;margin-bottom:12px"><div style="height:100%;border-radius:20px;background:${pctTC>85?'var(--accent-red)':'linear-gradient(90deg,var(--accent),var(--accent2))'};width:${pctTC}%"></div></div>`;
 
-        // Per TC/aditivo breakdown
+        // Per TC/aditivo breakdown with parcela values
         allItems.forEach(item => {
           const isAdit = !!item.tcPaiId;
           const despItem = state.despesas.filter(d => String(d.tcVinculo) === String(item.id));
@@ -3750,13 +3902,23 @@ function renderDashboard() {
           const gastoItem = despItem.reduce((s,d) => s+parseMoney(d.valor), 0);
           const saldoItem = valorItem - gastoItem;
 
-          // Group by parcela+tipo
-          const grupos = {};
+          // Get all parcelas: from distribution OR from actual expenses
+          const parcelasComValor = [...new Set([
+            ...(state.parcelaValores||[]).filter(pv => String(pv.tcId) === String(item.id)).map(pv => pv.parcela),
+            ...despItem.map(d => d.parcela).filter(Boolean)
+          ])].filter(p => {
+            if (!filtroParcela) return true;
+            return p === filtroParcela;
+          }).sort();
+
+          // Group despesas by parcela+tipo
+          const gastosPorParcelaTipo = {};
           despItem.forEach(d => {
+            if (filtroParcela && d.parcela !== filtroParcela) return;
             const key = `${d.parcela||'?'}__${d.tipo||'?'}`;
-            if (!grupos[key]) grupos[key] = { parcela: d.parcela, tipo: d.tipo, total: 0, qt: 0 };
-            grupos[key].total += parseMoney(d.valor);
-            grupos[key].qt++;
+            if (!gastosPorParcelaTipo[key]) gastosPorParcelaTipo[key] = { parcela: d.parcela, tipo: d.tipo, gasto: 0, qt: 0 };
+            gastosPorParcelaTipo[key].gasto += parseMoney(d.valor);
+            gastosPorParcelaTipo[key].qt++;
           });
 
           html += `<div class="prestacao-block">`;
@@ -3771,25 +3933,80 @@ function renderDashboard() {
           html += `<span style="color:var(--text-dim);font-size:11px">▾</span>`;
           html += `</div></div>`;
 
-          // Detail: breakdown por parcela/rubrica
+          // Detail: breakdown por parcela — com valores distribuídos e saldo real
           html += `<div class="prestacao-block-detail" id="pb-${item.id}">`;
-          if (!Object.keys(grupos).length) {
-            html += `<div style="font-size:12px;color:var(--text-dim);padding:4px 0">Nenhuma despesa lançada</div>`;
+          if (!parcelasComValor.length) {
+            html += `<div style="font-size:12px;color:var(--text-dim);padding:8px 0">
+              Nenhuma despesa ou distribuição de valores. 
+              <button class="btn btn-ghost" style="font-size:11px;padding:3px 8px" onclick="closeModal('modal-parcela-valores');showSection('tc');setTimeout(()=>abrirModalParcelaValores(${item.id}),100)">
+                📊 Registrar distribuição de parcelas
+              </button>
+            </div>`;
           } else {
+            // Build per-parcela table with distribution vs spent vs balance
+            html += `<div style="overflow-x:auto">`;
             html += `<table style="width:100%;font-size:12px;border-collapse:collapse">`;
-            html += `<thead><tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:4px 8px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim)">Parcela</th><th style="text-align:left;padding:4px 8px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim)">Rubrica</th><th style="text-align:right;padding:4px 8px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim)">Qtd</th><th style="text-align:right;padding:4px 8px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim)">Total</th></tr></thead><tbody>`;
-            Object.values(grupos).sort((a,b) => (a.parcela||'').localeCompare(b.parcela||'')).forEach(g => {
-              const pLabel = g.parcela === 'U' ? 'Única' : `${g.parcela}ª`;
-              const tColor = g.tipo === 'CUSTEIO' ? 'var(--custeio)' : g.tipo === 'CAPITAL' ? 'var(--capital)' : g.tipo === 'ALEM_MUROS' ? 'var(--alem)' : g.tipo === 'CAPINA' ? 'var(--capina)' : 'var(--obras)';
-              html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.04)">`;
-              html += `<td style="padding:5px 8px;color:var(--text-muted)">${pLabel} Parcela</td>`;
-              html += `<td style="padding:5px 8px;color:${tColor};font-weight:500">${tipoLabel(g.tipo)}</td>`;
-              html += `<td style="padding:5px 8px;text-align:right;color:var(--text-dim)">${g.qt}</td>`;
-              html += `<td style="padding:5px 8px;text-align:right;font-family:'DM Mono',monospace;color:var(--accent2)">${fmtMoney(g.total)}</td>`;
-              html += `</tr>`;
+            html += `<thead><tr style="border-bottom:1px solid var(--border)">
+              <th style="text-align:left;padding:5px 8px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim)">Parcela</th>
+              <th style="text-align:left;padding:5px 8px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim)">Rubrica</th>
+              <th style="text-align:right;padding:5px 8px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim)">Previsto</th>
+              <th style="text-align:right;padding:5px 8px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim)">Lançado</th>
+              <th style="text-align:right;padding:5px 8px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim)">Saldo</th>
+              <th style="text-align:left;padding:5px 8px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim)">Situação</th>
+            </tr></thead><tbody>`;
+
+            const TIPOS_DASH = ['CUSTEIO','CAPITAL','ALEM_MUROS','OBRAS','CAPINA'];
+            const tipoKey = { CUSTEIO:'custeio', CAPITAL:'capital', ALEM_MUROS:'alem', OBRAS:'obras', CAPINA:'capina' };
+            const tColor = t => t==='CUSTEIO'?'var(--custeio)':t==='CAPITAL'?'var(--capital)':t==='ALEM_MUROS'?'var(--alem)':t==='CAPINA'?'var(--capina)':'var(--obras)';
+
+            parcelasComValor.forEach(parcela => {
+              const pLabel = parcela==='U'?'Única':`${parcela}ª`;
+              const pvRow = (state.parcelaValores||[]).find(pv => String(pv.tcId)===String(item.id) && pv.parcela===parcela);
+              const sit = getSituacao(item.id, parcela);
+              let isFirst = true;
+
+              // Show rows for types that have either a distribution value or expense
+              TIPOS_DASH.forEach(tipo => {
+                const previsto = pvRow ? parseMoney(pvRow[tipoKey[tipo]]) : 0;
+                const gastoKey = `${parcela}__${tipo}`;
+                const gasto = gastosPorParcelaTipo[gastoKey]?.gasto || 0;
+                if (previsto === 0 && gasto === 0) return; // skip empty rows
+                const saldoLinha = previsto - gasto;
+                const saldoColor = saldoLinha < 0 ? 'var(--accent-red)' : saldoLinha === 0 && previsto > 0 ? 'var(--text-muted)' : 'var(--accent2)';
+
+                html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.04)">`;
+                if (isFirst) {
+                  // count rows in this parcela
+                  const rowsInParcela = TIPOS_DASH.filter(t2 => {
+                    const p2 = pvRow ? parseMoney(pvRow[tipoKey[t2]]) : 0;
+                    const g2 = gastosPorParcelaTipo[`${parcela}__${t2}`]?.gasto || 0;
+                    return p2 > 0 || g2 > 0;
+                  }).length;
+                  html += `<td rowspan="${rowsInParcela}" style="padding:5px 8px;color:var(--text-muted);border-right:1px solid var(--border);vertical-align:top;white-space:nowrap;font-weight:600">${pLabel} Parcela</td>`;
+                  isFirst = false;
+                }
+                html += `<td style="padding:5px 8px;color:${tColor(tipo)};font-weight:500">${tipoLabel(tipo)}</td>`;
+                html += `<td style="padding:5px 8px;text-align:right;font-family:'DM Mono',monospace;color:var(--text-muted)">${previsto>0?fmtMoney(previsto):'—'}</td>`;
+                html += `<td style="padding:5px 8px;text-align:right;font-family:'DM Mono',monospace;color:var(--accent-red)">${gasto>0?fmtMoney(gasto):'—'}</td>`;
+                html += `<td style="padding:5px 8px;text-align:right;font-family:'DM Mono',monospace;color:${saldoColor}">${previsto>0?fmtMoney(saldoLinha):gasto>0?'<span style="color:var(--accent3);font-size:10px">Sem previsão</span>':'—'}</td>`;
+                // Situação only on first type row per parcela
+                if (isFirst === false && TIPOS_DASH.indexOf(tipo) === TIPOS_DASH.findIndex(t2 => { const p2=pvRow?parseMoney(pvRow[tipoKey[t2]]):0; const g2=gastosPorParcelaTipo[`${parcela}__${t2}`]?.gasto||0; return p2>0||g2>0; })) {
+                  html += `<td style="padding:5px 8px"><span class="sit-pill ${sitCls(sit)}">${sitLabel(sit)||'—'}</span></td>`;
+                } else {
+                  html += `<td style="padding:5px 8px"></td>`;
+                }
+                html += `</tr>`;
+              });
             });
-            html += `</tbody><tfoot><tr style="border-top:1px solid var(--border-light)"><td colspan="3" style="padding:5px 8px;font-weight:600;font-size:11px;color:var(--text-muted)">Total gasto</td><td style="padding:5px 8px;text-align:right;font-family:'DM Mono',monospace;font-weight:600;color:var(--accent-red)">${fmtMoney(gastoItem)}</td></tr></tfoot>`;
-            html += `</table>`;
+
+            html += `</tbody><tfoot><tr style="border-top:1px solid var(--border-light)">
+              <td colspan="2" style="padding:5px 8px;font-weight:600;font-size:11px;color:var(--text-muted)">Total gasto</td>
+              <td style="padding:5px 8px;text-align:right;font-family:'DM Mono',monospace;color:var(--text-muted)">${fmtMoney(getTotalDistribuido(item.id,filtroParcela)||valorItem)}</td>
+              <td style="padding:5px 8px;text-align:right;font-family:'DM Mono',monospace;font-weight:600;color:var(--accent-red)">${fmtMoney(gastoItem)}</td>
+              <td style="padding:5px 8px;text-align:right;font-family:'DM Mono',monospace;font-weight:600;color:${saldoItem<0?'var(--accent-red)':'var(--accent2)'}">${fmtMoney(saldoItem)}</td>
+              <td></td>
+            </tr></tfoot>`;
+            html += `</table></div>`;
           }
           html += `</div></div>`; // end prestacao-block-detail + prestacao-block
         });
@@ -4721,6 +4938,173 @@ function setSyncStatus(s) {
     txt.style.color  = '#f05060';
     time.textContent = hhmm();
   }
+}
+
+// ==================== PARCELA VALORES & SITUAÇÕES ====================
+const SIT_OPTIONS = [
+  { value: '',           label: '— Sem situação —',         cls: 'sit-sem' },
+  { value: 'analise',    label: '🔍 Em Análise',             cls: 'sit-analise' },
+  { value: 'aprovada',   label: '✅ Aprovada',               cls: 'sit-aprovada' },
+  { value: 'ajuste',     label: '✏️ Em Ajuste',              cls: 'sit-ajuste' },
+  { value: 'ressalvas',  label: '⚠️ Aprovada com Ressalvas', cls: 'sit-ressalvas' },
+  { value: 'reprovada',  label: '❌ Reprovada',              cls: 'sit-reprovada' }
+];
+
+function sitLabel(v) {
+  const f = SIT_OPTIONS.find(o => o.value === v);
+  return f ? f.label : '—';
+}
+function sitCls(v) {
+  const f = SIT_OPTIONS.find(o => o.value === v);
+  return f ? f.cls : 'sit-sem';
+}
+
+let _pvRows = []; // working buffer while modal is open
+
+function abrirModalParcelaValores(tcId) {
+  const tc = (state.tcs||[]).find(t => t.id === tcId);
+  if (!tc) return;
+  document.getElementById('pv-tc-id').value = tcId;
+  document.getElementById('pv-tc-label').textContent =
+    (tc.ehAditivo ? `Aditivo ${tc.numero}` : `TC ${tc.numero}`) + ` — ${tc.escola||''}`;
+
+  // Build working rows from existing data
+  const existingVals = (state.parcelaValores||[]).filter(r => String(r.tcId) === String(tcId));
+  const existingSits = (state.parcelaSituacoes||[]).filter(r => String(r.tcId) === String(tcId));
+
+  // Union of parcelas already registered
+  const parcelas = [...new Set([
+    ...existingVals.map(r => r.parcela),
+    ...existingSits.map(r => r.parcela),
+    ...state.despesas.filter(d => String(d.tcVinculo) === String(tcId)).map(d => d.parcela).filter(Boolean)
+  ])].sort();
+
+  if (!parcelas.length) parcelas.push('01');
+
+  _pvRows = parcelas.map(p => {
+    const v = existingVals.find(r => r.parcela === p) || {};
+    const s = existingSits.find(r => r.parcela === p) || {};
+    return {
+      parcela: p,
+      custeio: v.custeio || '0,00',
+      capital: v.capital || '0,00',
+      alem:    v.alem    || '0,00',
+      obras:   v.obras   || '0,00',
+      capina:  v.capina  || '0,00',
+      situacao: s.situacao || ''
+    };
+  });
+
+  renderPVTable();
+  openModal('modal-parcela-valores');
+}
+
+function renderPVTable() {
+  const tbody = document.getElementById('pv-tbody');
+  const parcelaNomes = { '01':'1ª Parcela','02':'2ª Parcela','03':'3ª Parcela','04':'4ª Parcela','U':'Única','05':'5ª Parcela' };
+  tbody.innerHTML = _pvRows.map((r, i) => `
+    <tr id="pvrow-${i}">
+      <td style="font-weight:600;color:var(--text);white-space:nowrap">
+        <select onchange="_pvRows[${i}].parcela=this.value" style="background:var(--surface3);border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-size:12px;color:var(--text);width:100px">
+          ${['01','02','03','04','05','U'].map(v => `<option value="${v}" ${r.parcela===v?'selected':''}>${parcelaNomes[v]||v}</option>`).join('')}
+        </select>
+      </td>
+      <td><input type="text" value="${r.custeio}" oninput="_pvRows[${i}].custeio=this.value" data-money placeholder="0,00" style="width:110px"></td>
+      <td><input type="text" value="${r.capital}" oninput="_pvRows[${i}].capital=this.value" data-money placeholder="0,00" style="width:110px"></td>
+      <td><input type="text" value="${r.alem}"    oninput="_pvRows[${i}].alem=this.value"    data-money placeholder="0,00" style="width:110px"></td>
+      <td><input type="text" value="${r.obras}"   oninput="_pvRows[${i}].obras=this.value"   data-money placeholder="0,00" style="width:110px"></td>
+      <td><input type="text" value="${r.capina}"  oninput="_pvRows[${i}].capina=this.value"  data-money placeholder="0,00" style="width:110px"></td>
+      <td>
+        <select onchange="_pvRows[${i}].situacao=this.value" style="background:var(--surface3);border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-size:11px;color:var(--text);width:180px">
+          ${SIT_OPTIONS.map(o => `<option value="${o.value}" ${r.situacao===o.value?'selected':''}>${o.label}</option>`).join('')}
+        </select>
+      </td>
+      <td><button class="action-btn del" onclick="removerLinhaPV(${i})" title="Remover">✕</button></td>
+    </tr>
+  `).join('');
+  // reinit money masks on new inputs
+  document.querySelectorAll('#pv-tbody input[data-money]').forEach(maskMoney);
+}
+
+function adicionarLinhaPV() {
+  _pvRows.push({ parcela:'01', custeio:'0,00', capital:'0,00', alem:'0,00', obras:'0,00', capina:'0,00', situacao:'' });
+  renderPVTable();
+}
+
+function removerLinhaPV(i) {
+  _pvRows.splice(i, 1);
+  renderPVTable();
+}
+
+async function salvarParcelaValores() {
+  const tcId = Number(document.getElementById('pv-tc-id').value);
+  if (!tcId) return;
+  setSyncStatus('syncing');
+
+  // Delete existing records for this TC
+  await Promise.all([
+    supa.from('parcela_valores').delete().eq('tc_id', tcId),
+    supa.from('parcela_situacoes').delete().eq('tc_id', tcId)
+  ]);
+
+  // Insert new rows
+  const pvInserts = _pvRows.map(r => ({
+    tc_id:    tcId,
+    parcela:  r.parcela,
+    custeio:  r.custeio  || '0,00',
+    capital:  r.capital  || '0,00',
+    alem_muros: r.alem   || '0,00',
+    obras:    r.obras    || '0,00',
+    capina:   r.capina   || '0,00'
+  }));
+  const psInserts = _pvRows.filter(r => r.situacao).map(r => ({
+    tc_id:    tcId,
+    parcela:  r.parcela,
+    situacao: r.situacao
+  }));
+
+  const ops = [];
+  if (pvInserts.length) ops.push(supa.from('parcela_valores').insert(pvInserts));
+  if (psInserts.length) ops.push(supa.from('parcela_situacoes').insert(psInserts));
+  if (ops.length) await Promise.all(ops);
+
+  // Update local state
+  state.parcelaValores = state.parcelaValores.filter(r => String(r.tcId) !== String(tcId));
+  state.parcelaSituacoes = state.parcelaSituacoes.filter(r => String(r.tcId) !== String(tcId));
+  _pvRows.forEach(r => {
+    state.parcelaValores.push({ tcId, parcela: r.parcela, custeio: r.custeio, capital: r.capital, alem: r.alem, obras: r.obras, capina: r.capina });
+    if (r.situacao) state.parcelaSituacoes.push({ tcId, parcela: r.parcela, situacao: r.situacao });
+  });
+
+  setSyncStatus('ok');
+  closeModal('modal-parcela-valores');
+  renderDashboard();
+  renderTCs();
+}
+
+// Helper: get distributed value for a TC+parcela+tipo
+function getValorDistribuido(tcId, parcela, tipo) {
+  const r = (state.parcelaValores||[]).find(v => String(v.tcId) === String(tcId) && v.parcela === parcela);
+  if (!r) return null; // null = não configurado
+  if (tipo === 'CUSTEIO') return parseMoney(r.custeio);
+  if (tipo === 'CAPITAL') return parseMoney(r.capital);
+  if (tipo === 'ALEM_MUROS') return parseMoney(r.alem);
+  if (tipo === 'OBRAS') return parseMoney(r.obras);
+  if (tipo === 'CAPINA') return parseMoney(r.capina);
+  return null;
+}
+
+// Helper: total distribuído para um TC+parcela (todos os tipos)
+function getTotalDistribuido(tcId, parcela) {
+  const r = (state.parcelaValores||[]).find(v => String(v.tcId) === String(tcId) && v.parcela === parcela);
+  if (!r) return null;
+  return parseMoney(r.custeio) + parseMoney(r.capital) + parseMoney(r.alem) + parseMoney(r.obras) + parseMoney(r.capina);
+}
+
+// Helper: get situacao
+function getSituacao(tcId, parcela) {
+  const r = (state.parcelaSituacoes||[]).find(s => String(s.tcId) === String(tcId) && s.parcela === parcela);
+  return r ? r.situacao : '';
 }
 
 // ==================== SUPABASE AUTH ====================
