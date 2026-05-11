@@ -847,6 +847,48 @@
   .app-shell { display: none; }
   .app-shell.authed { display: grid; }
 
+  /* ACCORDION */
+  .accordion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    margin-bottom: 4px;
+    transition: background 0.15s;
+  }
+  .accordion-header:hover { background: var(--surface3); }
+  .accordion-header .acc-title { font-size: 13px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .accordion-header .acc-chevron { color: var(--text-muted); font-size: 11px; transition: transform 0.2s; }
+  .accordion-header.open .acc-chevron { transform: rotate(180deg); }
+  .accordion-body { overflow: hidden; transition: max-height 0.3s ease, opacity 0.2s; max-height: 0; opacity: 0; }
+  .accordion-body.open { max-height: 800px; opacity: 1; }
+  .acc-inner { padding: 10px 0 6px; }
+
+  /* BLOCOS DE PRESTAÇÃO POR PARCELA */
+  .prestacao-block {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+  .prestacao-block-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; cursor: pointer; gap: 12px;
+  }
+  .prestacao-block-header:hover { background: rgba(255,255,255,0.02); }
+  .prestacao-block-detail {
+    border-top: 1px solid var(--border);
+    padding: 10px 14px;
+    display: none;
+  }
+  .prestacao-block-detail.open { display: block; }
+
   /* PRINT STYLES */
   @media print {
     .sidebar, .page-header .btn, .action-btn, .modal-overlay { display: none !important; }
@@ -972,6 +1014,11 @@
           <div class="field" style="margin:0;min-width:200px">
             <select id="dash-filtro-tc" onchange="renderDashboard()" style="font-size:12px;padding:7px 10px">
               <option value="">Todos os TCs / Aditivos</option>
+            </select>
+          </div>
+          <div class="field" style="margin:0;min-width:160px">
+            <select id="dash-filtro-parcela" onchange="renderDashboard()" style="font-size:12px;padding:7px 10px">
+              <option value="">Todas as Parcelas</option>
             </select>
           </div>
           <div class="field" style="margin:0;min-width:160px">
@@ -2201,6 +2248,121 @@
   </div>
 </div>
 
+<!-- MODAL: EDITAR TC -->
+<div class="modal-overlay" id="modal-edit-tc">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">✏️ Editar Termo de Compromisso</div>
+      <button class="modal-close" onclick="closeModal('modal-edit-tc')">×</button>
+    </div>
+    <input type="hidden" id="edit-tc-idx">
+    <div class="form-grid">
+      <div class="field">
+        <label>Número do TC / Aditivo</label>
+        <input type="text" id="edit-tc-numero" placeholder="225/2025">
+      </div>
+      <div class="field field-money">
+        <label>Valor (R$)</label>
+        <input type="text" id="edit-tc-valor" placeholder="0,00" data-money>
+      </div>
+      <div class="field">
+        <label>Data de Início</label>
+        <input type="date" id="edit-tc-inicio">
+      </div>
+      <div class="field">
+        <label>Data de Término</label>
+        <input type="date" id="edit-tc-fim">
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="edit-tc-status">
+          <option value="ativo">Ativo</option>
+          <option value="encerrado">Encerrado</option>
+          <option value="a_vencer">A Vencer (≤30 dias)</option>
+          <option value="suspenso">Suspenso</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>CNPJ da Caixa Escolar</label>
+        <input type="text" id="edit-tc-cnpj" placeholder="15.547.261/0001-01">
+      </div>
+      <div class="field form-full">
+        <label>Observações</label>
+        <textarea id="edit-tc-obs" placeholder="Observações..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-edit-tc')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarEdicaoTC()">Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EDITAR DESPESA -->
+<div class="modal-overlay" id="modal-edit-despesa">
+  <div class="modal" style="width:780px">
+    <div class="modal-header">
+      <div class="modal-title">✏️ Editar Despesa</div>
+      <button class="modal-close" onclick="closeModal('modal-edit-despesa')">×</button>
+    </div>
+    <input type="hidden" id="edit-desp-id">
+    <div class="form-grid">
+      <div class="field form-full">
+        <label>Nome do Credor</label>
+        <input type="text" id="edit-desp-credor" placeholder="Nome do fornecedor">
+      </div>
+      <div class="field">
+        <label>CNPJ / CPF</label>
+        <input type="text" id="edit-desp-cnpj" placeholder="00.000.000/0001-00">
+      </div>
+      <div class="field">
+        <label>TC / Aditivo vinculado</label>
+        <select id="edit-desp-tc"></select>
+      </div>
+      <div class="field">
+        <label>Tipo de Despesa</label>
+        <select id="edit-desp-tipo">
+          <option value="CUSTEIO">Custeio</option>
+          <option value="CAPITAL">Capital</option>
+          <option value="ALEM_MUROS">Além dos Muros</option>
+          <option value="OBRAS">Obras</option>
+          <option value="CAPINA">Capina / Roçamento</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Nº da Parcela</label>
+        <select id="edit-desp-parcela">
+          <option value="01">Parcela 01</option>
+          <option value="02">Parcela 02</option>
+          <option value="03">Parcela 03</option>
+          <option value="04">Parcela 04</option>
+          <option value="U">Parcela Única</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Nº da Nota Fiscal</label>
+        <input type="text" id="edit-desp-nf-num" placeholder="NF 001">
+      </div>
+      <div class="field">
+        <label>Data da Nota Fiscal</label>
+        <input type="date" id="edit-desp-nf-data">
+      </div>
+      <div class="field field-money">
+        <label>Valor (R$)</label>
+        <input type="text" id="edit-desp-valor" placeholder="0,00" data-money>
+      </div>
+      <div class="field form-full">
+        <label>Descrição / Objeto</label>
+        <input type="text" id="edit-desp-descricao" placeholder="Ex.: Material de papelaria...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-edit-despesa')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarEdicaoDespesa()">Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: LANÇAR DESPESA -->
 <div class="modal-overlay" id="modal-despesa">
   <div class="modal" style="width:780px">
@@ -2920,6 +3082,7 @@ function renderTCs() {
         <div class="gap-8">
           ${state.tcAtivo!==tc.id?`<button class="btn btn-ghost" style="font-size:12px" onclick="setTCAtivo(${tc.id})">Definir como ativo</button>`:''}
           <button class="btn btn-ghost" style="font-size:12px;color:var(--accent2)" onclick="abrirModalAditivo(${tc.id})">+ Aditivo</button>
+          <button class="btn btn-ghost" style="font-size:12px;color:var(--accent)" onclick="editarTC(${realIdx})">✏️ Editar</button>
           <button class="btn btn-ghost" style="font-size:12px;color:var(--accent-red)" onclick="removerTC(${realIdx})">Remover</button>
         </div>
       </div>
@@ -2937,6 +3100,7 @@ function renderTCs() {
             <span style="color:var(--text)">↳ ${a.numero}</span>
             <div class="gap-8">
               <span style="font-family:'DM Mono',monospace;color:var(--accent3)">+ R$ ${a.valor||'0,00'}</span>
+              <button class="action-btn" onclick="editarTC(${aIdx})" title="Editar aditivo">✏️</button>
               <button class="action-btn del" onclick="removerTC(${aIdx})" title="Remover aditivo">✕</button>
             </div>
           </div>`;
@@ -3024,7 +3188,8 @@ function renderDespesas() {
         <td class="td-muted">${fmtDate(d.nfData)||'—'}</td>
         <td class="td-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${d.descricao}">${d.descricao||'—'}</td>
         <td class="td-value text-right" style="color:var(--accent2)">R$ ${d.valor}</td>
-        <td>
+        <td style="white-space:nowrap">
+          <button class="action-btn" onclick="editarDespesa(${d.id})" title="Editar">✏️</button>
           <button class="action-btn del" onclick="removerDespesa(${d.id})" title="Remover">✕</button>
         </td>
       </tr>
@@ -3043,6 +3208,109 @@ async function removerDespesa(id) {
   renderDashboard();
   renderChecklist();
   refreshPendenciaBadge();
+}
+
+// ==================== EDITAR DESPESA ====================
+function editarDespesa(id) {
+  const d = state.despesas.find(x => x.id === id);
+  if (!d) return;
+  document.getElementById('edit-desp-id').value = id;
+  document.getElementById('edit-desp-credor').value = d.credor || '';
+  document.getElementById('edit-desp-cnpj').value = d.cnpj || '';
+  document.getElementById('edit-desp-nf-num').value = d.nfNum || '';
+  document.getElementById('edit-desp-nf-data').value = d.nfData || '';
+  document.getElementById('edit-desp-valor').value = d.valor || '';
+  document.getElementById('edit-desp-descricao').value = d.descricao || '';
+  // populate TC dropdown
+  const sel = document.getElementById('edit-desp-tc');
+  sel.innerHTML = '<option value="">— Selecione —</option>';
+  (state.tcs||[]).filter(t => !t.tcPaiId).forEach(tc => {
+    const opt = document.createElement('option');
+    opt.value = tc.id; opt.textContent = `TC ${tc.numero}`;
+    sel.appendChild(opt);
+    (state.tcs||[]).filter(a => a.tcPaiId === tc.id).forEach(a => {
+      const o2 = document.createElement('option');
+      o2.value = a.id; o2.textContent = `  └ Aditivo ${a.numero}`;
+      sel.appendChild(o2);
+    });
+  });
+  if (d.tcVinculo) sel.value = d.tcVinculo;
+  document.getElementById('edit-desp-tipo').value = d.tipo || 'CUSTEIO';
+  // add Parcela Única option if needed
+  const ps = document.getElementById('edit-desp-parcela');
+  const hasU = [...ps.options].some(o => o.value === 'U');
+  if (!hasU) { const o = document.createElement('option'); o.value='U'; o.textContent='Parcela Única'; ps.appendChild(o); }
+  ps.value = d.parcela || '01';
+  openModal('modal-edit-despesa');
+  // init money mask
+  const vi = document.getElementById('edit-desp-valor');
+  maskMoney(vi);
+}
+
+async function salvarEdicaoDespesa() {
+  const id = Number(document.getElementById('edit-desp-id').value);
+  const idx = state.despesas.findIndex(x => x.id === id);
+  if (idx === -1) { alert('Despesa não encontrada.'); return; }
+  const d = state.despesas[idx];
+  d.credor = document.getElementById('edit-desp-credor').value.trim();
+  d.cnpj = document.getElementById('edit-desp-cnpj').value.trim();
+  d.tcVinculo = document.getElementById('edit-desp-tc').value;
+  d.tipo = document.getElementById('edit-desp-tipo').value;
+  d.parcela = document.getElementById('edit-desp-parcela').value;
+  d.nfNum = document.getElementById('edit-desp-nf-num').value.trim();
+  d.nfData = document.getElementById('edit-desp-nf-data').value;
+  d.valor = document.getElementById('edit-desp-valor').value.trim();
+  d.descricao = document.getElementById('edit-desp-descricao').value.trim();
+  if (!d.credor || !d.valor) { alert('Preencha ao menos o credor e o valor.'); return; }
+  setSyncStatus('syncing');
+  const { error } = await supa.from('despesas').update(despesaToRow(d)).eq('id', id);
+  if (error) { setSyncStatus('error'); alert('Erro ao atualizar: ' + error.message); return; }
+  setSyncStatus('ok');
+  closeModal('modal-edit-despesa');
+  renderDespesas();
+  renderDashboard();
+  renderChecklist();
+  refreshPendenciaBadge();
+}
+
+// ==================== EDITAR TC ====================
+function editarTC(i) {
+  const tc = state.tcs[i];
+  if (!tc) return;
+  document.getElementById('edit-tc-idx').value = i;
+  document.getElementById('edit-tc-numero').value = tc.numero || '';
+  document.getElementById('edit-tc-valor').value = tc.valor || '';
+  document.getElementById('edit-tc-inicio').value = tc.inicio || '';
+  document.getElementById('edit-tc-fim').value = tc.fim || '';
+  document.getElementById('edit-tc-status').value = tc.status || 'ativo';
+  document.getElementById('edit-tc-cnpj').value = tc.cnpj || '';
+  document.getElementById('edit-tc-obs').value = tc.obs || '';
+  openModal('modal-edit-tc');
+  const vi = document.getElementById('edit-tc-valor');
+  maskMoney(vi);
+}
+
+async function salvarEdicaoTC() {
+  const i = Number(document.getElementById('edit-tc-idx').value);
+  const tc = state.tcs[i];
+  if (!tc) { alert('TC não encontrado.'); return; }
+  tc.numero = document.getElementById('edit-tc-numero').value.trim();
+  tc.valor = document.getElementById('edit-tc-valor').value.trim();
+  tc.inicio = document.getElementById('edit-tc-inicio').value;
+  tc.fim = document.getElementById('edit-tc-fim').value;
+  tc.status = document.getElementById('edit-tc-status').value;
+  tc.cnpj = document.getElementById('edit-tc-cnpj').value.trim();
+  tc.obs = document.getElementById('edit-tc-obs').value.trim();
+  if (!tc.numero) { alert('Preencha o número do TC.'); return; }
+  setSyncStatus('syncing');
+  const { error } = await supa.from('tcs').update(tcToRow(tc)).eq('id', tc.id);
+  if (error) { setSyncStatus('error'); alert('Erro ao atualizar TC: ' + error.message); return; }
+  setSyncStatus('ok');
+  closeModal('modal-edit-tc');
+  renderTCs();
+  renderDashboard();
+  updateSidebarStatus();
+  populateTCDropdown();
 }
 
 // ==================== CHECKLIST ====================
@@ -3287,12 +3555,35 @@ function imprimirPendencias() {
   w.print();
 }
 
+// ==================== ACCORDION ====================
+function toggleAccordion(id) {
+  const hdr = document.getElementById('hdr-' + id);
+  const body = document.getElementById('body-' + id);
+  if (!hdr || !body) return;
+  const isOpen = body.classList.contains('open');
+  if (isOpen) {
+    body.classList.remove('open');
+    hdr.classList.remove('open');
+  } else {
+    body.classList.add('open');
+    hdr.classList.add('open');
+  }
+}
+
+function togglePrestacaoBlock(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('open');
+}
+
 // ==================== DASHBOARD ====================
 function limparFiltrosDash() {
   const ftc = document.getElementById('dash-filtro-tc');
   const ftipo = document.getElementById('dash-filtro-tipo');
+  const fparcela = document.getElementById('dash-filtro-parcela');
   if (ftc) ftc.value = '';
   if (ftipo) ftipo.value = '';
+  if (fparcela) fparcela.value = '';
   renderDashboard();
 }
 
@@ -3316,11 +3607,28 @@ function populateDashTCFilter() {
   if (cur) sel.value = cur;
 }
 
+function populateDashParcelaFilter() {
+  const sel = document.getElementById('dash-filtro-parcela');
+  if (!sel) return;
+  const cur = sel.value;
+  const parcelas = [...new Set(state.despesas.map(d => d.parcela).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">Todas as Parcelas</option>';
+  parcelas.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p;
+    opt.textContent = p === 'U' ? 'Parcela Única' : `Parcela ${p}`;
+    sel.appendChild(opt);
+  });
+  if (cur) sel.value = cur;
+}
+
 function renderDashboard() {
   populateDashTCFilter();
+  populateDashParcelaFilter();
 
-  const filtroTC   = document.getElementById('dash-filtro-tc')?.value || '';
-  const filtroTipo = document.getElementById('dash-filtro-tipo')?.value || '';
+  const filtroTC      = document.getElementById('dash-filtro-tc')?.value || '';
+  const filtroTipo    = document.getElementById('dash-filtro-tipo')?.value || '';
+  const filtroParcela = document.getElementById('dash-filtro-parcela')?.value || '';
 
   // Label do filtro ativo
   const labelEl = document.getElementById('dash-filtro-label');
@@ -3328,13 +3636,15 @@ function renderDashboard() {
     const partes = [];
     if (filtroTC) { const tc = (state.tcs||[]).find(t => String(t.id) === filtroTC); if (tc) partes.push(tc.ehAditivo ? `Aditivo ${tc.numero}` : `TC ${tc.numero}`); }
     if (filtroTipo) partes.push({CUSTEIO:'Custeio',CAPITAL:'Capital',ALEM_MUROS:'Além dos Muros',OBRAS:'Obras',CAPINA:'Capina'}[filtroTipo] || filtroTipo);
+    if (filtroParcela) partes.push(filtroParcela === 'U' ? 'Parcela Única' : `Parcela ${filtroParcela}`);
     labelEl.textContent = partes.length ? `Filtrando por: ${partes.join(' · ')}` : '';
   }
 
   // Filtrar despesas
   let despFilt = state.despesas.filter(d => {
-    if (filtroTC   && String(d.tcVinculo) !== String(filtroTC)) return false;
-    if (filtroTipo && d.tipo !== filtroTipo) return false;
+    if (filtroTC      && String(d.tcVinculo) !== String(filtroTC)) return false;
+    if (filtroTipo    && d.tipo !== filtroTipo) return false;
+    if (filtroParcela && d.parcela !== filtroParcela) return false;
     return true;
   });
 
@@ -3363,7 +3673,6 @@ function renderDashboard() {
   const tcAtivo = state.tcs.find(t => t.id === state.tcAtivo);
   if (tcAtivo) {
     const valorTC = parseMoney(tcAtivo.valor);
-    // soma aditivos ao TC ativo
     const totalAditivos = (state.tcs||[]).filter(a => a.tcPaiId === tcAtivo.id).reduce((s,a) => s + parseMoney(a.valor), 0);
     const valorTotal = valorTC + totalAditivos;
     document.getElementById('saldo-recebido').textContent = fmtMoney(valorTotal);
@@ -3377,53 +3686,99 @@ function renderDashboard() {
     document.getElementById('saldo-disponivel').textContent = 'R$ —';
   }
 
-  // Saldo por TC/Aditivo
+  // ── Saldo por TC/Aditivo — ACCORDION com breakdown por parcela/tipo ──
   const saldoEl = document.getElementById('dash-saldo-tcs');
   if (saldoEl) {
     const tcs = (state.tcs||[]);
     if (!tcs.length) {
       saldoEl.innerHTML = '<div class="empty-state" style="padding:20px"><div class="empty-sub">Nenhum TC cadastrado</div></div>';
     } else {
-      // Agrupar: TCs principais com seus aditivos
       const principais = tcs.filter(t => !t.tcPaiId);
-      let html = '<div style="display:flex;flex-direction:column;gap:10px">';
-      principais.forEach(tc => {
+      let html = '<div style="display:flex;flex-direction:column;gap:8px">';
+      principais.forEach((tc, tcIdx) => {
         const aditivos = tcs.filter(a => a.tcPaiId === tc.id);
+        const allItems = [tc, ...aditivos]; // TC + seus aditivos
         const valorBase = parseMoney(tc.valor);
-        const gastoTC = state.despesas.filter(d => String(d.tcVinculo) === String(tc.id)).reduce((s,d) => s+parseMoney(d.valor), 0);
         const totalAdit = aditivos.reduce((s,a) => s + parseMoney(a.valor), 0);
         const valorTCTotal = valorBase + totalAdit;
-        const gastoTotal = gastoTC + aditivos.reduce((s,a) => {
-          return s + state.despesas.filter(d => String(d.tcVinculo) === String(a.id)).reduce((ss,d) => ss+parseMoney(d.valor), 0);
-        }, 0);
+        const todasDespTC = state.despesas.filter(d => String(d.tcVinculo) === String(tc.id) || aditivos.some(a => String(d.tcVinculo) === String(a.id)));
+        const gastoTotal = todasDespTC.reduce((s,d) => s+parseMoney(d.valor), 0);
         const saldoTC = valorTCTotal - gastoTotal;
         const pctTC = valorTCTotal > 0 ? Math.min(gastoTotal / valorTCTotal * 100, 100) : 0;
         const ativo = state.tcAtivo === tc.id;
-        html += `<div style="background:var(--surface2);border:1px solid ${ativo?'rgba(79,142,247,0.4)':'var(--border)'};border-radius:10px;padding:12px 14px">`;
-        html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">`;
-        html += `<div style="font-size:13px;font-weight:600">TC ${tc.numero}${ativo?' <span style="font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(79,142,247,0.15);color:var(--accent)">Ativo</span>':''}</div>`;
-        html += `<div style="font-family:\'DM Mono\',monospace;font-size:12px;color:${saldoTC<0?'var(--accent-red)':'var(--accent2)'}">Saldo: ${fmtMoney(saldoTC)}</div>`;
+        const accId = `acc-tc-${tc.id}`;
+
+        // Header accordion
+        html += `<div class="accordion-item">`;
+        html += `<div class="accordion-header" id="hdr-${accId}" onclick="toggleAccordion('${accId}')" style="border-color:${ativo?'rgba(79,142,247,0.4)':'var(--border)'}">`;
+        html += `<div class="acc-title">`;
+        html += `<span style="font-size:13px;font-weight:600;color:var(--text)">TC ${tc.numero}${ativo?' <span style="font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(79,142,247,0.15);color:var(--accent)">Ativo</span>':''}</span>`;
+        html += `<span style="font-size:11px;color:var(--text-muted)">${fmtMoney(valorTCTotal)} total${aditivos.length ? ` · ${aditivos.length} aditivo(s)` : ''}</span>`;
         html += `</div>`;
-        html += `<div style="display:flex;gap:20px;font-size:12px;margin-bottom:8px">`;
-        html += `<span style="color:var(--text-muted)">Valor: <span style="font-family:\'DM Mono\',monospace;color:var(--text)">${fmtMoney(valorTCTotal)}</span></span>`;
-        html += `<span style="color:var(--text-muted)">Gasto: <span style="font-family:\'DM Mono\',monospace;color:var(--accent-red)">${fmtMoney(gastoTotal)}</span></span>`;
-        if (aditivos.length) html += `<span style="color:var(--text-muted)">${aditivos.length} aditivo(s)</span>`;
-        html += `</div>`;
-        html += `<div style="background:var(--surface);border-radius:20px;height:4px;overflow:hidden"><div style="height:100%;border-radius:20px;background:${pctTC>85?'var(--accent-red)':'linear-gradient(90deg,var(--accent),var(--accent2))'};width:${pctTC}%"></div></div>`;
-        // Aditivos
-        if (aditivos.length) {
-          html += `<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">`;
-          aditivos.forEach(a => {
-            const gastoA = state.despesas.filter(d => String(d.tcVinculo) === String(a.id)).reduce((s,d) => s+parseMoney(d.valor), 0);
-            const saldoA = parseMoney(a.valor) - gastoA;
-            html += `<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;color:var(--text-muted)">`;
-            html += `<span>↳ Aditivo ${a.numero}</span>`;
-            html += `<span>R$ ${a.valor} | Gasto: ${fmtMoney(gastoA)} | <span style="color:${saldoA<0?'var(--accent-red)':'var(--accent2)'}">Saldo: ${fmtMoney(saldoA)}</span></span>`;
-            html += `</div>`;
+        html += `<div style="display:flex;align-items:center;gap:12px">`;
+        html += `<span style="font-family:'DM Mono',monospace;font-size:13px;color:${saldoTC<0?'var(--accent-red)':'var(--accent2)'}">Saldo: ${fmtMoney(saldoTC)}</span>`;
+        html += `<span class="acc-chevron">▼</span>`;
+        html += `</div></div>`;
+
+        // Accordion body
+        html += `<div class="accordion-body" id="body-${accId}">`;
+        html += `<div class="acc-inner">`;
+        // Progress bar
+        html += `<div style="background:var(--surface);border-radius:20px;height:4px;overflow:hidden;margin-bottom:12px"><div style="height:100%;border-radius:20px;background:${pctTC>85?'var(--accent-red)':'linear-gradient(90deg,var(--accent),var(--accent2))'};width:${pctTC}%"></div></div>`;
+
+        // Per TC/aditivo breakdown
+        allItems.forEach(item => {
+          const isAdit = !!item.tcPaiId;
+          const despItem = state.despesas.filter(d => String(d.tcVinculo) === String(item.id));
+          const valorItem = parseMoney(item.valor);
+          const gastoItem = despItem.reduce((s,d) => s+parseMoney(d.valor), 0);
+          const saldoItem = valorItem - gastoItem;
+
+          // Group by parcela+tipo
+          const grupos = {};
+          despItem.forEach(d => {
+            const key = `${d.parcela||'?'}__${d.tipo||'?'}`;
+            if (!grupos[key]) grupos[key] = { parcela: d.parcela, tipo: d.tipo, total: 0, qt: 0 };
+            grupos[key].total += parseMoney(d.valor);
+            grupos[key].qt++;
           });
+
+          html += `<div class="prestacao-block">`;
+          html += `<div class="prestacao-block-header" onclick="togglePrestacaoBlock('pb-${item.id}')">`;
+          html += `<div style="display:flex;align-items:center;gap:8px">`;
+          html += `<span style="font-size:12px;font-weight:600;color:${isAdit?'var(--accent3)':'var(--accent)'}">${isAdit?'↳ Aditivo':'TC'} ${item.numero}</span>`;
+          html += `<span style="font-size:11px;color:var(--text-dim)">Valor: ${fmtMoney(valorItem)}</span>`;
           html += `</div>`;
-        }
-        html += `</div>`;
+          html += `<div style="display:flex;align-items:center;gap:12px;font-size:12px">`;
+          html += `<span style="color:var(--accent-red)">Gasto: ${fmtMoney(gastoItem)}</span>`;
+          html += `<span style="color:${saldoItem<0?'var(--accent-red)':'var(--accent2)'}">Saldo: ${fmtMoney(saldoItem)}</span>`;
+          html += `<span style="color:var(--text-dim);font-size:11px">▾</span>`;
+          html += `</div></div>`;
+
+          // Detail: breakdown por parcela/rubrica
+          html += `<div class="prestacao-block-detail" id="pb-${item.id}">`;
+          if (!Object.keys(grupos).length) {
+            html += `<div style="font-size:12px;color:var(--text-dim);padding:4px 0">Nenhuma despesa lançada</div>`;
+          } else {
+            html += `<table style="width:100%;font-size:12px;border-collapse:collapse">`;
+            html += `<thead><tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:4px 8px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim)">Parcela</th><th style="text-align:left;padding:4px 8px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim)">Rubrica</th><th style="text-align:right;padding:4px 8px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim)">Qtd</th><th style="text-align:right;padding:4px 8px;font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim)">Total</th></tr></thead><tbody>`;
+            Object.values(grupos).sort((a,b) => (a.parcela||'').localeCompare(b.parcela||'')).forEach(g => {
+              const pLabel = g.parcela === 'U' ? 'Única' : `${g.parcela}ª`;
+              const tColor = g.tipo === 'CUSTEIO' ? 'var(--custeio)' : g.tipo === 'CAPITAL' ? 'var(--capital)' : g.tipo === 'ALEM_MUROS' ? 'var(--alem)' : g.tipo === 'CAPINA' ? 'var(--capina)' : 'var(--obras)';
+              html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.04)">`;
+              html += `<td style="padding:5px 8px;color:var(--text-muted)">${pLabel} Parcela</td>`;
+              html += `<td style="padding:5px 8px;color:${tColor};font-weight:500">${tipoLabel(g.tipo)}</td>`;
+              html += `<td style="padding:5px 8px;text-align:right;color:var(--text-dim)">${g.qt}</td>`;
+              html += `<td style="padding:5px 8px;text-align:right;font-family:'DM Mono',monospace;color:var(--accent2)">${fmtMoney(g.total)}</td>`;
+              html += `</tr>`;
+            });
+            html += `</tbody><tfoot><tr style="border-top:1px solid var(--border-light)"><td colspan="3" style="padding:5px 8px;font-weight:600;font-size:11px;color:var(--text-muted)">Total gasto</td><td style="padding:5px 8px;text-align:right;font-family:'DM Mono',monospace;font-weight:600;color:var(--accent-red)">${fmtMoney(gastoItem)}</td></tr></tfoot>`;
+            html += `</table>`;
+          }
+          html += `</div></div>`; // end prestacao-block-detail + prestacao-block
+        });
+
+        html += `</div></div></div>`; // end acc-inner + accordion-body + accordion-item
       });
       html += '</div>';
       saldoEl.innerHTML = html;
