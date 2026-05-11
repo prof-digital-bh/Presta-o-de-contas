@@ -2251,6 +2251,7 @@
             <th>Capina (R$)</th>
             <th style="min-width:180px">Situação da Prestação</th>
             <th style="min-width:110px">Mês/Ano Início</th>
+            <th style="min-width:120px">Término da Execução</th>
             <th></th>
           </tr>
         </thead>
@@ -3004,7 +3005,8 @@ async function carregarDados() {
     alem: r.alem_muros || '0,00',
     obras: r.obras || '0,00',
     capina: r.capina || '0,00',
-    mesAnoInicio: r.mes_ano_inicio || ''
+    mesAnoInicio: r.mes_ano_inicio || '',
+    dataTermino: r.data_termino || ''
   }));
   state.parcelaSituacoes = (psData || []).map(r => ({
     id: r.id,
@@ -3054,6 +3056,16 @@ function maskMoney(input) {
     return intFmt + ',' + decStr;
   }
 
+  input.addEventListener('input', function() {
+    const raw = this.value.replace(/[^\d]/g, '');
+    if (!raw) { this.value = ''; return; }
+    const cents = raw.slice(-2).padStart(2, '0');
+    const reais = raw.length > 2 ? raw.slice(0, raw.length - 2) : '0';
+    const reaisFmt = reais.replace(/^0+/, '') || '0';
+    const reaisComMilhar = reaisFmt.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    this.value = reaisComMilhar + ',' + cents;
+    this.setSelectionRange(this.value.length, this.value.length);
+  });
   input.addEventListener('blur', function() {
     if (!this.value.trim()) return;
     this.value = fmt(this.value);
@@ -4676,31 +4688,32 @@ function renderAlertas() {
   const hoje = new Date(); hoje.setHours(0,0,0,0);
   const tcs = state.tcs || [];
 
-  // ── ALERTAS DE DATA LIMITE DAS PARCELAS (prioridade máxima) ──
+  // ── ALERTAS DE DATA LIMITE DAS PARCELAS ──
+  // Data limite = data_termino da execução + 30 dias (Art. 28 Decreto 1134/2024)
   const parcelaNomesAlerta = { '01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única','UI':'Única(i)','UII':'Única(ii)','ALI':'Alimentação','SVC':'Serviços','MAT':'Materialidade' };
   (state.parcelaValores||[]).forEach(pv => {
-    if (!pv.mesAnoInicio) return;
+    if (!pv.dataTermino) return; // usa data_termino como base
     const tcItem = (state.tcs||[]).find(t => String(t.id) === String(pv.tcId));
     if (!tcItem) return;
     try {
-      const [ano, mes] = pv.mesAnoInicio.split('-').map(Number);
-      const fimMes = new Date(ano, mes, 0); // último dia do mês de início
-      const limite = new Date(fimMes);
-      limite.setDate(limite.getDate() + 30); // data limite = término + 30 dias
+      const termino = new Date(pv.dataTermino + 'T00:00:00');
+      const limite = new Date(termino);
+      limite.setDate(limite.getDate() + 30); // prazo: 30 dias após término da execução
       const diffDias = Math.round((limite - hoje) / (1000*60*60*24));
       const nomeParc = parcelaNomesAlerta[pv.parcela] || pv.parcela;
       const numTC = tcItem.tcPaiId ? `Aditivo ${tcItem.numero}` : `TC ${tcItem.numero}`;
       const dd = String(limite.getDate()).padStart(2,'0');
       const mm = String(limite.getMonth()+1).padStart(2,'0');
+      const terminoFmt = termino.toLocaleDateString('pt-BR');
       const limiteFmt = `${dd}/${mm}/${limite.getFullYear()}`;
       if (diffDias < 0) {
-        alertas.push({ tipo: 'red', msg: `📋 ${numTC} — Parcela ${nomeParc}: DATA LIMITE DE PRESTAÇÃO VENCIDA há ${Math.abs(diffDias)} dia(s) (${limiteFmt}). Providencie imediatamente!` });
+        alertas.push({ tipo: 'red', msg: `📋 ${numTC} — Parcela ${nomeParc}: PRAZO DE PRESTAÇÃO VENCIDO há ${Math.abs(diffDias)} dia(s) (término ${terminoFmt} → limite ${limiteFmt}). Providencie imediatamente!` });
       } else if (diffDias <= 15) {
-        alertas.push({ tipo: 'red', msg: `📋 ${numTC} — Parcela ${nomeParc}: Data limite em ${diffDias} dia(s) (${limiteFmt}). URGENTE: finalize a prestação de contas.` });
+        alertas.push({ tipo: 'red', msg: `📋 ${numTC} — Parcela ${nomeParc}: Prazo vence em ${diffDias} dia(s) — ${limiteFmt}. URGENTE: finalize a prestação de contas.` });
       } else if (diffDias <= 30) {
-        alertas.push({ tipo: 'orange', msg: `📋 ${numTC} — Parcela ${nomeParc}: Data limite em ${diffDias} dia(s) (${limiteFmt}). Organize a documentação.` });
+        alertas.push({ tipo: 'orange', msg: `📋 ${numTC} — Parcela ${nomeParc}: Prazo vence em ${diffDias} dia(s) — ${limiteFmt}. Organize a documentação.` });
       } else if (diffDias <= 60) {
-        alertas.push({ tipo: 'blue', msg: `📋 ${numTC} — Parcela ${nomeParc}: Data limite em ${diffDias} dia(s) (${limiteFmt}). Planeje a prestação de contas.` });
+        alertas.push({ tipo: 'blue', msg: `📋 ${numTC} — Parcela ${nomeParc}: Prazo vence em ${diffDias} dia(s) — ${limiteFmt}. Planeje a prestação de contas.` });
       }
     } catch(e) {}
   });
@@ -5077,7 +5090,8 @@ function abrirModalParcelaValores(tcId) {
       obras:   v.obras   || '0,00',
       capina:  v.capina  || '0,00',
       situacao: s ? s.situacao : '',
-      mesAnoInicio: v.mesAnoInicio || ''
+      mesAnoInicio: v.mesAnoInicio || '',
+      dataTermino: v.dataTermino || ''
     });
   });
   // Adiciona linhas para despesas ainda sem distribuição registrada
@@ -5089,7 +5103,7 @@ function abrirModalParcelaValores(tcId) {
           tcItemId: String(id),
           parcela: p,
           custeio: '0,00', capital: '0,00', alem: '0,00', obras: '0,00', capina: '0,00',
-          situacao: '', mesAnoInicio: ''
+          situacao: '', mesAnoInicio: '', dataTermino: ''
         });
       }
     });
@@ -5102,7 +5116,7 @@ function abrirModalParcelaValores(tcId) {
 
   // Se não há nenhuma linha ainda, começa com uma em branco para o TC original
   if (!_pvRows.length) {
-    _pvRows.push({ tcItemId: String(tc.id), parcela: '01', custeio:'0,00', capital:'0,00', alem:'0,00', obras:'0,00', capina:'0,00', situacao:'', mesAnoInicio:'' });
+    _pvRows.push({ tcItemId: String(tc.id), parcela: '01', custeio:'0,00', capital:'0,00', alem:'0,00', obras:'0,00', capina:'0,00', situacao:'', mesAnoInicio:'', dataTermino:'' });
   }
 
   renderPVTable();
@@ -5176,6 +5190,9 @@ function renderPVTable() {
       <td>
         <input type="month" value="${r.mesAnoInicio||''}" oninput="_pvRows[${i}].mesAnoInicio=this.value" title="Mês/Ano de início da parcela" style="background:var(--surface3);border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-size:12px;color:var(--text-muted);width:120px">
       </td>
+      <td>
+        <input type="date" value="${r.dataTermino||''}" oninput="_pvRows[${i}].dataTermino=this.value" title="Data de término da execução da parcela" style="background:var(--surface3);border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-size:12px;color:var(--text-muted);width:130px">
+      </td>
       <td><button class="action-btn del" onclick="removerLinhaPV(${i})" title="Remover linha">✕</button></td>
     </tr>
   `}).join('');
@@ -5187,7 +5204,7 @@ function renderPVTable() {
 function adicionarLinhaPV() {
   // Nova linha aponta por padrão para o TC original
   const defaultId = _pvAllItems.length ? String(_pvAllItems[0].id) : '';
-  _pvRows.push({ tcItemId: defaultId, parcela:'01', custeio:'0,00', capital:'0,00', alem:'0,00', obras:'0,00', capina:'0,00', situacao:'', mesAnoInicio:'' });
+  _pvRows.push({ tcItemId: defaultId, parcela:'01', custeio:'0,00', capital:'0,00', alem:'0,00', obras:'0,00', capina:'0,00', situacao:'', mesAnoInicio:'', dataTermino:'' });
   renderPVTable();
 }
 
@@ -5219,7 +5236,8 @@ async function salvarParcelaValores() {
     alem_muros:     r.alem       || '0,00',
     obras:          r.obras      || '0,00',
     capina:         r.capina     || '0,00',
-    mes_ano_inicio: r.mesAnoInicio || null
+    mes_ano_inicio: r.mesAnoInicio || null,
+    data_termino:   r.dataTermino  || null
   }));
   const psInserts = _pvRows.filter(r => r.situacao).map(r => ({
     tc_id:    Number(r.tcItemId),
@@ -5239,7 +5257,7 @@ async function salvarParcelaValores() {
     state.parcelaValores.push({
       tcId: Number(r.tcItemId), parcela: r.parcela,
       custeio: r.custeio, capital: r.capital, alem: r.alem, obras: r.obras, capina: r.capina,
-      mesAnoInicio: r.mesAnoInicio
+      mesAnoInicio: r.mesAnoInicio, dataTermino: r.dataTermino
     });
     if (r.situacao) state.parcelaSituacoes.push({ tcId: Number(r.tcItemId), parcela: r.parcela, situacao: r.situacao });
   });
