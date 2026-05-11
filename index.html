@@ -3883,16 +3883,26 @@ function renderDashboard() {
   // saldo parcela — uses distributed values if configured, otherwise TC total
   const tcAtivo = state.tcs.find(t => t.id === state.tcAtivo);
   if (tcAtivo) {
+    const aditivos = (state.tcs||[]).filter(a => a.tcPaiId === tcAtivo.id);
+    const allTcIds = [tcAtivo.id, ...aditivos.map(a => a.id)];
     const valorTC = parseMoney(tcAtivo.valor);
-    const totalAditivos = (state.tcs||[]).filter(a => a.tcPaiId === tcAtivo.id).reduce((s,a) => s + parseMoney(a.valor), 0);
+    const totalAditivos = aditivos.reduce((s,a) => s + parseMoney(a.valor), 0);
     const valorTotal = valorTC + totalAditivos;
+
+    // CORREÇÃO: totalSaldo restrito apenas ao tcAtivo (+ aditivos) e parcela filtrada
+    // Evita que despesas de outros TCs/parcelas contaminem o "Total Gasto" do saldo
+    const despSaldo = state.despesas.filter(d => {
+      if (!allTcIds.some(id => String(id) === String(d.tcVinculo))) return false;
+      if (filtroParcela && d.parcela !== filtroParcela) return false;
+      return true;
+    });
+    const totalSaldo = despSaldo.reduce((s,d) => s + parseMoney(d.valor), 0);
 
     // If a parcela filter and distributed values exist → use sum of previsto for that parcela
     let previsto = valorTotal;
     let notaEl = document.getElementById('saldo-parcela-nota');
     if (filtroParcela) {
       // Sum distributed for this parcela across TC + aditivos
-      const allTcIds = [tcAtivo, ...(state.tcs||[]).filter(a => a.tcPaiId === tcAtivo.id)].map(t => t.id);
       const pvRows = (state.parcelaValores||[]).filter(pv => allTcIds.some(id => String(id)===String(pv.tcId)) && pv.parcela === filtroParcela);
       if (pvRows.length) {
         previsto = pvRows.reduce((s,pv) => s + parseMoney(pv.custeio) + parseMoney(pv.capital) + parseMoney(pv.alem) + parseMoney(pv.obras) + parseMoney(pv.capina), 0);
@@ -3911,10 +3921,11 @@ function renderDashboard() {
     }
 
     document.getElementById('saldo-recebido').textContent = fmtMoney(previsto);
-    const saldo = previsto - total;
+    document.getElementById('saldo-gasto').textContent = fmtMoney(totalSaldo);
+    const saldo = previsto - totalSaldo;
     document.getElementById('saldo-disponivel').textContent = fmtMoney(saldo);
     document.getElementById('saldo-disponivel').style.color = saldo < 0 ? 'var(--accent-red)' : 'var(--accent2)';
-    const pct = previsto > 0 ? Math.min(total / previsto * 100, 100) : 0;
+    const pct = previsto > 0 ? Math.min(totalSaldo / previsto * 100, 100) : 0;
     document.getElementById('progress-bar').style.width = pct + '%';
     document.getElementById('progress-bar').style.background = pct > 90 ? 'var(--accent-red)' : 'linear-gradient(90deg,var(--accent),var(--accent2))';
     document.getElementById('progress-label').textContent = Math.round(pct) + '% utilizado';
