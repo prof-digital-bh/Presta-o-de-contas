@@ -907,6 +907,10 @@
   .sit-ressalvas  { background: rgba(181,123,238,0.15);color: var(--alem);       border: 1px solid rgba(181,123,238,0.3); }
   .sit-reprovada  { background: rgba(240,80,96,0.15);  color: var(--accent-red); border: 1px solid rgba(240,80,96,0.3); }
   .sit-sem        { background: var(--surface2); color: var(--text-dim); border: 1px solid var(--border); }
+  .sit-nao-creditada { background: rgba(240,80,96,0.1); color: #f88; border: 1px solid rgba(240,80,96,0.25); }
+  .sit-andamento  { background: rgba(79,142,247,0.1); color: #7abfff; border: 1px solid rgba(79,142,247,0.25); }
+  .sit-liquidada  { background: rgba(56,217,169,0.2); color: #5ef0c0; border: 1px solid rgba(56,217,169,0.4); }
+  .sit-montagem   { background: rgba(246,166,35,0.1); color: #f9c96a; border: 1px solid rgba(246,166,35,0.25); }
 
   /* TABELA DE DISTRIBUIÇÃO DE PARCELAS */
   .parcela-dist-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:10px; }
@@ -2246,6 +2250,8 @@
             <th>Obras (R$)</th>
             <th>Capina (R$)</th>
             <th style="min-width:180px">Situação da Prestação</th>
+            <th style="min-width:120px">Data Limite 🔔</th>
+            <th style="min-width:120px">Data de Término</th>
             <th></th>
           </tr>
         </thead>
@@ -2998,7 +3004,9 @@ async function carregarDados() {
     capital: r.capital || '0,00',
     alem: r.alem_muros || '0,00',
     obras: r.obras || '0,00',
-    capina: r.capina || '0,00'
+    capina: r.capina || '0,00',
+    dataLimite:  r.data_limite  || '',
+    dataTermino: r.data_termino || ''
   }));
   state.parcelaSituacoes = (psData || []).map(r => ({
     id: r.id,
@@ -4650,6 +4658,29 @@ function renderAlertas() {
   const hoje = new Date(); hoje.setHours(0,0,0,0);
   const tcs = state.tcs || [];
 
+  // ── ALERTAS DE DATA LIMITE DAS PARCELAS (prioridade máxima) ──
+  const parcelaNomesAlerta = { '01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única','UI':'Única(i)','UII':'Única(ii)','ALI':'Alimentação','SVC':'Serviços','MAT':'Materialidade' };
+  (state.parcelaValores||[]).forEach(pv => {
+    if (!pv.dataLimite) return;
+    const tcItem = (state.tcs||[]).find(t => String(t.id) === String(pv.tcId));
+    if (!tcItem) return;
+    const limite = new Date(pv.dataLimite + 'T00:00:00');
+    const diffDias = Math.round((limite - hoje) / (1000*60*60*24));
+    const nomeParc = parcelaNomesAlerta[pv.parcela] || pv.parcela;
+    const numTC = tcItem.tcPaiId
+      ? `Aditivo ${tcItem.numero}`
+      : `TC ${tcItem.numero}`;
+    if (diffDias < 0) {
+      alertas.push({ tipo: 'red', msg: `📋 ${numTC} — Parcela ${nomeParc}: DATA LIMITE VENCIDA há ${Math.abs(diffDias)} dia(s) (${fmtDate(pv.dataLimite)}). Providencie a prestação de contas imediatamente!` });
+    } else if (diffDias <= 15) {
+      alertas.push({ tipo: 'red', msg: `📋 ${numTC} — Parcela ${nomeParc}: Data limite em ${diffDias} dia(s) (${fmtDate(pv.dataLimite)}). Urgente: finalize a prestação de contas.` });
+    } else if (diffDias <= 30) {
+      alertas.push({ tipo: 'orange', msg: `📋 ${numTC} — Parcela ${nomeParc}: Data limite em ${diffDias} dia(s) (${fmtDate(pv.dataLimite)}). Organize a documentação com antecedência.` });
+    } else if (diffDias <= 60) {
+      alertas.push({ tipo: 'blue', msg: `📋 ${numTC} — Parcela ${nomeParc}: Data limite em ${diffDias} dia(s) (${fmtDate(pv.dataLimite)}). Planeje a prestação de contas.` });
+    }
+  });
+
   tcs.filter(t => !t.tcPaiId).forEach(tc => {
     if (!tc.fim) return;
     const fim = new Date(tc.fim + 'T00:00:00');
@@ -4947,12 +4978,16 @@ function setSyncStatus(s) {
 
 // ==================== PARCELA VALORES & SITUAÇÕES ====================
 const SIT_OPTIONS = [
-  { value: '',           label: '— Sem situação —',         cls: 'sit-sem' },
-  { value: 'analise',    label: '🔍 Em Análise',             cls: 'sit-analise' },
-  { value: 'aprovada',   label: '✅ Aprovada',               cls: 'sit-aprovada' },
-  { value: 'ajuste',     label: '✏️ Em Ajuste',              cls: 'sit-ajuste' },
-  { value: 'ressalvas',  label: '⚠️ Aprovada com Ressalvas', cls: 'sit-ressalvas' },
-  { value: 'reprovada',  label: '❌ Reprovada',              cls: 'sit-reprovada' }
+  { value: '',              label: '— Sem situação —',         cls: 'sit-sem' },
+  { value: 'nao_creditada', label: '🔴 Não creditada',         cls: 'sit-nao-creditada' },
+  { value: 'em_andamento',  label: '🔄 Em andamento',          cls: 'sit-andamento' },
+  { value: 'montagem',      label: '🗂️ Montagem de prestação', cls: 'sit-montagem' },
+  { value: 'analise',       label: '🔍 Em Análise',             cls: 'sit-analise' },
+  { value: 'aprovada',      label: '✅ Aprovada',               cls: 'sit-aprovada' },
+  { value: 'liquidada',     label: '💰 Liquidada',              cls: 'sit-liquidada' },
+  { value: 'ajuste',        label: '✏️ Em Ajuste',              cls: 'sit-ajuste' },
+  { value: 'ressalvas',     label: '⚠️ Aprovada com Ressalvas', cls: 'sit-ressalvas' },
+  { value: 'reprovada',     label: '❌ Reprovada',              cls: 'sit-reprovada' }
 ];
 
 function sitLabel(v) {
@@ -5017,7 +5052,9 @@ function abrirModalParcelaValores(tcId) {
       alem:    v.alem    || '0,00',
       obras:   v.obras   || '0,00',
       capina:  v.capina  || '0,00',
-      situacao: s ? s.situacao : ''
+      situacao: s ? s.situacao : '',
+      dataLimite:  v.dataLimite  || '',
+      dataTermino: v.dataTermino || ''
     });
   });
   // Adiciona linhas para despesas ainda sem distribuição registrada
@@ -5029,7 +5066,7 @@ function abrirModalParcelaValores(tcId) {
           tcItemId: String(id),
           parcela: p,
           custeio: '0,00', capital: '0,00', alem: '0,00', obras: '0,00', capina: '0,00',
-          situacao: ''
+          situacao: '', dataLimite: '', dataTermino: ''
         });
       }
     });
@@ -5042,7 +5079,7 @@ function abrirModalParcelaValores(tcId) {
 
   // Se não há nenhuma linha ainda, começa com uma em branco para o TC original
   if (!_pvRows.length) {
-    _pvRows.push({ tcItemId: String(tc.id), parcela: '01', custeio:'0,00', capital:'0,00', alem:'0,00', obras:'0,00', capina:'0,00', situacao:'' });
+    _pvRows.push({ tcItemId: String(tc.id), parcela: '01', custeio:'0,00', capital:'0,00', alem:'0,00', obras:'0,00', capina:'0,00', situacao:'', dataLimite:'', dataTermino:'' });
   }
 
   renderPVTable();
@@ -5051,7 +5088,8 @@ function abrirModalParcelaValores(tcId) {
 
 function renderPVTable() {
   const tbody = document.getElementById('pv-tbody');
-  const parcelaNomes = { '01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única' };
+  const parcelaNomes = { '01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única','UI':'Única(i)','UII':'Única(ii)','ALI':'Alimentação','SVC':'Serviços','MAT':'Materialidade' };
+  const parcelaOpts = ['01','02','03','04','05','U','UI','UII','ALI','SVC','MAT'];
 
   tbody.innerHTML = _pvRows.map((r, i) => {
     const itemAtual = _pvAllItems.find(it => String(it.id) === String(r.tcItemId)) || _pvAllItems[0];
@@ -5069,8 +5107,8 @@ function renderPVTable() {
         </select>
       </td>
       <td>
-        <select onchange="_pvRows[${i}].parcela=this.value" style="background:var(--surface3);border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-size:12px;color:var(--text);width:80px">
-          ${['01','02','03','04','05','U'].map(v => `<option value="${v}" ${r.parcela===v?'selected':''}>${parcelaNomes[v]||v}</option>`).join('')}
+        <select onchange="_pvRows[${i}].parcela=this.value" style="background:var(--surface3);border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-size:12px;color:var(--text);width:110px">
+          ${parcelaOpts.map(v => `<option value="${v}" ${r.parcela===v?'selected':''}>${parcelaNomes[v]||v}</option>`).join('')}
         </select>
       </td>
       <td><input type="text" value="${r.custeio}" oninput="_pvRows[${i}].custeio=this.value" data-money placeholder="0,00" style="width:100px"></td>
@@ -5083,6 +5121,12 @@ function renderPVTable() {
           ${SIT_OPTIONS.map(o => `<option value="${o.value}" ${r.situacao===o.value?'selected':''}>${o.label}</option>`).join('')}
         </select>
       </td>
+      <td>
+        <input type="date" value="${r.dataLimite||''}" oninput="_pvRows[${i}].dataLimite=this.value" title="Data limite desta parcela (gera alertas)" style="background:var(--surface3);border:1px solid rgba(246,166,35,0.4);border-radius:5px;padding:4px 7px;font-size:12px;color:var(--accent3);width:130px">
+      </td>
+      <td>
+        <input type="date" value="${r.dataTermino||''}" oninput="_pvRows[${i}].dataTermino=this.value" title="Data de término da prestação" style="background:var(--surface3);border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-size:12px;color:var(--text-muted);width:130px">
+      </td>
       <td><button class="action-btn del" onclick="removerLinhaPV(${i})" title="Remover linha">✕</button></td>
     </tr>
   `}).join('');
@@ -5094,7 +5138,7 @@ function renderPVTable() {
 function adicionarLinhaPV() {
   // Nova linha aponta por padrão para o TC original
   const defaultId = _pvAllItems.length ? String(_pvAllItems[0].id) : '';
-  _pvRows.push({ tcItemId: defaultId, parcela:'01', custeio:'0,00', capital:'0,00', alem:'0,00', obras:'0,00', capina:'0,00', situacao:'' });
+  _pvRows.push({ tcItemId: defaultId, parcela:'01', custeio:'0,00', capital:'0,00', alem:'0,00', obras:'0,00', capina:'0,00', situacao:'', dataLimite:'', dataTermino:'' });
   renderPVTable();
 }
 
@@ -5119,13 +5163,15 @@ async function salvarParcelaValores() {
 
   // Monta inserts separados por tcItemId
   const pvInserts = _pvRows.map(r => ({
-    tc_id:      Number(r.tcItemId),
-    parcela:    r.parcela,
-    custeio:    r.custeio    || '0,00',
-    capital:    r.capital    || '0,00',
-    alem_muros: r.alem       || '0,00',
-    obras:      r.obras      || '0,00',
-    capina:     r.capina     || '0,00'
+    tc_id:       Number(r.tcItemId),
+    parcela:     r.parcela,
+    custeio:     r.custeio    || '0,00',
+    capital:     r.capital    || '0,00',
+    alem_muros:  r.alem       || '0,00',
+    obras:       r.obras      || '0,00',
+    capina:      r.capina     || '0,00',
+    data_limite: r.dataLimite  || null,
+    data_termino:r.dataTermino || null
   }));
   const psInserts = _pvRows.filter(r => r.situacao).map(r => ({
     tc_id:    Number(r.tcItemId),
@@ -5144,7 +5190,8 @@ async function salvarParcelaValores() {
   _pvRows.forEach(r => {
     state.parcelaValores.push({
       tcId: Number(r.tcItemId), parcela: r.parcela,
-      custeio: r.custeio, capital: r.capital, alem: r.alem, obras: r.obras, capina: r.capina
+      custeio: r.custeio, capital: r.capital, alem: r.alem, obras: r.obras, capina: r.capina,
+      dataLimite: r.dataLimite, dataTermino: r.dataTermino
     });
     if (r.situacao) state.parcelaSituacoes.push({ tcId: Number(r.tcItemId), parcela: r.parcela, situacao: r.situacao });
   });
