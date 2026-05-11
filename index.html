@@ -2230,18 +2230,22 @@
     <input type="hidden" id="pv-tc-id">
     <div id="pv-tc-label" style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:14px"></div>
 
+    <!-- Resumo de valores do TC e aditivos -->
+    <div id="pv-resumo-tcs" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px"></div>
+
     <!-- Tabela de distribuição -->
     <div style="overflow-x:auto">
       <table class="parcela-dist-table" id="pv-table">
         <thead>
           <tr>
-            <th>Parcela</th>
+            <th style="min-width:160px">Pertence a</th>
+            <th style="min-width:100px">Parcela</th>
             <th>Custeio (R$)</th>
             <th>Capital (R$)</th>
-            <th>Além dos Muros (R$)</th>
+            <th>Além Muros (R$)</th>
             <th>Obras (R$)</th>
             <th>Capina (R$)</th>
-            <th>Situação da Prestação</th>
+            <th style="min-width:180px">Situação da Prestação</th>
             <th></th>
           </tr>
         </thead>
@@ -2252,7 +2256,7 @@
 
     <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
       <button class="btn btn-ghost" style="font-size:12px" onclick="adicionarLinhaPV()">+ Adicionar Parcela</button>
-      <span style="font-size:11px;color:var(--text-dim)">Os valores são salvos automaticamente ao clicar em "Salvar"</span>
+      <span style="font-size:11px;color:var(--text-dim)">Informe a qual TC ou Aditivo cada parcela pertence antes de salvar.</span>
     </div>
 
     <div class="modal-footer">
@@ -4960,41 +4964,86 @@ function sitCls(v) {
   return f ? f.cls : 'sit-sem';
 }
 
-let _pvRows = []; // working buffer while modal is open
+let _pvRows = [];    // working buffer while modal is open
+let _pvTcPai = null; // TC principal aberto no modal
+let _pvAllItems = []; // [{ id, label, valor, isAdit }] — TC + seus aditivos
 
 function abrirModalParcelaValores(tcId) {
   const tc = (state.tcs||[]).find(t => t.id === tcId);
   if (!tc) return;
+  _pvTcPai = tc;
+
+  // Monta lista de itens: TC original + todos os seus aditivos
+  const aditivos = (state.tcs||[]).filter(a => a.tcPaiId === tc.id);
+  _pvAllItems = [
+    { id: tc.id, label: `TC ${tc.numero} (original)`, valor: tc.valor, isAdit: false },
+    ...aditivos.map(a => ({ id: a.id, label: `Aditivo ${a.numero}`, valor: a.valor, isAdit: true }))
+  ];
+
   document.getElementById('pv-tc-id').value = tcId;
   document.getElementById('pv-tc-label').textContent =
-    (tc.ehAditivo ? `Aditivo ${tc.numero}` : `TC ${tc.numero}`) + ` — ${tc.escola||''}`;
+    `TC ${tc.numero} — ${tc.escola||''} ${aditivos.length ? `(+ ${aditivos.length} aditivo${aditivos.length>1?'s':''})` : ''}`;
 
-  // Build working rows from existing data
-  const existingVals = (state.parcelaValores||[]).filter(r => String(r.tcId) === String(tcId));
-  const existingSits = (state.parcelaSituacoes||[]).filter(r => String(r.tcId) === String(tcId));
+  // Resumo de valores por item
+  const resumoEl = document.getElementById('pv-resumo-tcs');
+  resumoEl.innerHTML = _pvAllItems.map(item => `
+    <div style="display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid ${item.isAdit?'rgba(246,166,35,0.3)':'rgba(79,142,247,0.3)'};border-radius:8px;padding:5px 11px">
+      <span style="font-size:11px;font-weight:600;color:${item.isAdit?'var(--accent3)':'var(--accent)'}">${item.label}</span>
+      <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--accent2)">R$ ${item.valor||'0,00'}</span>
+    </div>
+  `).join('');
 
-  // Union of parcelas already registered
-  const parcelas = [...new Set([
-    ...existingVals.map(r => r.parcela),
-    ...existingSits.map(r => r.parcela),
-    ...state.despesas.filter(d => String(d.tcVinculo) === String(tcId)).map(d => d.parcela).filter(Boolean)
-  ])].sort();
+  // Carrega linhas existentes para TODOS os itens (TC + aditivos)
+  const allIds = _pvAllItems.map(i => i.id);
+  const existingVals = (state.parcelaValores||[]).filter(r => allIds.some(id => String(id) === String(r.tcId)));
+  const existingSits = (state.parcelaSituacoes||[]).filter(r => allIds.some(id => String(id) === String(r.tcId)));
 
-  if (!parcelas.length) parcelas.push('01');
+  // Despesas existentes por item
+  const despPorItem = {};
+  allIds.forEach(id => {
+    despPorItem[id] = state.despesas.filter(d => String(d.tcVinculo) === String(id)).map(d => d.parcela).filter(Boolean);
+  });
 
-  _pvRows = parcelas.map(p => {
-    const v = existingVals.find(r => r.parcela === p) || {};
-    const s = existingSits.find(r => r.parcela === p) || {};
-    return {
-      parcela: p,
+  // Monta linhas: uma por (tcItemId + parcela) já registrado ou com despesas
+  const linhasMap = new Map(); // key = `${tcItemId}__${parcela}`
+  existingVals.forEach(v => {
+    const key = `${v.tcId}__${v.parcela}`;
+    const s = existingSits.find(s => String(s.tcId) === String(v.tcId) && s.parcela === v.parcela);
+    linhasMap.set(key, {
+      tcItemId: String(v.tcId),
+      parcela: v.parcela,
       custeio: v.custeio || '0,00',
       capital: v.capital || '0,00',
       alem:    v.alem    || '0,00',
       obras:   v.obras   || '0,00',
       capina:  v.capina  || '0,00',
-      situacao: s.situacao || ''
-    };
+      situacao: s ? s.situacao : ''
+    });
   });
+  // Adiciona linhas para despesas ainda sem distribuição registrada
+  allIds.forEach(id => {
+    (despPorItem[id]||[]).forEach(p => {
+      const key = `${id}__${p}`;
+      if (!linhasMap.has(key)) {
+        linhasMap.set(key, {
+          tcItemId: String(id),
+          parcela: p,
+          custeio: '0,00', capital: '0,00', alem: '0,00', obras: '0,00', capina: '0,00',
+          situacao: ''
+        });
+      }
+    });
+  });
+
+  _pvRows = [...linhasMap.values()].sort((a,b) => {
+    if (a.tcItemId !== b.tcItemId) return String(a.tcItemId).localeCompare(String(b.tcItemId));
+    return (a.parcela||'').localeCompare(b.parcela||'');
+  });
+
+  // Se não há nenhuma linha ainda, começa com uma em branco para o TC original
+  if (!_pvRows.length) {
+    _pvRows.push({ tcItemId: String(tc.id), parcela: '01', custeio:'0,00', capital:'0,00', alem:'0,00', obras:'0,00', capina:'0,00', situacao:'' });
+  }
 
   renderPVTable();
   openModal('modal-parcela-valores');
@@ -5002,33 +5051,50 @@ function abrirModalParcelaValores(tcId) {
 
 function renderPVTable() {
   const tbody = document.getElementById('pv-tbody');
-  const parcelaNomes = { '01':'1ª Parcela','02':'2ª Parcela','03':'3ª Parcela','04':'4ª Parcela','U':'Única','05':'5ª Parcela' };
-  tbody.innerHTML = _pvRows.map((r, i) => `
-    <tr id="pvrow-${i}">
-      <td style="font-weight:600;color:var(--text);white-space:nowrap">
-        <select onchange="_pvRows[${i}].parcela=this.value" style="background:var(--surface3);border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-size:12px;color:var(--text);width:100px">
+  const parcelaNomes = { '01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única' };
+
+  tbody.innerHTML = _pvRows.map((r, i) => {
+    const itemAtual = _pvAllItems.find(it => String(it.id) === String(r.tcItemId)) || _pvAllItems[0];
+    const corItem = itemAtual?.isAdit ? 'var(--accent3)' : 'var(--accent)';
+
+    return `
+    <tr id="pvrow-${i}" style="border-bottom:1px solid rgba(255,255,255,0.05)">
+      <td style="white-space:nowrap">
+        <select onchange="_pvRows[${i}].tcItemId=this.value" style="background:var(--surface3);border:1px solid var(--border);border-radius:5px;padding:4px 8px;font-size:12px;color:${corItem};width:100%;min-width:150px;font-weight:600">
+          ${_pvAllItems.map(it => `
+            <option value="${it.id}" ${String(r.tcItemId)===String(it.id)?'selected':''} style="color:${it.isAdit?'var(--accent3)':'var(--accent)'}">
+              ${it.isAdit ? '↳ ' : ''}${it.label}
+            </option>
+          `).join('')}
+        </select>
+      </td>
+      <td>
+        <select onchange="_pvRows[${i}].parcela=this.value" style="background:var(--surface3);border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-size:12px;color:var(--text);width:80px">
           ${['01','02','03','04','05','U'].map(v => `<option value="${v}" ${r.parcela===v?'selected':''}>${parcelaNomes[v]||v}</option>`).join('')}
         </select>
       </td>
-      <td><input type="text" value="${r.custeio}" oninput="_pvRows[${i}].custeio=this.value" data-money placeholder="0,00" style="width:110px"></td>
-      <td><input type="text" value="${r.capital}" oninput="_pvRows[${i}].capital=this.value" data-money placeholder="0,00" style="width:110px"></td>
-      <td><input type="text" value="${r.alem}"    oninput="_pvRows[${i}].alem=this.value"    data-money placeholder="0,00" style="width:110px"></td>
-      <td><input type="text" value="${r.obras}"   oninput="_pvRows[${i}].obras=this.value"   data-money placeholder="0,00" style="width:110px"></td>
-      <td><input type="text" value="${r.capina}"  oninput="_pvRows[${i}].capina=this.value"  data-money placeholder="0,00" style="width:110px"></td>
+      <td><input type="text" value="${r.custeio}" oninput="_pvRows[${i}].custeio=this.value" data-money placeholder="0,00" style="width:100px"></td>
+      <td><input type="text" value="${r.capital}" oninput="_pvRows[${i}].capital=this.value" data-money placeholder="0,00" style="width:100px"></td>
+      <td><input type="text" value="${r.alem}"    oninput="_pvRows[${i}].alem=this.value"    data-money placeholder="0,00" style="width:100px"></td>
+      <td><input type="text" value="${r.obras}"   oninput="_pvRows[${i}].obras=this.value"   data-money placeholder="0,00" style="width:100px"></td>
+      <td><input type="text" value="${r.capina}"  oninput="_pvRows[${i}].capina=this.value"  data-money placeholder="0,00" style="width:100px"></td>
       <td>
-        <select onchange="_pvRows[${i}].situacao=this.value" style="background:var(--surface3);border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-size:11px;color:var(--text);width:180px">
+        <select onchange="_pvRows[${i}].situacao=this.value" style="background:var(--surface3);border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-size:11px;color:var(--text);width:175px">
           ${SIT_OPTIONS.map(o => `<option value="${o.value}" ${r.situacao===o.value?'selected':''}>${o.label}</option>`).join('')}
         </select>
       </td>
-      <td><button class="action-btn del" onclick="removerLinhaPV(${i})" title="Remover">✕</button></td>
+      <td><button class="action-btn del" onclick="removerLinhaPV(${i})" title="Remover linha">✕</button></td>
     </tr>
-  `).join('');
-  // reinit money masks on new inputs
+  `}).join('');
+
+  // reinit money masks nos novos inputs
   document.querySelectorAll('#pv-tbody input[data-money]').forEach(maskMoney);
 }
 
 function adicionarLinhaPV() {
-  _pvRows.push({ parcela:'01', custeio:'0,00', capital:'0,00', alem:'0,00', obras:'0,00', capina:'0,00', situacao:'' });
+  // Nova linha aponta por padrão para o TC original
+  const defaultId = _pvAllItems.length ? String(_pvAllItems[0].id) : '';
+  _pvRows.push({ tcItemId: defaultId, parcela:'01', custeio:'0,00', capital:'0,00', alem:'0,00', obras:'0,00', capina:'0,00', situacao:'' });
   renderPVTable();
 }
 
@@ -5038,28 +5104,31 @@ function removerLinhaPV(i) {
 }
 
 async function salvarParcelaValores() {
-  const tcId = Number(document.getElementById('pv-tc-id').value);
-  if (!tcId) return;
+  if (!_pvAllItems.length) return;
   setSyncStatus('syncing');
 
-  // Delete existing records for this TC
-  await Promise.all([
-    supa.from('parcela_valores').delete().eq('tc_id', tcId),
-    supa.from('parcela_situacoes').delete().eq('tc_id', tcId)
-  ]);
+  // Agrupa linhas por tcItemId para deletar/inserir por item
+  const idsEnvolvidos = [...new Set(_pvRows.map(r => Number(r.tcItemId)))];
+  // Também garante deletar itens que existiam e foram removidos
+  const todosIds = _pvAllItems.map(i => i.id);
 
-  // Insert new rows
+  await Promise.all(todosIds.map(id => Promise.all([
+    supa.from('parcela_valores').delete().eq('tc_id', id),
+    supa.from('parcela_situacoes').delete().eq('tc_id', id)
+  ])));
+
+  // Monta inserts separados por tcItemId
   const pvInserts = _pvRows.map(r => ({
-    tc_id:    tcId,
-    parcela:  r.parcela,
-    custeio:  r.custeio  || '0,00',
-    capital:  r.capital  || '0,00',
-    alem_muros: r.alem   || '0,00',
-    obras:    r.obras    || '0,00',
-    capina:   r.capina   || '0,00'
+    tc_id:      Number(r.tcItemId),
+    parcela:    r.parcela,
+    custeio:    r.custeio    || '0,00',
+    capital:    r.capital    || '0,00',
+    alem_muros: r.alem       || '0,00',
+    obras:      r.obras      || '0,00',
+    capina:     r.capina     || '0,00'
   }));
   const psInserts = _pvRows.filter(r => r.situacao).map(r => ({
-    tc_id:    tcId,
+    tc_id:    Number(r.tcItemId),
     parcela:  r.parcela,
     situacao: r.situacao
   }));
@@ -5069,12 +5138,15 @@ async function salvarParcelaValores() {
   if (psInserts.length) ops.push(supa.from('parcela_situacoes').insert(psInserts));
   if (ops.length) await Promise.all(ops);
 
-  // Update local state
-  state.parcelaValores = state.parcelaValores.filter(r => String(r.tcId) !== String(tcId));
-  state.parcelaSituacoes = state.parcelaSituacoes.filter(r => String(r.tcId) !== String(tcId));
+  // Atualiza state local — remove todos os envolvidos e reinsere
+  state.parcelaValores = state.parcelaValores.filter(r => !todosIds.some(id => String(id) === String(r.tcId)));
+  state.parcelaSituacoes = state.parcelaSituacoes.filter(r => !todosIds.some(id => String(id) === String(r.tcId)));
   _pvRows.forEach(r => {
-    state.parcelaValores.push({ tcId, parcela: r.parcela, custeio: r.custeio, capital: r.capital, alem: r.alem, obras: r.obras, capina: r.capina });
-    if (r.situacao) state.parcelaSituacoes.push({ tcId, parcela: r.parcela, situacao: r.situacao });
+    state.parcelaValores.push({
+      tcId: Number(r.tcItemId), parcela: r.parcela,
+      custeio: r.custeio, capital: r.capital, alem: r.alem, obras: r.obras, capina: r.capina
+    });
+    if (r.situacao) state.parcelaSituacoes.push({ tcId: Number(r.tcItemId), parcela: r.parcela, situacao: r.situacao });
   });
 
   setSyncStatus('ok');
