@@ -3200,10 +3200,17 @@ async function salvarTC() {
   populateTCDropdown();
 }
 
+let _tcMostrarTodos = false;
+
+function toggleTCsMostrarTodos() {
+  _tcMostrarTodos = !_tcMostrarTodos;
+  renderTCs();
+}
+
 function renderTCs() {
   const el = document.getElementById('tc-list');
   const tcs = state.tcs || [];
-  const principais = tcs.filter(t => !t.tcPaiId);
+  const todasPrincipais = tcs.filter(t => !t.tcPaiId);
   if (!tcs.length) {
     el.innerHTML = `<div class="empty-state"><div class="empty-icon">📄</div><div class="empty-title">Nenhum TC cadastrado</div><div class="empty-sub">Adicione um Termo de Compromisso para começar</div><button class="btn btn-primary mt-16" onclick="openModal('modal-tc')">Adicionar TC</button></div>`;
     return;
@@ -3214,7 +3221,36 @@ function renderTCs() {
     encerrado: { label: 'Encerrado', cls: 'badge-red' },
     suspenso:  { label: 'Suspenso',  cls: 'badge-purple' }
   };
-  el.innerHTML = principais.map((tc, i) => {
+
+  // Filtra: por padrão só ativos e a_vencer; toggle mostra todos
+  const principais = _tcMostrarTodos
+    ? todasPrincipais
+    : todasPrincipais.filter(tc => {
+        const st = tc.status !== 'suspenso' ? (typeof calcStatusTC === 'function' ? calcStatusTC(tc.inicio, tc.fim) : tc.status) : 'suspenso';
+        return st === 'ativo' || st === 'a_vencer';
+      });
+
+  const encerradosOcultos = todasPrincipais.length - principais.length;
+
+  // Botão toggle no topo da lista
+  const toggleBtn = encerradosOcultos > 0 || _tcMostrarTodos ? `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:9px">
+      <span style="font-size:12px;color:var(--text-muted)">
+        ${_tcMostrarTodos
+          ? `Exibindo todos os ${todasPrincipais.length} TC(s).`
+          : `${encerradosOcultos} TC(s) encerrado(s)/suspenso(s) oculto(s).`}
+      </span>
+      <button class="btn btn-ghost" style="font-size:12px;padding:5px 12px;margin-left:auto" onclick="toggleTCsMostrarTodos()">
+        ${_tcMostrarTodos ? '🔼 Mostrar apenas ativos' : '🔽 Ver todos os TCs'}
+      </button>
+    </div>` : '';
+
+  if (!principais.length) {
+    el.innerHTML = toggleBtn + `<div class="empty-state"><div class="empty-icon">📄</div><div class="empty-title">Nenhum TC ativo no momento</div><div class="empty-sub">Todos os TCs estão encerrados ou suspensos.</div></div>`;
+    return;
+  }
+
+  el.innerHTML = toggleBtn + principais.map((tc, i) => {
     const realIdx = tcs.indexOf(tc);
     const st = tc.status !== 'suspenso' ? (typeof calcStatusTC === 'function' ? calcStatusTC(tc.inicio, tc.fim) : tc.status) : 'suspenso';
     const si = statusInfo[st] || statusInfo.ativo;
