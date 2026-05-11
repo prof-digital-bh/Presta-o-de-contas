@@ -1492,6 +1492,8 @@
             </div>
           </div>
           <div class="form-grid">
+            <div class="field form-full"><label style="color:var(--accent3)">TC / Aditivo</label>
+              <select id="anx1-tc"><option value="">— Usar TC Ativo —</option></select></div>
             <div class="field"><label>Nº da Parcela</label>
               <select id="anx1-parcela"><option value="1ª">1ª Parcela</option><option value="2ª">2ª Parcela</option><option value="3ª" selected>3ª Parcela</option><option value="4ª">4ª Parcela</option><option value="Única">Parcela Única</option></select></div>
             <div class="field"><label>Categoria</label>
@@ -1522,6 +1524,8 @@
           </div>
           <div class="alert alert-info"><span>ℹ</span><span>A Deliberação do Conselho Fiscal deve ser elaborada após o crédito do recurso na conta da Caixa Escolar e antes do início das despesas, registrando o planejamento e a aplicação dos valores recebidos.</span></div>
           <div class="form-grid form-grid-3">
+            <div class="field form-full" style="grid-column:1/-1"><label style="color:var(--accent3)">TC / Aditivo</label>
+              <select id="anx2-tc"><option value="">— Usar TC Ativo —</option></select></div>
             <div class="field">
               <label>Dia da Reunião</label>
               <input type="number" id="doc-dia" value="" min="1" max="31">
@@ -1582,6 +1586,8 @@
           </div>
           <div class="alert alert-info"><span>ℹ</span><span>O Relatório de Execução Físico-Financeiro resume todos os recebimentos e despesas da Caixa Escolar no período. Deve ser apresentado em todas as prestações de contas.</span></div>
           <div class="form-grid">
+            <div class="field form-full"><label style="color:var(--accent3)">TC / Aditivo</label>
+              <select id="anx3-tc" onchange="renderAnexo3()"><option value="">— Usar TC Ativo —</option></select></div>
             <div class="field">
               <label>Parcela</label>
               <select id="rel-parcela">
@@ -1654,6 +1660,10 @@
             </div>
           </div>
           <div class="alert alert-info"><span>ℹ</span><span>Informe as guias de INSS, ISSQN, DARF retidos nas notas fiscais de serviço. Para compras de material (sem retenção), deixe em branco.</span></div>
+          <div class="form-grid mb-16" style="grid-template-columns:1fr">
+            <div class="field"><label style="color:var(--accent3)">TC / Aditivo</label>
+              <select id="anx4-tc"><option value="">— Usar TC Ativo —</option></select></div>
+          </div>
           <div id="anx4-linhas">
             <div style="display:grid;grid-template-columns:2fr 1fr 2fr 1fr 1fr;gap:8px;margin-bottom:6px;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;padding:0 4px">
               <span>Guia (INSS, ISSQN, DARF)</span><span>Data</span><span>Nota Fiscal Referente</span><span>Valor Guia</span><span>Valor NF</span>
@@ -1680,6 +1690,8 @@
             </div>
           </div>
           <div class="form-grid">
+            <div class="field form-full"><label style="color:var(--accent3)">TC / Aditivo</label>
+              <select id="anx5-tc"><option value="">— Usar TC Ativo —</option></select></div>
             <div class="field"><label>Data do Crédito (dd/mm/aaaa)</label><input type="text" id="anx5-datacred" value=""></div>
             <div class="field"><label>Categoria da verba</label>
               <select id="anx5-cat"><option value="custeio">custeio</option><option value="capital">capital</option></select></div>
@@ -1708,6 +1720,10 @@
             </div>
           </div>
           <div class="alert alert-warn"><span>⚠</span><span>Obrigatório para <strong>todos os bens de Capital</strong> adquiridos. Devem ser tombados em nome do Município imediatamente após a aquisição.</span></div>
+          <div class="form-grid mb-16" style="grid-template-columns:1fr">
+            <div class="field"><label style="color:var(--accent3)">TC / Aditivo</label>
+              <select id="anx6-tc"><option value="">— Usar TC Ativo —</option></select></div>
+          </div>
           <div id="anx6-itens-wrap">
             <div style="display:grid;grid-template-columns:1fr 60px 80px 1fr 100px 100px;gap:8px;margin-bottom:6px;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px">
               <span>Discriminação do Bem</span><span>Qtd</span><span>Unid.</span><span>Nº Doc (NF)</span><span>Valor Unit.</span><span>Valor Total</span>
@@ -2946,7 +2962,7 @@ function showSection(id) {
   if (id === 'relatorio') renderAnexo3();
   if (id === 'dashboard') renderDashboard();
   if (id === 'alertas') renderAlertas();
-  if (id === 'anexos') { popularAnx6ComCapital(); }
+  if (id === 'anexos') { popularAnx6ComCapital(); popularTodosAnexosTCSelects(); }
   if (id === 'links') renderLinks();
 }
 
@@ -3806,10 +3822,12 @@ function renderDashboard() {
 function renderAnexo3() {
   const tipo = document.getElementById('rel-tipo').value;
   const parcela = document.getElementById('rel-parcela').value;
-  const list = state.despesas.filter(d => d.tipo === tipo && d.parcela === parcela);
+  const tcSel = getTCDoAnexo('anx3-tc');
+  const tcId = tcSel ? String(tcSel.id) : null;
+  const list = state.despesas.filter(d => d.tipo === tipo && d.parcela === parcela && (!tcId || String(d.tcVinculo) === tcId));
   const tbody = document.getElementById('anexo3-tbody');
   if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px">Nenhuma despesa do tipo ${tipoLabel(tipo)} na Parcela ${parcela}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px">Nenhuma despesa do tipo ${tipoLabel(tipo)} na Parcela ${parcela}${tcId ? ` para TC ${tcSel.numero}` : ''}</td></tr>`;
     document.getElementById('anexo3-total').textContent = 'R$ 0,00';
     return;
   }
@@ -3831,7 +3849,9 @@ function renderAnexo3() {
 function gerarAnexo3() {
   const tipo = document.getElementById('rel-tipo').value;
   const parcela = document.getElementById('rel-parcela').value;
-  const list = state.despesas.filter(d => d.tipo === tipo && d.parcela === parcela);
+  const tcSel = getTCDoAnexo('anx3-tc');
+  const tcId = tcSel ? String(tcSel.id) : null;
+  const list = state.despesas.filter(d => d.tipo === tipo && d.parcela === parcela && (!tcId || String(d.tcVinculo) === tcId));
   const saldoAnt = document.getElementById('rel-saldo-ant').value;
   const creditado = document.getElementById('rel-creditado').value;
   const rendimento = document.getElementById('rel-rendimento').value;
@@ -3854,6 +3874,7 @@ function gerarAnexo3() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = `AnexoIII_Parcela${parcela}_${tipo}.txt`; a.click();
 }
+const gerarAnexoIII = gerarAnexo3;
 
 // ==================== GERAR DOCUMENTO ====================
 function gerarDocumento() {
@@ -3864,13 +3885,20 @@ function gerarDocumento() {
   const periodo = document.getElementById('doc-periodo').value;
   const tcNum = document.getElementById('doc-tc').value;
 
-  const tcAtivo = state.tcs.find(t => t.id === state.tcAtivo);
-  const escola = tcAtivo ? tcAtivo.escola : '___________________________';
-  const presidente = tcAtivo ? tcAtivo.presidente : '___________________________';
-  const cnpjCE = tcAtivo ? tcAtivo.cnpj : '___________________________';
+  // Usar TC selecionado no Anexo II ou o TC ativo como fallback
+  const tcSel = getTCDoAnexo('anx2-tc');
+  const escola = tcSel ? tcSel.escola : '___________________________';
+  const presidente = tcSel ? tcSel.presidente : '___________________________';
+  const cnpjCE = tcSel ? tcSel.cnpj : '___________________________';
 
-  const custeio = state.despesas.filter(d => d.tipo === 'CUSTEIO' || d.tipo === 'CAPINA');
-  const capital = state.despesas.filter(d => d.tipo === 'CAPITAL');
+  // Filtrar despesas pelo TC selecionado
+  const tcId = tcSel ? tcSel.id : null;
+  const despFiltradas = tcId
+    ? state.despesas.filter(d => String(d.tcVinculo) === String(tcId))
+    : state.despesas;
+
+  const custeio = despFiltradas.filter(d => d.tipo === 'CUSTEIO' || d.tipo === 'CAPINA');
+  const capital = despFiltradas.filter(d => d.tipo === 'CAPITAL');
   const totalCusteio = custeio.reduce((s,d) => s + parseMoney(d.valor), 0);
   const totalCapital = capital.reduce((s,d) => s + parseMoney(d.valor), 0);
   const totalGeral = totalCusteio + totalCapital;
@@ -3880,7 +3908,7 @@ function gerarDocumento() {
   const saldoAnt = document.getElementById('rel-saldo-ant').value;
 
   let acoes = {};
-  state.despesas.forEach(d => {
+  despFiltradas.forEach(d => {
     const key = d.tipo === 'CAPITAL' ? 'EQUIPAMENTOS/MOBILIÁRIO' :
                 d.tipo === 'ALEM_MUROS' ? 'ROTEIROS EDUCATIVOS/CULTURAIS' :
                 'MATERIAIS DE EXPEDIENTE/PAPELARIA';
@@ -3901,7 +3929,7 @@ function gerarDocumento() {
   txt += `Pauta: Deliberação sobre a utilização de recurso referente ao repasse DA ${parcela.toUpperCase()} PARCELA\n`;
   txt += `para CUSTEIO, no ano de ${ano}, para ações de Manutenção e Desenvolvimento do ensino - MDE,\n`;
   txt += `em consonância com a proposta pedagógica da Escola, conforme estabelece o TERMO DE\n`;
-  txt += `COMPROMISSO ${tcNum}, assinado entre a Caixa Escolar ${(tcAtivo?.escola||'').toUpperCase()}\n`;
+  txt += `COMPROMISSO ${tcNum}, assinado entre a Caixa Escolar ${(tcSel?.escola||escola).toUpperCase()}\n`;
   txt += `e a Prefeitura de Contagem, por intermédio da Secretaria Municipal de Educação.\n\n`;
 
   const totalRecebido = parseMoney(saldoAnt) + parseMoney(creditado.replace('.','').replace(',','.')) + parseMoney(rendimento.replace('.','').replace(',','.'));
@@ -4005,11 +4033,52 @@ function getTCNumero() {
 }
 
 // ==================== NAVEGAÇÃO ANEXOS ====================
+function popularTCSelectAnexo(selId) {
+  const sel = document.getElementById(selId);
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Usar TC Ativo —</option>';
+  (state.tcs||[]).filter(t => !t.tcPaiId).forEach(tc => {
+    const opt = document.createElement('option');
+    opt.value = tc.id;
+    opt.textContent = `TC ${tc.numero}`;
+    if (state.tcAtivo === tc.id) opt.textContent += ' (Ativo)';
+    sel.appendChild(opt);
+    (state.tcs||[]).filter(a => a.tcPaiId === tc.id).forEach(a => {
+      const o2 = document.createElement('option');
+      o2.value = a.id;
+      o2.textContent = `  └ Aditivo ${a.numero} (TC ${tc.numero})`;
+      sel.appendChild(o2);
+    });
+  });
+  if (cur) sel.value = cur;
+}
+
+function popularTodosAnexosTCSelects() {
+  ['anx1-tc','anx2-tc','anx3-tc','anx4-tc','anx5-tc','anx6-tc'].forEach(popularTCSelectAnexo);
+}
+
+function getTCDoAnexo(selId) {
+  const sel = document.getElementById(selId);
+  const val = sel ? sel.value : '';
+  if (val) {
+    const tc = (state.tcs||[]).find(t => String(t.id) === String(val));
+    return tc || getTCAtivo();
+  }
+  return getTCAtivo();
+}
+
+function getTCNumeroDoAnexo(selId) {
+  const tc = getTCDoAnexo(selId);
+  return tc ? tc.numero : '___/____';
+}
+
 function mostrarAnexo(id, el) {
   document.querySelectorAll('.anexo-panel').forEach(p => p.style.display = 'none');
   document.getElementById(id).style.display = '';
   document.querySelectorAll('#anexo-tabs .parcela-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
+  popularTodosAnexosTCSelects();
 }
 
 // ==================== IMPRIMIR ANEXO ====================
@@ -4034,6 +4103,7 @@ function gerarAnexo1() {
   const dia = document.getElementById('anx1-dia').value;
   const mes = document.getElementById('anx1-mes').value;
   const ano = document.getElementById('anx1-ano').value;
+  const tcNum = getTCNumeroDoAnexo('anx1-tc');
   const acaoText = acao === 'MANUTENCAO'
     ? '(X) DESPESAS COM A MANUTENÇÃO DO FUNCIONAMENTO ESCOLAR\n( ) DESPESAS COM AQUISIÇÃO DE BENS MÓVEIS DE CAPITAL OU REFORMA, MANUTENÇÃO, REFORMA E REQUALIFICAÇÃO.'
     : '( ) DESPESAS COM A MANUTENÇÃO DO FUNCIONAMENTO ESCOLAR\n(X) DESPESAS COM AQUISIÇÃO DE BENS MÓVEIS DE CAPITAL OU REFORMA, MANUTENÇÃO, REFORMA E REQUALIFICAÇÃO.';
@@ -4042,7 +4112,7 @@ function gerarAnexo1() {
 
 Caixa Escolar: ${CAIXA_ESCOLAR}
 Endereço: ${ESCOLA} — Contagem/MG
-N.º do Termo de Compromisso: ${getTCNumero()}
+N.º do Termo de Compromisso: ${tcNum}
 N.º da Parcela: ( ) ____ª Parcela   (X) ${parcela}   ( ) Parcela Única
 Categoria: ${cat === 'CUSTEIO' ? '(X) CUSTEIO   ( ) CAPITAL' : '( ) CUSTEIO   (X) CAPITAL'}
 
@@ -4087,6 +4157,7 @@ function gerarAnexo4() {
   const dia = document.getElementById('anx4-dia').value;
   const mes = document.getElementById('anx4-mes').value;
   const ano = document.getElementById('anx4-ano').value;
+  const tcNum = getTCNumeroDoAnexo('anx4-tc');
   let linhas = '';
   let total = 0;
   rows.forEach((row, i) => {
@@ -4103,7 +4174,7 @@ function gerarAnexo4() {
                         RELAÇÃO DE GUIAS PAGAS
 
 Caixa Escolar: ${CAIXA_ESCOLAR}          CNPJ: ${CNPJ_CE}
-Termo de Compromisso: ${getTCNumero()}
+Termo de Compromisso: ${tcNum}
 
 ${'─'.repeat(90)}
 Nº  Guia (INSS, ISSQN)                Data          Nota Fiscal            Valor Guia    Valor NF
@@ -4129,7 +4200,7 @@ function gerarAnexo5() {
   const dia = document.getElementById('anx5-dia').value;
   const mes = document.getElementById('anx5-mes').value;
   const ano = document.getElementById('anx5-ano').value;
-  const tcNum = getTCNumero();
+  const tcNum = getTCNumeroDoAnexo('anx5-tc');
   let txt = `                              ANEXO V
                         PARECER DO CONSELHO FISCAL
 
@@ -4194,6 +4265,7 @@ function gerarAnexo6() {
   const mes = document.getElementById('anx6-mes').value;
   const ano = document.getElementById('anx6-ano').value;
   const hoje = `${dia}/${mes}/${ano}`;
+  const tcNum = getTCNumeroDoAnexo('anx6-tc');
   let itens = '';
   let total = 0;
   rows.forEach(row => {
@@ -4217,7 +4289,7 @@ ${ENDERECO_SEDUC}
 
 Pelo presente instrumento a Caixa Escolar ${CAIXA_ESCOLAR} da Unidade
 Escolar ${ESCOLA}, faz, em conformidade com a legislação aplicável ao Termo
-de Compromisso de nº ${getTCNumero()} e demais normas pertinentes à matéria,
+de Compromisso de nº ${tcNum} e demais normas pertinentes à matéria,
 a doação do(s) bem(ns) conforme discriminado(s) abaixo, adquirido(s) com recursos
 do referido Programa de Manutenção e Desenvolvimento da Educação Básica para que
 seja(m) tombado(s) e incorporado(s) ao patrimônio público e destinado(s) à escola
