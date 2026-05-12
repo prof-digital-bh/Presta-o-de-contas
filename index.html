@@ -1039,24 +1039,56 @@
       </div>
 
       <!-- ═══════════════════════════════════════════════════════
-           BLOCO 1 — VISÃO GERAL DOS TERMOS (ativos + encerrados)
+           BLOCO 5 — ÚLTIMOS LANÇAMENTOS + PENDÊNCIAS (retrátil)
            ═══════════════════════════════════════════════════════ -->
-      <div class="card mb-20" id="card-visao-termos">
-        <div class="card-header">
-          <div class="card-title">
-            <div class="card-title-icon" style="background:rgba(79,142,247,0.12);color:var(--accent)">📋</div>
-            Visão Geral dos Termos
-          </div>
-          <div class="gap-8">
-            <div style="display:flex;gap:6px;align-items:center">
-              <button id="btn-termos-ativos"   class="btn btn-ghost" style="font-size:11px;padding:5px 12px;background:rgba(56,217,169,0.12);color:var(--accent2);border-color:rgba(56,217,169,0.3)" onclick="dashFiltroTermos('ativos')">Ativos</button>
-              <button id="btn-termos-todos"    class="btn btn-ghost" style="font-size:11px;padding:5px 12px" onclick="dashFiltroTermos('todos')">Todos</button>
-              <button id="btn-termos-encerrados" class="btn btn-ghost" style="font-size:11px;padding:5px 12px" onclick="dashFiltroTermos('encerrados')">Encerrados</button>
+      <div class="card mb-20" id="card-ultimos-pend">
+        <div class="accordion-header" id="hdr-ultimos-pend" onclick="toggleAccordion('ultimos-pend')" style="background:transparent;border:none;margin-bottom:0;padding:4px 0">
+          <div class="acc-title" style="gap:10px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="card-title-icon" style="background:rgba(79,142,247,0.12);color:var(--custeio)">⊟</div>
+              <span style="font-size:14px;font-weight:600;color:var(--text)">Últimos Lançamentos &amp; Pendências</span>
             </div>
           </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:11px;color:var(--text-dim)" id="dash-ultimos-pend-resumo"></span>
+            <span class="acc-chevron">▼</span>
+          </div>
         </div>
-        <div id="dash-visao-termos">
-          <div class="empty-state" style="padding:20px"><div class="empty-sub">Nenhum TC cadastrado</div></div>
+        <div class="accordion-body" id="body-ultimos-pend" style="max-height:0;opacity:0">
+          <div class="acc-inner" style="padding-top:16px">
+            <div style="border-top:1px solid var(--border);padding-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                  <div class="card-title" style="font-size:13px">
+                    <div class="card-title-icon" style="background:rgba(79,142,247,0.15);color:var(--custeio);width:24px;height:24px;font-size:12px">⊟</div>
+                    Últimos Lançamentos
+                  </div>
+                  <button class="btn btn-ghost" style="font-size:12px" onclick="showSection('despesas')">Ver todos →</button>
+                </div>
+                <div id="dash-ultimos">
+                  <div class="empty-state" style="padding:24px">
+                    <div class="empty-icon">📋</div>
+                    <div class="empty-sub">Nenhuma despesa lançada ainda</div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                  <div class="card-title" style="font-size:13px">
+                    <div class="card-title-icon" style="background:rgba(240,80,96,0.15);color:var(--accent-red);width:24px;height:24px;font-size:12px">⚠</div>
+                    Pendências
+                  </div>
+                  <button class="btn btn-ghost" style="font-size:12px" onclick="showSection('checklist')">Ver checklist →</button>
+                </div>
+                <div id="dash-pendencias">
+                  <div class="empty-state" style="padding:24px">
+                    <div class="empty-icon">✅</div>
+                    <div class="empty-sub">Sem pendências no momento</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1107,112 +1139,38 @@
       </div>
 
       <!-- ═══════════════════════════════════════════════════════
-           BLOCO 3 — TOTALIZADORES (por filtro de tipo/parcela)
+           BLOCO 1 — VISÃO GERAL DOS TERMOS (ativos + encerrados)
            ═══════════════════════════════════════════════════════ -->
-      <div class="card mb-20" style="padding:12px 18px">
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
-          <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">Totalizadores — filtrar por:</span>
-          <div class="field" style="margin:0;min-width:200px">
-            <select id="dash-filtro-tc" onchange="renderDashboard()" style="font-size:12px;padding:7px 10px">
-              <option value="">Todos os TCs / Aditivos</option>
-            </select>
-          </div>
-          <div class="field" style="margin:0;min-width:160px">
-            <select id="dash-filtro-parcela" onchange="renderDashboard()" style="font-size:12px;padding:7px 10px">
-              <option value="">Todas as Parcelas</option>
-            </select>
-          </div>
-          <div class="field" style="margin:0;min-width:160px">
-            <select id="dash-filtro-tipo" onchange="renderDashboard()" style="font-size:12px;padding:7px 10px">
-              <option value="">Todos os Tipos</option>
-              <option value="CUSTEIO">Custeio</option>
-              <option value="CAPITAL">Capital</option>
-              <option value="ALEM_MUROS">Além dos Muros</option>
-              <option value="OBRAS">Obras</option>
-              <option value="CAPINA">Capina / Roçamento</option>
-            </select>
-          </div>
-          <button class="btn btn-ghost" style="font-size:12px;padding:7px 12px" onclick="limparFiltrosDash()">✕ Limpar</button>
-          <div id="dash-filtro-label" style="font-size:11px;color:var(--text-dim);margin-left:auto"></div>
-        </div>
-        <div class="stats-grid" style="margin-bottom:0">
-          <div class="stat-card stat-custeio">
-            <div class="stat-label">Custeio</div>
-            <div class="stat-value stat-value-custeio" id="stat-custeio">R$ 0,00</div>
-            <div class="stat-meta" id="stat-custeio-qt">0 lançamentos</div>
-          </div>
-          <div class="stat-card stat-capital">
-            <div class="stat-label">Capital</div>
-            <div class="stat-value stat-value-capital" id="stat-capital">R$ 0,00</div>
-            <div class="stat-meta" id="stat-capital-qt">0 lançamentos</div>
-          </div>
-          <div class="stat-card stat-alem">
-            <div class="stat-label">Além dos Muros</div>
-            <div class="stat-value stat-value-alem" id="stat-alem">R$ 0,00</div>
-            <div class="stat-meta" id="stat-alem-qt">0 lançamentos</div>
-          </div>
-          <div class="stat-card stat-total">
-            <div class="stat-label">Total Gasto</div>
-            <div class="stat-value" style="color:var(--text)" id="stat-total">R$ 0,00</div>
-            <div class="stat-meta" id="stat-total-qt">0 lançamentos</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ═══════════════════════════════════════════════════════
-           BLOCO 4 — SALDO POR TC/ADITIVO (accordion detalhado)
-           ═══════════════════════════════════════════════════════ -->
-      <div class="card mb-20" id="card-saldo-tcs">
+      <div class="card mb-20" id="card-visao-termos">
         <div class="card-header">
           <div class="card-title">
-            <div class="card-title-icon" style="background:rgba(56,217,169,0.15);color:var(--accent2)">$</div>
-            Saldo por TC / Aditivo
+            <div class="card-title-icon" style="background:rgba(79,142,247,0.12);color:var(--accent)">📋</div>
+            Visão Geral dos Termos
+          </div>
+          <div class="gap-8">
+            <div style="display:flex;gap:6px;align-items:center">
+              <button id="btn-termos-ativos"   class="btn btn-ghost" style="font-size:11px;padding:5px 12px;background:rgba(56,217,169,0.12);color:var(--accent2);border-color:rgba(56,217,169,0.3)" onclick="dashFiltroTermos('ativos')">Ativos</button>
+              <button id="btn-termos-todos"    class="btn btn-ghost" style="font-size:11px;padding:5px 12px" onclick="dashFiltroTermos('todos')">Todos</button>
+              <button id="btn-termos-encerrados" class="btn btn-ghost" style="font-size:11px;padding:5px 12px" onclick="dashFiltroTermos('encerrados')">Encerrados</button>
+            </div>
           </div>
         </div>
-        <div id="dash-saldo-tcs">
+        <div id="dash-visao-termos">
           <div class="empty-state" style="padding:20px"><div class="empty-sub">Nenhum TC cadastrado</div></div>
         </div>
       </div>
 
-      <!-- ═══════════════════════════════════════════════════════
-           BLOCO 5 — ÚLTIMOS LANÇAMENTOS + PENDÊNCIAS
-           ═══════════════════════════════════════════════════════ -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">
-              <div class="card-title-icon" style="background:rgba(79,142,247,0.15);color:var(--custeio)">⊟</div>
-              Últimos Lançamentos
-            </div>
-            <button class="btn btn-ghost" style="font-size:12px" onclick="showSection('despesas')">Ver todos →</button>
-          </div>
-          <div id="dash-ultimos">
-            <div class="empty-state" style="padding:24px">
-              <div class="empty-icon">📋</div>
-              <div class="empty-sub">Nenhuma despesa lançada ainda</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">
-              <div class="card-title-icon" style="background:rgba(240,80,96,0.15);color:var(--accent-red)">⚠</div>
-              Pendências
-            </div>
-            <button class="btn btn-ghost" style="font-size:12px" onclick="showSection('checklist')">Ver checklist →</button>
-          </div>
-          <div id="dash-pendencias">
-            <div class="empty-state" style="padding:24px">
-              <div class="empty-icon">✅</div>
-              <div class="empty-sub">Sem pendências no momento</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- compat: saldo parcela (mantido para não quebrar renderDashboard) -->
-      <div class="card" style="display:none">
+      <!-- compat: elementos usados internamente pelo renderDashboard -->
+      <div style="display:none">
+        <select id="dash-filtro-tc"></select>
+        <select id="dash-filtro-parcela"></select>
+        <select id="dash-filtro-tipo"></select>
+        <div id="dash-filtro-label"></div>
+        <div id="stat-custeio"></div><div id="stat-custeio-qt"></div>
+        <div id="stat-capital"></div><div id="stat-capital-qt"></div>
+        <div id="stat-alem"></div><div id="stat-alem-qt"></div>
+        <div id="stat-total"></div><div id="stat-total-qt"></div>
+        <div id="dash-saldo-tcs"></div>
         <div id="saldo-parcela-nota"></div>
         <div id="saldo-recebido"></div>
         <div id="saldo-gasto"></div>
@@ -4498,6 +4456,13 @@ function renderDashboard() {
         <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--accent2)">R$ ${d.valor}</div>
       </div>`;
     }).join('');
+  }
+
+  // Atualiza resumo do header retrátil (Bloco 5)
+  const resumoEl = document.getElementById('dash-ultimos-pend-resumo');
+  if (resumoEl) {
+    const qtLanc = state.despesas.length;
+    resumoEl.textContent = qtLanc > 0 ? `${qtLanc} lançamento${qtLanc > 1 ? 's' : ''} no total` : 'Nenhum lançamento';
   }
 }
 
