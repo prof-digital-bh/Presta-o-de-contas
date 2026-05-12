@@ -1038,10 +1038,80 @@
         <button class="btn btn-primary" onclick="showSection('despesas'); openModal('modal-despesa')">+ Lançar Despesa</button>
       </div>
 
-      <!-- FILTROS DASHBOARD -->
+      <!-- ═══════════════════════════════════════════════════════
+           BLOCO 1 — VISÃO GERAL DOS TERMOS (ativos + encerrados)
+           ═══════════════════════════════════════════════════════ -->
+      <div class="card mb-20" id="card-visao-termos">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon" style="background:rgba(79,142,247,0.12);color:var(--accent)">📋</div>
+            Visão Geral dos Termos
+          </div>
+          <div class="gap-8">
+            <div style="display:flex;gap:6px;align-items:center">
+              <button id="btn-termos-ativos"   class="btn btn-ghost" style="font-size:11px;padding:5px 12px;background:rgba(56,217,169,0.12);color:var(--accent2);border-color:rgba(56,217,169,0.3)" onclick="dashFiltroTermos('ativos')">Ativos</button>
+              <button id="btn-termos-todos"    class="btn btn-ghost" style="font-size:11px;padding:5px 12px" onclick="dashFiltroTermos('todos')">Todos</button>
+              <button id="btn-termos-encerrados" class="btn btn-ghost" style="font-size:11px;padding:5px 12px" onclick="dashFiltroTermos('encerrados')">Encerrados</button>
+            </div>
+          </div>
+        </div>
+        <div id="dash-visao-termos">
+          <div class="empty-state" style="padding:20px"><div class="empty-sub">Nenhum TC cadastrado</div></div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════
+           BLOCO 2 — ACOMPANHAMENTO DE PARCELA (filtro preciso)
+           ═══════════════════════════════════════════════════════ -->
+      <div class="card mb-20" style="border-color:rgba(181,123,238,0.25)">
+        <div class="card-header">
+          <div class="card-title">
+            <div class="card-title-icon" style="background:rgba(181,123,238,0.15);color:var(--alem)">🔍</div>
+            Acompanhamento de Parcela
+            <span style="font-size:10px;background:rgba(181,123,238,0.12);color:var(--alem);border:1px solid rgba(181,123,238,0.3);border-radius:10px;padding:2px 8px;font-weight:500">Filtro preciso por TC + Parcela</span>
+          </div>
+        </div>
+
+        <!-- Filtros vinculados -->
+        <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;padding:12px 0 16px;border-bottom:1px solid var(--border)">
+          <div class="field" style="margin:0;flex:1;min-width:220px">
+            <label style="font-size:11px;color:var(--alem)">Termo / Aditivo</label>
+            <select id="dash-acomp-tc" onchange="onDashAcompTCChange()" style="font-size:12px;padding:7px 10px">
+              <option value="">— Selecione o TC ou Aditivo —</option>
+            </select>
+          </div>
+          <div class="field" style="margin:0;min-width:170px">
+            <label style="font-size:11px;color:var(--alem)">Parcela</label>
+            <select id="dash-acomp-parcela" onchange="renderDashAcomp()" style="font-size:12px;padding:7px 10px">
+              <option value="">— Selecione a Parcela —</option>
+            </select>
+          </div>
+          <div class="field" style="margin:0;min-width:160px">
+            <label style="font-size:11px;color:var(--text-dim)">Tipo (opcional)</label>
+            <select id="dash-acomp-tipo" onchange="renderDashAcomp()" style="font-size:12px;padding:7px 10px">
+              <option value="">Todos os Tipos</option>
+              <option value="CUSTEIO">Custeio</option>
+              <option value="CAPITAL">Capital</option>
+              <option value="ALEM_MUROS">Além dos Muros</option>
+              <option value="OBRAS">Obras</option>
+              <option value="CAPINA">Capina / Roçamento</option>
+            </select>
+          </div>
+          <button class="btn btn-ghost" style="font-size:12px;padding:7px 12px;margin-bottom:1px" onclick="limparDashAcomp()">✕ Limpar</button>
+        </div>
+
+        <!-- Resultado do acompanhamento -->
+        <div id="dash-acomp-resultado" style="margin-top:16px">
+          <div style="font-size:12px;color:var(--text-dim);text-align:center;padding:20px 0">Selecione um Termo e uma Parcela para acompanhar os gastos</div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════
+           BLOCO 3 — TOTALIZADORES (por filtro de tipo/parcela)
+           ═══════════════════════════════════════════════════════ -->
       <div class="card mb-20" style="padding:12px 18px">
-        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-          <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">Filtrar dashboard:</span>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+          <span style="font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap">Totalizadores — filtrar por:</span>
           <div class="field" style="margin:0;min-width:200px">
             <select id="dash-filtro-tc" onchange="renderDashboard()" style="font-size:12px;padding:7px 10px">
               <option value="">Todos os TCs / Aditivos</option>
@@ -1065,32 +1135,33 @@
           <button class="btn btn-ghost" style="font-size:12px;padding:7px 12px" onclick="limparFiltrosDash()">✕ Limpar</button>
           <div id="dash-filtro-label" style="font-size:11px;color:var(--text-dim);margin-left:auto"></div>
         </div>
+        <div class="stats-grid" style="margin-bottom:0">
+          <div class="stat-card stat-custeio">
+            <div class="stat-label">Custeio</div>
+            <div class="stat-value stat-value-custeio" id="stat-custeio">R$ 0,00</div>
+            <div class="stat-meta" id="stat-custeio-qt">0 lançamentos</div>
+          </div>
+          <div class="stat-card stat-capital">
+            <div class="stat-label">Capital</div>
+            <div class="stat-value stat-value-capital" id="stat-capital">R$ 0,00</div>
+            <div class="stat-meta" id="stat-capital-qt">0 lançamentos</div>
+          </div>
+          <div class="stat-card stat-alem">
+            <div class="stat-label">Além dos Muros</div>
+            <div class="stat-value stat-value-alem" id="stat-alem">R$ 0,00</div>
+            <div class="stat-meta" id="stat-alem-qt">0 lançamentos</div>
+          </div>
+          <div class="stat-card stat-total">
+            <div class="stat-label">Total Gasto</div>
+            <div class="stat-value" style="color:var(--text)" id="stat-total">R$ 0,00</div>
+            <div class="stat-meta" id="stat-total-qt">0 lançamentos</div>
+          </div>
+        </div>
       </div>
 
-      <div class="stats-grid">
-        <div class="stat-card stat-custeio">
-          <div class="stat-label">Custeio</div>
-          <div class="stat-value stat-value-custeio" id="stat-custeio">R$ 0,00</div>
-          <div class="stat-meta" id="stat-custeio-qt">0 lançamentos</div>
-        </div>
-        <div class="stat-card stat-capital">
-          <div class="stat-label">Capital</div>
-          <div class="stat-value stat-value-capital" id="stat-capital">R$ 0,00</div>
-          <div class="stat-meta" id="stat-capital-qt">0 lançamentos</div>
-        </div>
-        <div class="stat-card stat-alem">
-          <div class="stat-label">Além dos Muros</div>
-          <div class="stat-value stat-value-alem" id="stat-alem">R$ 0,00</div>
-          <div class="stat-meta" id="stat-alem-qt">0 lançamentos</div>
-        </div>
-        <div class="stat-card stat-total">
-          <div class="stat-label">Total Gasto</div>
-          <div class="stat-value" style="color:var(--text)" id="stat-total">R$ 0,00</div>
-          <div class="stat-meta" id="stat-total-qt">0 lançamentos</div>
-        </div>
-      </div>
-
-      <!-- Saldo por TC/Aditivo -->
+      <!-- ═══════════════════════════════════════════════════════
+           BLOCO 4 — SALDO POR TC/ADITIVO (accordion detalhado)
+           ═══════════════════════════════════════════════════════ -->
       <div class="card mb-20" id="card-saldo-tcs">
         <div class="card-header">
           <div class="card-title">
@@ -1103,6 +1174,9 @@
         </div>
       </div>
 
+      <!-- ═══════════════════════════════════════════════════════
+           BLOCO 5 — ÚLTIMOS LANÇAMENTOS + PENDÊNCIAS
+           ═══════════════════════════════════════════════════════ -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
         <div class="card">
           <div class="card-header">
@@ -1137,28 +1211,14 @@
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">Saldo da Parcela <span id="saldo-parcela-nota" style="font-size:10px;color:var(--text-dim);font-weight:400;margin-left:4px"></span></div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
-          <div>
-            <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Valor Previsto</div>
-            <div style="font-family:'DM Mono',monospace;font-size:16px;color:var(--text)" id="saldo-recebido">R$ 0,00</div>
-          </div>
-          <div>
-            <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Total Gasto</div>
-            <div style="font-family:'DM Mono',monospace;font-size:16px;color:var(--accent-red)" id="saldo-gasto">R$ 0,00</div>
-          </div>
-          <div>
-            <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Saldo Disponível</div>
-            <div style="font-family:'DM Mono',monospace;font-size:16px;color:var(--accent2)" id="saldo-disponivel">R$ 0,00</div>
-          </div>
-        </div>
-        <div class="progress-bar-wrap mt-16">
-          <div class="progress-bar-fill" id="progress-bar" style="width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2))"></div>
-        </div>
-        <div style="font-size:11px;color:var(--text-dim);margin-top:6px" id="progress-label">0% utilizado</div>
+      <!-- compat: saldo parcela (mantido para não quebrar renderDashboard) -->
+      <div class="card" style="display:none">
+        <div id="saldo-parcela-nota"></div>
+        <div id="saldo-recebido"></div>
+        <div id="saldo-gasto"></div>
+        <div id="saldo-disponivel"></div>
+        <div id="progress-bar" style="width:0%"></div>
+        <div id="progress-label"></div>
       </div>
     </section>
 
@@ -3798,6 +3858,298 @@ function limparFiltrosDash() {
   renderDashboard();
 }
 
+// ── Visão Geral dos Termos ──
+let _dashTermosFiltro = 'ativos'; // 'ativos' | 'encerrados' | 'todos'
+
+function dashFiltroTermos(modo) {
+  _dashTermosFiltro = modo;
+  ['ativos','todos','encerrados'].forEach(m => {
+    const btn = document.getElementById('btn-termos-' + m);
+    if (!btn) return;
+    btn.style.background = m === modo ? 'rgba(79,142,247,0.15)' : '';
+    btn.style.color = m === modo ? 'var(--accent)' : '';
+    btn.style.borderColor = m === modo ? 'rgba(79,142,247,0.3)' : '';
+  });
+  renderDashVisaoTermos();
+}
+
+function renderDashVisaoTermos() {
+  const el = document.getElementById('dash-visao-termos');
+  if (!el) return;
+  const tcs = (state.tcs||[]).filter(t => !t.tcPaiId);
+  if (!tcs.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:20px"><div class="empty-sub">Nenhum TC cadastrado</div></div>';
+    return;
+  }
+
+  let filtrados = tcs;
+  if (_dashTermosFiltro === 'ativos') {
+    filtrados = tcs.filter(t => { const s = calcStatusTC(t.inicio, t.fim); return s === 'ativo' || s === 'a_vencer'; });
+  } else if (_dashTermosFiltro === 'encerrados') {
+    filtrados = tcs.filter(t => { const s = calcStatusTC(t.inicio, t.fim); return s === 'encerrado' || t.status === 'suspenso'; });
+  }
+
+  const statusInfo = {
+    ativo:     { label:'Ativo',     cls:'badge-green', dot:'var(--accent2)' },
+    a_vencer:  { label:'A Vencer',  cls:'badge-orange', dot:'var(--accent3)' },
+    encerrado: { label:'Encerrado', cls:'badge-red', dot:'var(--accent-red)' },
+    suspenso:  { label:'Suspenso',  cls:'badge-purple', dot:'var(--alem)' }
+  };
+
+  if (!filtrados.length) {
+    const msg = _dashTermosFiltro === 'ativos' ? 'Nenhum TC ativo no momento.' : 'Nenhum TC encerrado/suspenso.';
+    el.innerHTML = `<div class="empty-state" style="padding:20px"><div class="empty-sub">${msg}</div></div>`;
+    return;
+  }
+
+  const parNomes = {'01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única'};
+
+  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px">` +
+    filtrados.map(tc => {
+      const aditivos = (state.tcs||[]).filter(a => a.tcPaiId === tc.id);
+      const st = tc.status === 'suspenso' ? 'suspenso' : calcStatusTC(tc.inicio, tc.fim);
+      const si = statusInfo[st] || statusInfo.ativo;
+      const isAtivo = state.tcAtivo === tc.id;
+      const valorBase = parseMoney(tc.valor);
+      const totalAdit = aditivos.reduce((s,a) => s + parseMoney(a.valor), 0);
+      const valorTotal = valorBase + totalAdit;
+
+      // Gastos apenas deste TC (+ aditivos)
+      const allIds = [tc.id, ...aditivos.map(a=>a.id)];
+      const gastoTotal = state.despesas.filter(d => allIds.some(id => String(id)===String(d.tcVinculo)))
+        .reduce((s,d) => s + parseMoney(d.valor), 0);
+      const saldoTC = valorTotal - gastoTotal;
+      const pctTC = valorTotal > 0 ? Math.min(gastoTotal/valorTotal*100,100) : 0;
+
+      // Parcelas registradas
+      const allPvRows = (state.parcelaValores||[]).filter(pv => allIds.some(id=>String(id)===String(pv.tcId)));
+      const allSitRows = (state.parcelaSituacoes||[]).filter(ps => allIds.some(id=>String(id)===String(ps.tcId)));
+      const parcelas = [...new Set([...allPvRows.map(r=>r.parcela), ...allSitRows.map(r=>r.parcela)])].sort();
+
+      const parcelasHtml = parcelas.length ? parcelas.map(p => {
+        const sit = (allSitRows.find(r=>r.parcela===p)||{}).situacao || '';
+        const pvR  = allPvRows.find(r=>r.parcela===p);
+        const totalPv = pvR ? parseMoney(pvR.custeio)+parseMoney(pvR.capital)+parseMoney(pvR.alem)+parseMoney(pvR.obras)+parseMoney(pvR.capina) : 0;
+        const gastoP = state.despesas.filter(d => allIds.some(id=>String(id)===String(d.tcVinculo)) && d.parcela===p)
+          .reduce((s,d) => s+parseMoney(d.valor), 0);
+        return `<div style="display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:4px 9px;cursor:pointer"
+          title="Clique para acompanhar esta parcela"
+          onclick="abrirAcompParcela('${tc.id}','${p}')">
+          <span style="font-size:11px;font-weight:600;color:var(--text-muted)">${parNomes[p]||p} Parc.</span>
+          ${totalPv>0?`<span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--text-dim)">${fmtMoney(totalPv)}</span>`:''}
+          ${gastoP>0?`<span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--accent-red)">−${fmtMoney(gastoP)}</span>`:''}
+          ${sit?`<span class="sit-pill ${sitCls(sit)}" style="padding:1px 6px;font-size:9px">${sitLabel(sit)}</span>`:''}
+        </div>`;
+      }).join('') : '<span style="font-size:11px;color:var(--text-dim)">Sem distribuição de parcelas cadastrada</span>';
+
+      return `<div style="background:var(--surface2);border:1px solid ${isAtivo?'rgba(79,142,247,0.35)':st==='encerrado'?'rgba(240,80,96,0.2)':'var(--border)'};border-radius:10px;padding:14px 16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="width:7px;height:7px;border-radius:50%;background:${si.dot};flex-shrink:0;display:inline-block"></span>
+            <span style="font-size:13px;font-weight:600;color:var(--text)">TC ${tc.numero}</span>
+            <span class="tc-badge ${si.cls}">${si.label}</span>
+            ${isAtivo?'<span class="tc-badge badge-blue">Ativo</span>':''}
+            ${aditivos.length?`<span style="font-size:11px;color:var(--accent3)">${aditivos.length} aditivo(s)</span>`:''}
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;font-family:'DM Mono',monospace;font-size:12px">
+            <span style="color:var(--text-muted)">Previsto: ${fmtMoney(valorTotal)}</span>
+            <span style="color:var(--accent-red)">Gasto: ${fmtMoney(gastoTotal)}</span>
+            <span style="color:${saldoTC<0?'var(--accent-red)':'var(--accent2)'}">Saldo: ${fmtMoney(saldoTC)}</span>
+          </div>
+        </div>
+        <div style="margin:8px 0;background:var(--surface3);border-radius:20px;height:4px;overflow:hidden">
+          <div style="height:100%;border-radius:20px;background:${pctTC>90?'var(--accent-red)':'linear-gradient(90deg,var(--accent),var(--accent2))'};width:${pctTC}%"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px">${fmtDate(tc.inicio)} → ${fmtDate(tc.fim)} &nbsp;·&nbsp; ${Math.round(pctTC)}% utilizado</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+          <span style="font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-dim);margin-right:2px">Parcelas:</span>
+          ${parcelasHtml}
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+}
+
+// ── Abrir acompanhamento de parcela a partir do card ──
+function abrirAcompParcela(tcId, parcela) {
+  const sel = document.getElementById('dash-acomp-tc');
+  if (sel) { sel.value = tcId; onDashAcompTCChange(); }
+  setTimeout(() => {
+    const sp = document.getElementById('dash-acomp-parcela');
+    if (sp) { sp.value = parcela; renderDashAcomp(); }
+    // scroll até o bloco
+    const bloco = document.querySelector('[style*="border-color:rgba(181,123,238"]');
+    if (bloco) bloco.scrollIntoView({ behavior:'smooth', block:'start' });
+  }, 50);
+}
+
+function onDashAcompTCChange() {
+  const tcId = document.getElementById('dash-acomp-tc')?.value || '';
+  const sel = document.getElementById('dash-acomp-parcela');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Selecione a Parcela —</option>';
+  if (!tcId) { renderDashAcomp(); return; }
+
+  const tc = (state.tcs||[]).find(t => String(t.id) === String(tcId));
+  if (!tc) return;
+
+  // Parcelas disponíveis: da distribuição OU das despesas vinculadas a ESTE tc/aditivo
+  const pvParcelas = (state.parcelaValores||[]).filter(pv => String(pv.tcId)===String(tcId)).map(p=>p.parcela);
+  const despParcelas = state.despesas.filter(d => String(d.tcVinculo)===String(tcId)).map(d=>d.parcela).filter(Boolean);
+  const parcelas = [...new Set([...pvParcelas, ...despParcelas])].sort();
+
+  const parNomes = {'01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única'};
+  parcelas.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p;
+    opt.textContent = `${parNomes[p]||p} Parcela`;
+    sel.appendChild(opt);
+  });
+  renderDashAcomp();
+}
+
+function limparDashAcomp() {
+  const tc = document.getElementById('dash-acomp-tc');
+  const p  = document.getElementById('dash-acomp-parcela');
+  const t  = document.getElementById('dash-acomp-tipo');
+  if (tc) tc.value = '';
+  if (p)  p.innerHTML = '<option value="">— Selecione a Parcela —</option>';
+  if (t)  t.value = '';
+  renderDashAcomp();
+}
+
+function renderDashAcomp() {
+  const el = document.getElementById('dash-acomp-resultado');
+  if (!el) return;
+
+  const tcId    = document.getElementById('dash-acomp-tc')?.value || '';
+  const parcela = document.getElementById('dash-acomp-parcela')?.value || '';
+  const tipo    = document.getElementById('dash-acomp-tipo')?.value || '';
+
+  if (!tcId || !parcela) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--text-dim);text-align:center;padding:20px 0">Selecione um Termo e uma Parcela para acompanhar os gastos</div>';
+    return;
+  }
+
+  const tc = (state.tcs||[]).find(t => String(t.id) === String(tcId));
+  if (!tc) { el.innerHTML = '<div style="font-size:12px;color:var(--accent-red);padding:12px">TC não encontrado.</div>'; return; }
+
+  const parNomes = {'01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única'};
+
+  // ── FILTRO PRECISO: despesas vinculadas EXATAMENTE a este tcId e esta parcela ──
+  let despesas = state.despesas.filter(d =>
+    String(d.tcVinculo) === String(tcId) &&
+    d.parcela === parcela
+  );
+  if (tipo) despesas = despesas.filter(d => d.tipo === tipo);
+
+  // Valores distribuídos para este TC + parcela
+  const pvRow = (state.parcelaValores||[]).find(pv => String(pv.tcId)===String(tcId) && pv.parcela===parcela);
+  const sit = getSituacao(tcId, parcela);
+
+  const TIPOS = ['CUSTEIO','CAPITAL','ALEM_MUROS','OBRAS','CAPINA'];
+  const tipoKey = { CUSTEIO:'custeio', CAPITAL:'capital', ALEM_MUROS:'alem', OBRAS:'obras', CAPINA:'capina' };
+  const tiposParaExibir = tipo ? [tipo] : TIPOS;
+
+  // Total geral desta parcela/tipo
+  const totalGasto = despesas.reduce((s,d) => s+parseMoney(d.valor), 0);
+  const totalPrevisto = pvRow ? tiposParaExibir.reduce((s,t2) => s + parseMoney(pvRow[tipoKey[t2]]||'0'), 0) : 0;
+  const saldoGeral = totalPrevisto - totalGasto;
+
+  // Label do TC/aditivo
+  const tcLabel = tc.ehAditivo ? `Aditivo ${tc.numero}` : `TC ${tc.numero}`;
+
+  let html = `<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:13px;font-weight:600;color:${tc.ehAditivo?'var(--accent3)':'var(--accent)'}">${tcLabel}</span>
+      <span style="font-size:12px;color:var(--text-muted)">· ${parNomes[parcela]||parcela} Parcela</span>
+      ${tipo?`<span class="tipo-pill tipo-${tipo}" style="font-size:10px">${tipoLabel(tipo)}</span>`:''}
+      ${sit?`<span class="sit-pill ${sitCls(sit)}" style="font-size:11px">${sitLabel(sit)}</span>`:''}
+    </div>
+  </div>`;
+
+  // Cards de totais
+  html += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:14px 16px">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-dim);margin-bottom:6px">Previsto (Parcela)</div>
+      <div style="font-family:'DM Mono',monospace;font-size:17px;color:var(--text)">${totalPrevisto>0?fmtMoney(totalPrevisto):'<span style="color:var(--text-dim);font-size:13px">Não configurado</span>'}</div>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:14px 16px">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-dim);margin-bottom:6px">Lançado (${despesas.length} desp.)</div>
+      <div style="font-family:'DM Mono',monospace;font-size:17px;color:var(--accent-red)">${fmtMoney(totalGasto)}</div>
+    </div>
+    <div style="background:var(--surface2);border:1px solid ${saldoGeral<0?'rgba(240,80,96,0.3)':'rgba(56,217,169,0.2)'};border-radius:9px;padding:14px 16px">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-dim);margin-bottom:6px">Saldo</div>
+      <div style="font-family:'DM Mono',monospace;font-size:17px;color:${saldoGeral<0?'var(--accent-red)':'var(--accent2)'}">${totalPrevisto>0?fmtMoney(saldoGeral):'<span style="color:var(--text-dim);font-size:12px">—</span>'}</div>
+    </div>
+  </div>`;
+
+  // Barra de progresso
+  if (totalPrevisto > 0) {
+    const pct = Math.min(totalGasto/totalPrevisto*100, 100);
+    html += `<div style="margin-bottom:16px">
+      <div style="background:var(--surface2);border-radius:20px;height:6px;overflow:hidden">
+        <div style="height:100%;border-radius:20px;background:${pct>90?'var(--accent-red)':'linear-gradient(90deg,var(--accent),var(--accent2))'};width:${pct}%;transition:width 0.4s"></div>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:5px">${Math.round(pct)}% utilizado da parcela</div>
+    </div>`;
+  }
+
+  // Breakdown por rubrica
+  const rubricas = tiposParaExibir.filter(t2 => {
+    const prev = pvRow ? parseMoney(pvRow[tipoKey[t2]]||'0') : 0;
+    const gasto = despesas.filter(d=>d.tipo===t2).reduce((s,d)=>s+parseMoney(d.valor),0);
+    return prev > 0 || gasto > 0;
+  });
+
+  if (rubricas.length) {
+    html += `<div style="overflow-x:auto;margin-bottom:16px"><table style="width:100%;font-size:12px;border-collapse:collapse">
+      <thead><tr style="border-bottom:1px solid var(--border)">
+        <th style="text-align:left;padding:5px 8px;font-size:10px;text-transform:uppercase;color:var(--text-dim)">Rubrica</th>
+        <th style="text-align:right;padding:5px 8px;font-size:10px;text-transform:uppercase;color:var(--text-dim)">Previsto</th>
+        <th style="text-align:right;padding:5px 8px;font-size:10px;text-transform:uppercase;color:var(--text-dim)">Lançado</th>
+        <th style="text-align:right;padding:5px 8px;font-size:10px;text-transform:uppercase;color:var(--text-dim)">Saldo</th>
+      </tr></thead><tbody>`;
+    rubricas.forEach(t2 => {
+      const prev  = pvRow ? parseMoney(pvRow[tipoKey[t2]]||'0') : 0;
+      const gasto = despesas.filter(d=>d.tipo===t2).reduce((s,d)=>s+parseMoney(d.valor),0);
+      const sld   = prev - gasto;
+      const tColor = t2==='CUSTEIO'?'var(--custeio)':t2==='CAPITAL'?'var(--capital)':t2==='ALEM_MUROS'?'var(--alem)':t2==='CAPINA'?'var(--capina)':'var(--obras)';
+      html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.04)">
+        <td style="padding:5px 8px"><span style="font-size:11px;font-weight:600;color:${tColor}">${tipoLabel(t2)}</span></td>
+        <td style="padding:5px 8px;text-align:right;font-family:'DM Mono',monospace;color:var(--text-muted)">${prev>0?fmtMoney(prev):'—'}</td>
+        <td style="padding:5px 8px;text-align:right;font-family:'DM Mono',monospace;color:var(--accent-red)">${gasto>0?fmtMoney(gasto):'—'}</td>
+        <td style="padding:5px 8px;text-align:right;font-family:'DM Mono',monospace;color:${sld<0?'var(--accent-red)':prev>0?'var(--accent2)':'var(--text-dim)'}">${prev>0?fmtMoney(sld):gasto>0?'<span style="color:var(--accent3);font-size:10px">Sem previsão</span>':'—'}</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+  }
+
+  // Lista das despesas desta parcela
+  if (despesas.length) {
+    html += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-dim);margin-bottom:8px">Despesas desta parcela (${despesas.length})</div>`;
+    html += `<div style="overflow-x:auto"><table style="width:100%;font-size:12px;border-collapse:collapse">
+      <thead><tr style="border-bottom:1px solid var(--border);background:var(--surface2)">
+        <th style="padding:6px 8px;font-size:10px;text-transform:uppercase;color:var(--text-dim);text-align:left">Tipo</th>
+        <th style="padding:6px 8px;font-size:10px;text-transform:uppercase;color:var(--text-dim);text-align:left">Credor</th>
+        <th style="padding:6px 8px;font-size:10px;text-transform:uppercase;color:var(--text-dim);text-align:left">NF</th>
+        <th style="padding:6px 8px;font-size:10px;text-transform:uppercase;color:var(--text-dim);text-align:right">Valor</th>
+      </tr></thead><tbody>`;
+    despesas.forEach(d => {
+      html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.04)">
+        <td style="padding:5px 8px"><span class="tipo-pill tipo-${d.tipo}" style="font-size:10px">${tipoLabel(d.tipo)}</span></td>
+        <td style="padding:5px 8px;font-weight:500;color:var(--text)">${d.credor}</td>
+        <td style="padding:5px 8px;color:var(--text-muted)">${d.nfNum||'—'}${d.nfData?' · '+fmtDate(d.nfData):''}</td>
+        <td style="padding:5px 8px;text-align:right;font-family:'DM Mono',monospace;color:var(--accent2)">R$ ${d.valor}</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+  } else {
+    html += `<div style="font-size:12px;color:var(--text-dim);padding:10px 0">Nenhuma despesa lançada para esta parcela${tipo?' com o tipo selecionado':''}.</div>`;
+  }
+
+  el.innerHTML = html;
+}
+
 function populateDashTCFilter() {
   const sel = document.getElementById('dash-filtro-tc');
   if (!sel) return;
@@ -3833,9 +4185,33 @@ function populateDashParcelaFilter() {
   if (cur) sel.value = cur;
 }
 
+// ── Populate acompanhamento TC dropdown ──
+function populateDashAcompTCFilter() {
+  const sel = document.getElementById('dash-acomp-tc');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Selecione o TC ou Aditivo —</option>';
+  (state.tcs||[]).filter(t => !t.tcPaiId).forEach(tc => {
+    const opt = document.createElement('option');
+    opt.value = tc.id;
+    opt.textContent = `TC ${tc.numero}`;
+    sel.appendChild(opt);
+    (state.tcs||[]).filter(a => a.tcPaiId === tc.id).forEach(a => {
+      const optA = document.createElement('option');
+      optA.value = a.id;
+      optA.textContent = `  └ Aditivo ${a.numero}`;
+      sel.appendChild(optA);
+    });
+  });
+  if (cur) { sel.value = cur; }
+}
+
 function renderDashboard() {
   populateDashTCFilter();
   populateDashParcelaFilter();
+  populateDashAcompTCFilter();
+  renderDashVisaoTermos();
+  renderDashAcomp();
 
   const filtroTC      = document.getElementById('dash-filtro-tc')?.value || '';
   const filtroTipo    = document.getElementById('dash-filtro-tipo')?.value || '';
