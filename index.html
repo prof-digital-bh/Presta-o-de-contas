@@ -962,11 +962,6 @@
       <div class="sidebar-sub">Caixa Escolar</div>
     </div>
 
-    <!-- elementos ocultos para compatibilidade JS -->
-    <span id="tc-sidebar-num" style="display:none"></span>
-    <span id="tc-sidebar-escola" style="display:none"></span>
-    <span id="tc-sidebar-status" style="display:none"></span>
-
     <nav class="nav-section">
       <div class="nav-label">Principal</div>
       <div class="nav-item" onclick="showSection('tc')">
@@ -2909,36 +2904,8 @@ function initExtras() {
   updateSidebarStatus();
 }
 
-// Update sidebar badge color based on status
-function updateSidebarStatus() {
-  const tc = (state.tcs||[]).find(t => t.id === state.tcAtivo);
-  const numEl = document.getElementById('tc-sidebar-num');
-  const escolaEl = document.getElementById('tc-sidebar-escola');
-  const badge = document.getElementById('tc-sidebar-status');
-  if (!tc) {
-    numEl.textContent = 'Nenhum TC';
-    numEl.style.color = 'var(--text-dim)';
-    escolaEl.textContent = 'Cadastre um TC';
-    escolaEl.style.color = 'var(--text-dim)';
-    badge.style.display = 'none';
-    return;
-  }
-  numEl.textContent = 'TC ' + tc.numero;
-  numEl.style.color = '';
-  escolaEl.textContent = tc.escola.replace('E.M. ','').replace('Escola Municipal ','');
-  escolaEl.style.color = '';
-  badge.style.display = '';
-  const status = calcStatusTC(tc.inicio, tc.fim);
-  const map = {
-    ativo: ['Ativo', 'badge-green'],
-    a_vencer: ['A Vencer', 'badge-orange'],
-    encerrado: ['Encerrado', 'badge-red'],
-    suspenso: ['Suspenso', 'badge-purple']
-  };
-  const [label, cls] = map[status] || ['Ativo', 'badge-green'];
-  badge.textContent = label;
-  badge.className = 'tc-badge ' + cls;
-}
+// Sidebar status removida — função mantida para compatibilidade
+function updateSidebarStatus() {}
 // ==================== STATE (definição base) ====================
 let state = {
   tcs: [],
