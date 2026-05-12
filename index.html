@@ -2540,13 +2540,17 @@
       </div>
       <div class="field" id="field-parcela-col">
         <label>Nº da Parcela</label>
-        <select id="d-parcela">
-          <option value="01">Parcela 01</option>
-          <option value="02">Parcela 02</option>
-          <option value="03" selected>Parcela 03</option>
-          <option value="04">Parcela 04</option>
+        <select id="d-parcela" onchange="onParcelaOrTipoChange()">
+          <option value="01">1ª Parcela</option>
+          <option value="02">2ª Parcela</option>
+          <option value="03" selected>3ª Parcela</option>
+          <option value="04">4ª Parcela</option>
         </select>
       </div>
+
+      <!-- Saldo da Parcela por Categoria -->
+      <div class="field form-full" id="field-saldo-parcela" style="display:none"></div>
+
       <div class="field">
         <label>Nº da Nota Fiscal</label>
         <input type="text" id="d-nf-num" placeholder="NF 001">
@@ -2789,6 +2793,83 @@ function mostrarSaldoTC(tcId) {
   document.getElementById('saldo-tc-disp').textContent = fmtMoney(saldo);
   document.getElementById('saldo-tc-disp').style.color = saldo < 0 ? 'var(--accent-red)' : 'var(--accent2)';
   el.style.display = '';
+  // Atualiza também o saldo da parcela se já estiver selecionada
+  const parcelaEl = document.getElementById('d-parcela');
+  if (parcelaEl) mostrarSaldoParcela(tcId, parcelaEl.value);
+}
+
+// Mostra saldo da parcela específica por tipo de categoria
+function mostrarSaldoParcela(tcId, parcela) {
+  const el = document.getElementById('field-saldo-parcela');
+  if (!el) return;
+  if (!tcId || !parcela) { el.style.display = 'none'; return; }
+
+  // Busca configuração de valores da parcela
+  const pvRow = (state.parcelaValores||[]).find(r => String(r.tcId) === String(tcId) && r.parcela === parcela);
+  if (!pvRow) { el.style.display = 'none'; return; }
+
+  // Tipo selecionado
+  const tipoEl = document.getElementById('d-tipo');
+  const tipo = tipoEl ? tipoEl.value : '';
+
+  // Mapa tipo → campo em pvRow
+  const tipoMap = { CUSTEIO:'custeio', CAPITAL:'capital', ALEM_MUROS:'alem', OBRAS:'obras', CAPINA:'capina' };
+  const campo = tipoMap[tipo];
+
+  // Valor distribuído para esta parcela/tipo
+  const valorDistrib = campo ? parseMoney(pvRow[campo]||'0,00') : 0;
+
+  // Já gasto nesta parcela+tipo+tcId
+  const gastoParc = (state.despesas||[])
+    .filter(d => String(d.tcVinculo) === String(tcId) && d.parcela === parcela && d.tipo === tipo)
+    .reduce((s,d) => s + parseMoney(d.valor), 0);
+
+  const saldoParc = valorDistrib - gastoParc;
+
+  // Labels dos tipos
+  const tipoLabels = { CUSTEIO:'Custeio', CAPITAL:'Capital', ALEM_MUROS:'Além Muros', OBRAS:'Obras', CAPINA:'Capina' };
+  const parNomes = {'01':'1ª Parcela','02':'2ª Parcela','03':'3ª Parcela','04':'4ª Parcela','05':'5ª Parcela','U':'Parcela Única'};
+
+  // Resumo de todas as categorias da parcela
+  const cats = [
+    { key:'CUSTEIO', campo:'custeio', label:'Custeio', color:'var(--custeio)' },
+    { key:'CAPITAL', campo:'capital', label:'Capital', color:'var(--capital)' },
+    { key:'ALEM_MUROS', campo:'alem', label:'Além Muros', color:'var(--alem)' },
+    { key:'OBRAS', campo:'obras', label:'Obras', color:'var(--obras)' },
+    { key:'CAPINA', campo:'capina', label:'Capina', color:'var(--capina)' }
+  ].filter(c => parseMoney(pvRow[c.campo]||'0,00') > 0);
+
+  const resumoCats = cats.map(c => {
+    const vDist = parseMoney(pvRow[c.campo]||'0,00');
+    const vGasto = (state.despesas||[])
+      .filter(d => String(d.tcVinculo)===String(tcId) && d.parcela===parcela && d.tipo===c.key)
+      .reduce((s,d)=>s+parseMoney(d.valor),0);
+    const vSaldo = vDist - vGasto;
+    const ativo = c.key === tipo;
+    return `<div style="display:flex;flex-direction:column;gap:2px;min-width:80px;padding:6px 9px;border-radius:7px;background:${ativo?'rgba(79,142,247,0.12)':'transparent'};border:1px solid ${ativo?'rgba(79,142,247,0.3)':'transparent'}">
+      <span style="font-size:9px;text-transform:uppercase;letter-spacing:0.5px;color:${c.color};font-weight:700">${c.label}</span>
+      <span style="font-size:10px;color:var(--text-dim)">Dist: <span style="font-family:'DM Mono',monospace;color:var(--text)">${fmtMoney(vDist)}</span></span>
+      <span style="font-size:10px;color:var(--text-dim)">Gasto: <span style="font-family:'DM Mono',monospace;color:var(--accent-red)">${fmtMoney(vGasto)}</span></span>
+      <span style="font-size:10px;color:var(--text-dim)">Saldo: <span style="font-family:'DM Mono',monospace;color:${vSaldo<0?'var(--accent-red)':'var(--accent2)'};font-weight:600">${fmtMoney(vSaldo)}</span></span>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div style="background:var(--surface3);border:1px solid var(--border-light);border-radius:9px;padding:11px 14px">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.7px;color:var(--accent3);font-weight:700;margin-bottom:8px">
+        📦 ${parNomes[parcela]||('Parcela '+parcela)} — Saldo por Categoria
+      </div>
+      ${cats.length > 0 ? `<div style="display:flex;flex-wrap:wrap;gap:6px">${resumoCats}</div>` :
+        `<div style="font-size:12px;color:var(--text-dim)">Nenhum valor distribuído para esta parcela.</div>`}
+      ${campo && valorDistrib > 0 ? `
+      <div style="margin-top:10px;padding:8px 10px;border-radius:7px;background:${saldoParc<0?'rgba(240,80,96,0.1)':'rgba(56,217,169,0.08)'};border:1px solid ${saldoParc<0?'rgba(240,80,96,0.3)':'rgba(56,217,169,0.2)'};font-size:12px">
+        ${saldoParc < 0
+          ? `⛔ <strong style="color:var(--accent-red)">Saldo insuficiente!</strong> Já foram gastos <span style="font-family:'DM Mono',monospace">${fmtMoney(gastoParc)}</span> de <span style="font-family:'DM Mono',monospace">${fmtMoney(valorDistrib)}</span> em <strong>${tipoLabels[tipo]||tipo}</strong> nesta parcela. Saldo: <span style="font-family:'DM Mono',monospace;color:var(--accent-red)">${fmtMoney(saldoParc)}</span>`
+          : `✅ Saldo disponível para <strong>${tipoLabels[tipo]||tipo}</strong>: <span style="font-family:'DM Mono',monospace;color:var(--accent2);font-size:13px">${fmtMoney(saldoParc)}</span>`
+        }
+      </div>` : ''}
+    </div>`;
+  el.style.display = '';
 }
 
 // populateTCDropdown is called inside openModal below
@@ -2830,6 +2911,33 @@ async function salvarDespesa() {
   };
   if (!d.credor || !d.valor) { alert('Preencha ao menos o credor e o valor.'); return; }
   if (!d.tcVinculo) { alert('Selecione o TC ou Aditivo vinculado.'); return; }
+  // Validar saldo da parcela por tipo
+  const pvCheck = (state.parcelaValores||[]).find(r => String(r.tcId)===String(d.tcVinculo) && r.parcela===d.parcela);
+  if (pvCheck) {
+    const tipoMap = { CUSTEIO:'custeio', CAPITAL:'capital', ALEM_MUROS:'alem', OBRAS:'obras', CAPINA:'capina' };
+    const campo = tipoMap[d.tipo];
+    if (campo) {
+      const valorDist = parseMoney(pvCheck[campo]||'0,00');
+      const jaGasto = (state.despesas||[]).filter(x => String(x.tcVinculo)===String(d.tcVinculo) && x.parcela===d.parcela && x.tipo===d.tipo).reduce((s,x)=>s+parseMoney(x.valor),0);
+      const saldoDisp = valorDist - jaGasto;
+      const valorLancar = parseMoney(d.valor);
+      if (valorDist > 0 && valorLancar > saldoDisp) {
+        const tipoLabels = { CUSTEIO:'Custeio', CAPITAL:'Capital', ALEM_MUROS:'Além Muros', OBRAS:'Obras', CAPINA:'Capina' };
+        const parNomes = {'01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única'};
+        if (!confirm(`⚠ ATENÇÃO: Saldo insuficiente!
+
+` +
+          `Parcela ${parNomes[d.parcela]||d.parcela} — ${tipoLabels[d.tipo]||d.tipo}
+` +
+          `Disponível: R$ ${fmtMoneyStr(saldoDisp)}
+` +
+          `Lançando:   R$ ${fmtMoneyStr(valorLancar)}
+
+` +
+          `Deseja lançar mesmo assim (ficará negativo)?`)) return;
+      }
+    }
+  }
   setSyncStatus('syncing');
   const { error } = await supa.from('despesas').insert(despesaToRow(d));
   if (error) { setSyncStatus('error'); alert('Erro ao salvar despesa: ' + error.message); return; }
@@ -3132,6 +3240,7 @@ function openModal(id) {
     document.getElementById('d-credor').value = '';
     document.getElementById('d-cnpj').value = '';
     document.getElementById('field-saldo-tc').style.display = 'none';
+    const spEl = document.getElementById('field-saldo-parcela'); if(spEl) spEl.style.display='none';
     if (state.tcAtivo) mostrarSaldoTC(state.tcAtivo);
   }
   if (id === 'modal-tc') {
@@ -3368,6 +3477,14 @@ async function removerTC(i) {
 function tipoChange() {
   const tipo = document.getElementById('d-tipo').value;
   document.getElementById('field-subtipo').style.display = tipo === 'ALEM_MUROS' ? '' : 'none';
+  onParcelaOrTipoChange();
+}
+
+function onParcelaOrTipoChange() {
+  const tcId = document.getElementById('d-tc-vinculo').value;
+  const parcela = document.getElementById('d-parcela').value;
+  if (tcId && parcela) mostrarSaldoParcela(tcId, parcela);
+  else { const el = document.getElementById('field-saldo-parcela'); if(el) el.style.display='none'; }
 }
 
 
