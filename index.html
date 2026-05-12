@@ -1038,46 +1038,9 @@
         <button class="btn btn-primary" onclick="showSection('despesas'); openModal('modal-despesa')">+ Lançar Despesa</button>
       </div>
 
-      <!-- ═══════════════════════════════════════════════════════
-           BLOCO 5 — ÚLTIMOS LANÇAMENTOS + PENDÊNCIAS (retrátil)
-           ═══════════════════════════════════════════════════════ -->
-      <div class="card mb-20" id="card-ultimos-pend">
-        <div class="accordion-header" id="hdr-ultimos-pend" onclick="toggleAccordion('ultimos-pend')" style="background:transparent;border:none;margin-bottom:0;padding:4px 0">
-          <div class="acc-title" style="gap:10px">
-            <div style="display:flex;align-items:center;gap:8px">
-              <div class="card-title-icon" style="background:rgba(79,142,247,0.12);color:var(--custeio)">⊟</div>
-              <span style="font-size:14px;font-weight:600;color:var(--text)">Últimos Lançamentos &amp; Pendências</span>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:11px;color:var(--text-dim)" id="dash-ultimos-pend-resumo"></span>
-            <span class="acc-chevron">▼</span>
-          </div>
-        </div>
-        <div class="accordion-body" id="body-ultimos-pend" style="max-height:0;opacity:0">
-          <div class="acc-inner" style="padding-top:16px">
-            <div style="border-top:1px solid var(--border);padding-top:16px">
-              <div>
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-                  <div class="card-title" style="font-size:13px">
-                    <div class="card-title-icon" style="background:rgba(79,142,247,0.15);color:var(--custeio);width:24px;height:24px;font-size:12px">⊟</div>
-                    Últimos Lançamentos
-                  </div>
-                  <button class="btn btn-ghost" style="font-size:12px" onclick="showSection('despesas')">Ver todos →</button>
-                </div>
-                <div id="dash-ultimos">
-                  <div class="empty-state" style="padding:24px">
-                    <div class="empty-icon">📋</div>
-                    <div class="empty-sub">Nenhuma despesa lançada ainda</div>
-                  </div>
-                </div>
-              </div>
-              <!-- dash-pendencias mantido oculto para compatibilidade com o código JS -->
-              <div id="dash-pendencias" style="display:none"></div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- dash-pendencias mantido oculto para compatibilidade JS -->
+      <div id="dash-pendencias" style="display:none"></div>
+      <div id="dash-ultimos" style="display:none"></div>
 
       <!-- ═══════════════════════════════════════════════════════
            BLOCO 2 — ACOMPANHAMENTO DE PARCELA (filtro preciso)
