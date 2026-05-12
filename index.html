@@ -1056,7 +1056,7 @@
         </div>
         <div class="accordion-body" id="body-ultimos-pend" style="max-height:0;opacity:0">
           <div class="acc-inner" style="padding-top:16px">
-            <div style="border-top:1px solid var(--border);padding-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div style="border-top:1px solid var(--border);padding-top:16px">
               <div>
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
                   <div class="card-title" style="font-size:13px">
@@ -1072,21 +1072,8 @@
                   </div>
                 </div>
               </div>
-              <div>
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-                  <div class="card-title" style="font-size:13px">
-                    <div class="card-title-icon" style="background:rgba(240,80,96,0.15);color:var(--accent-red);width:24px;height:24px;font-size:12px">⚠</div>
-                    Pendências
-                  </div>
-                  <button class="btn btn-ghost" style="font-size:12px" onclick="showSection('checklist')">Ver checklist →</button>
-                </div>
-                <div id="dash-pendencias">
-                  <div class="empty-state" style="padding:24px">
-                    <div class="empty-icon">✅</div>
-                    <div class="empty-sub">Sem pendências no momento</div>
-                  </div>
-                </div>
-              </div>
+              <!-- dash-pendencias mantido oculto para compatibilidade com o código JS -->
+              <div id="dash-pendencias" style="display:none"></div>
             </div>
           </div>
         </div>
