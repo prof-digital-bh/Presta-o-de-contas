@@ -1173,6 +1173,7 @@
                 <th>Data NF</th>
                 <th>Descrição</th>
                 <th class="text-right">Valor</th>
+                <th>Pendências</th>
                 <th>Ações</th>
               </tr>
             </thead>
@@ -2410,6 +2411,53 @@
         <label>Descrição / Objeto</label>
         <input type="text" id="edit-desp-descricao" placeholder="Ex.: Material de papelaria...">
       </div>
+
+      <!-- PENDÊNCIAS — mesmos campos do modal de lançamento -->
+      <div class="field form-full" style="grid-column:1/-1;margin-top:4px;padding-top:12px;border-top:1px solid var(--border)">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:10px;font-weight:600">⚠ Pendências de Documentos</div>
+      </div>
+
+      <!-- ORÇAMENTOS -->
+      <div class="field">
+        <label>3 Orçamentos obtidos?</label>
+        <select id="edit-desp-orcamentos" onchange="toggleEditPendenciaField('orcamentos')">
+          <option value="sim">Sim</option>
+          <option value="nao">Não</option>
+          <option value="na">N/A (entrega imediata)</option>
+        </select>
+      </div>
+      <div class="field" id="edit-field-orcamentos-pend" style="display:none">
+        <label style="color:var(--accent3)">⚠ Justificativa / Pendência (Orçamentos)</label>
+        <input type="text" id="edit-desp-orcamentos-pend" placeholder="Descreva o motivo ou pendência...">
+      </div>
+
+      <!-- CERTIDÕES -->
+      <div class="field">
+        <label>Certidões do fornecedor OK?</label>
+        <select id="edit-desp-certidoes" onchange="toggleEditPendenciaField('certidoes')">
+          <option value="sim">Sim — regulares</option>
+          <option value="nao">Não (pendente)</option>
+          <option value="na">N/A (entrega imediata ≤ 30 dias)</option>
+        </select>
+      </div>
+      <div class="field" id="edit-field-certidoes-pend" style="display:none">
+        <label style="color:var(--accent-red)">⚠ Pendência de Certidões</label>
+        <input type="text" id="edit-desp-certidoes-pend" placeholder="Ex.: CND Federal vencida, CNDT pendente...">
+      </div>
+
+      <!-- CARTÃO CNPJ -->
+      <div class="field">
+        <label>Cartão CNPJ em dia?</label>
+        <select id="edit-desp-cartao-cnpj" onchange="toggleEditPendenciaField('cartao-cnpj')">
+          <option value="sim">Sim</option>
+          <option value="nao">Não (pendente)</option>
+          <option value="na">N/A</option>
+        </select>
+      </div>
+      <div class="field" id="edit-field-cartao-cnpj-pend" style="display:none">
+        <label style="color:var(--accent-red)">⚠ Pendência do Cartão CNPJ</label>
+        <input type="text" id="edit-desp-cartao-cnpj-pend" placeholder="Descreva a pendência...">
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modal-edit-despesa')">Cancelar</button>
@@ -2912,6 +2960,7 @@ let state = {
   despesas: [],
   fornecedoresCad: [],
   checkStates: {},
+  checkNotas: {},
   parcelaFiltro: 'todas',
   editIndex: null,
   tcAtivo: null,
@@ -3030,7 +3079,15 @@ async function carregarDados() {
   state.despesas = (despesasData || []).map(rowToDespesa);
   state.fornecedoresCad = (fornsData || []).map(r => ({ id: r.id, nome: r.nome, cnpj: r.cnpj, responsavel: r.responsavel }));
   state.checkStates = {};
-  (checksData || []).forEach(r => { state.checkStates[r.chave] = r.marcado; });
+  state.checkNotas = {};
+  (checksData || []).forEach(r => {
+    if (r.chave.startsWith('nota__')) {
+      state.checkNotas[r.chave.slice(6)] = r.observacao || '';
+    } else {
+      state.checkStates[r.chave] = r.marcado;
+      if (r.observacao) state.checkNotas[r.chave] = r.observacao;
+    }
+  });
   (confsData || []).forEach(r => {
     if (r.chave === 'tc_ativo') state.tcAtivo = r.valor ? Number(r.valor) : null;
     if (r.chave === 'parcela_filtro') state.parcelaFiltro = r.valor || 'todas';
@@ -3447,6 +3504,13 @@ function renderDespesas() {
         <td class="td-muted">${fmtDate(d.nfData)||'—'}</td>
         <td class="td-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${d.descricao}">${d.descricao||'—'}</td>
         <td class="td-value text-right" style="color:var(--accent2)">R$ ${d.valor}</td>
+        <td style="white-space:nowrap;max-width:120px">${(() => {
+          const pends = [];
+          if (d.orcamentos === 'nao') pends.push('<span title="Orçamentos pendentes' + (d.orcamentosPend ? ': ' + d.orcamentosPend.replace(/"/g,'') : '') + '" style="display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:10px;font-size:10px;background:rgba(246,166,35,0.15);color:var(--accent3);border:1px solid rgba(246,166,35,0.3);cursor:help">📋 Orç.</span>');
+          if (d.certidoes === 'nao') pends.push('<span title="Certidões pendentes' + (d.certidoesPend ? ': ' + d.certidoesPend.replace(/"/g,'') : '') + '" style="display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:10px;font-size:10px;background:rgba(240,80,96,0.15);color:var(--accent-red);border:1px solid rgba(240,80,96,0.3);cursor:help">⚠ Cert.</span>');
+          if (d.cartaoCnpj === 'nao') pends.push('<span title="Cartão CNPJ pendente' + (d.cartaoCnpjPend ? ': ' + d.cartaoCnpjPend.replace(/"/g,'') : '') + '" style="display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:10px;font-size:10px;background:rgba(240,80,96,0.15);color:var(--accent-red);border:1px solid rgba(240,80,96,0.3);cursor:help">⚠ CNPJ</span>');
+          return pends.length ? '<div style="display:flex;flex-wrap:wrap;gap:3px">' + pends.join('') + '</div>' : '<span style="color:var(--text-dim);font-size:11px">—</span>';
+        })()}</td>
         <td style="white-space:nowrap">
           <button class="action-btn" onclick="editarDespesa(${d.id})" title="Editar">✏️</button>
           <button class="action-btn del" onclick="removerDespesa(${d.id})" title="Remover">✕</button>
@@ -3500,10 +3564,34 @@ function editarDespesa(id) {
   const hasU = [...ps.options].some(o => o.value === 'U');
   if (!hasU) { const o = document.createElement('option'); o.value='U'; o.textContent='Parcela Única'; ps.appendChild(o); }
   ps.value = d.parcela || '01';
+  // pendências
+  const orc = document.getElementById('edit-desp-orcamentos');
+  orc.value = d.orcamentos || 'sim';
+  document.getElementById('edit-field-orcamentos-pend').style.display = orc.value === 'nao' ? '' : 'none';
+  document.getElementById('edit-desp-orcamentos-pend').value = d.orcamentosPend || '';
+  const cert = document.getElementById('edit-desp-certidoes');
+  cert.value = d.certidoes || 'sim';
+  document.getElementById('edit-field-certidoes-pend').style.display = cert.value === 'nao' ? '' : 'none';
+  document.getElementById('edit-desp-certidoes-pend').value = d.certidoesPend || '';
+  const cnpjEl = document.getElementById('edit-desp-cartao-cnpj');
+  cnpjEl.value = d.cartaoCnpj || 'sim';
+  document.getElementById('edit-field-cartao-cnpj-pend').style.display = cnpjEl.value === 'nao' ? '' : 'none';
+  document.getElementById('edit-desp-cartao-cnpj-pend').value = d.cartaoCnpjPend || '';
   openModal('modal-edit-despesa');
   // init money mask
   const vi = document.getElementById('edit-desp-valor');
   maskMoney(vi);
+}
+
+function toggleEditPendenciaField(field) {
+  const map = {
+    'orcamentos':  { sel: 'edit-desp-orcamentos',  pend: 'edit-field-orcamentos-pend',  val: 'nao' },
+    'certidoes':   { sel: 'edit-desp-certidoes',   pend: 'edit-field-certidoes-pend',   val: 'nao' },
+    'cartao-cnpj': { sel: 'edit-desp-cartao-cnpj', pend: 'edit-field-cartao-cnpj-pend', val: 'nao' }
+  };
+  const m = map[field]; if (!m) return;
+  const v = document.getElementById(m.sel).value;
+  document.getElementById(m.pend).style.display = v === m.val ? '' : 'none';
 }
 
 async function salvarEdicaoDespesa() {
@@ -3520,6 +3608,12 @@ async function salvarEdicaoDespesa() {
   d.nfData = document.getElementById('edit-desp-nf-data').value;
   d.valor = document.getElementById('edit-desp-valor').value.trim();
   d.descricao = document.getElementById('edit-desp-descricao').value.trim();
+  d.orcamentos = document.getElementById('edit-desp-orcamentos').value;
+  d.orcamentosPend = document.getElementById('edit-desp-orcamentos-pend').value.trim();
+  d.certidoes = document.getElementById('edit-desp-certidoes').value;
+  d.certidoesPend = document.getElementById('edit-desp-certidoes-pend').value.trim();
+  d.cartaoCnpj = document.getElementById('edit-desp-cartao-cnpj').value;
+  d.cartaoCnpjPend = document.getElementById('edit-desp-cartao-cnpj-pend').value.trim();
   if (!d.credor || !d.valor) { alert('Preencha ao menos o credor e o valor.'); return; }
   setSyncStatus('syncing');
   const { error } = await supa.from('despesas').update(despesaToRow(d)).eq('id', id);
@@ -3733,13 +3827,20 @@ function renderChecklist() {
 }
 
 function checkItem(key, label, sub, company, checked, cls) {
+  const nota = state.checkNotas && state.checkNotas[key] ? state.checkNotas[key] : '';
   return `
     <div class="check-item ${cls||''} ${checked?'done':''}" id="ci-${key}">
       <input class="check-cb" type="checkbox" id="cb-${key}" ${checked?'checked':''} onchange="toggleCheck('${key}')">
-      <div>
-        <div class="check-label">${label}</div>
-        ${sub?`<div class="check-sub">${sub}</div>`:''}
-        ${company?`<div class="check-company">${company}</div>`:''}
+      <div style="flex:1">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+          <div>
+            <div class="check-label">${label}</div>
+            ${sub?`<div class="check-sub">${sub}</div>`:''}
+            ${company?`<div class="check-company">${company}</div>`:''}
+            ${nota?`<div style="margin-top:5px;font-size:11.5px;color:var(--accent3);background:rgba(246,166,35,0.08);border:1px solid rgba(246,166,35,0.2);border-radius:5px;padding:4px 8px">📝 ${nota}</div>`:''}
+          </div>
+          <button onclick="editarNotaChecklist('${key}')" title="Adicionar/editar observação" style="background:none;border:1px solid var(--border);border-radius:5px;padding:3px 7px;cursor:pointer;font-size:11px;color:var(--text-dim);white-space:nowrap;flex-shrink:0;transition:all 0.15s" onmouseover="this.style.borderColor='var(--accent3)';this.style.color='var(--accent3)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">✏ nota</button>
+        </div>
       </div>
     </div>
   `;
@@ -3750,7 +3851,8 @@ async function toggleCheck(key) {
   const ci = document.getElementById('ci-'+key);
   if (state.checkStates[key]) { ci.classList.add('done'); ci.classList.remove('pending','pending-yellow'); }
   else { ci.classList.remove('done'); }
-  const { error } = await supa.from('checklist_states').upsert({ chave: key, marcado: state.checkStates[key], atualizado_em: new Date().toISOString() });
+  const notaAtual = (state.checkNotas && state.checkNotas[key]) || null;
+  const { error } = await supa.from('checklist_states').upsert({ chave: key, marcado: state.checkStates[key], observacao: notaAtual, atualizado_em: new Date().toISOString() });
   if (error) { setSyncStatus('error'); } else { setSyncStatus('ok'); }
   updatePendenciasSummary();
   refreshPendenciaBadge();
@@ -3778,9 +3880,14 @@ function updatePendenciasSummary() {
   if (!pendItems.length) {
     document.getElementById('pendencias-lista').innerHTML = `<div class="alert alert-success" style="margin:0"><span>✅</span><span>Todos os documentos estão OK!</span></div>`;
   } else {
-    document.getElementById('pendencias-lista').innerHTML = pendItems.map(p =>
-      `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(240,80,96,0.06);border:1px solid rgba(240,80,96,0.15);border-radius:7px;margin-bottom:6px;font-size:12.5px;color:var(--text)"><span style="color:var(--accent-red)">●</span>${p.textContent}</div>`
-    ).join('');
+    document.getElementById('pendencias-lista').innerHTML = pendItems.map(p => {
+      const key = p.closest('.check-item')?.id?.replace('ci-','');
+      const nota = key && state.checkNotas && state.checkNotas[key] ? state.checkNotas[key] : '';
+      return `<div style="padding:7px 10px;background:rgba(240,80,96,0.06);border:1px solid rgba(240,80,96,0.15);border-radius:7px;margin-bottom:6px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text)"><span style="color:var(--accent-red)">●</span>${p.textContent}</div>
+        ${nota ? `<div style="font-size:11px;color:var(--accent3);margin-top:3px;margin-left:16px">📝 ${nota}</div>` : ''}
+      </div>`;
+    }).join('');
   }
 
   // dash pendencias
@@ -3794,6 +3901,53 @@ function updatePendenciasSummary() {
 }
 
 function refreshChecklist() {
+  renderChecklist();
+}
+
+// ==================== NOTA NO CHECKLIST ====================
+let _editNotaKey = '';
+
+function editarNotaChecklist(key) {
+  _editNotaKey = key;
+  const nota = (state.checkNotas && state.checkNotas[key]) || '';
+  document.getElementById('nota-chk-input').value = nota;
+  // get label from DOM
+  const ciEl = document.getElementById('ci-' + key);
+  const labelEl = ciEl ? ciEl.querySelector('.check-label') : null;
+  document.getElementById('nota-chk-label').textContent = labelEl ? labelEl.textContent : key;
+  openModal('modal-nota-checklist');
+  setTimeout(() => document.getElementById('nota-chk-input').focus(), 150);
+}
+
+async function salvarNotaChecklist() {
+  const nota = document.getElementById('nota-chk-input').value.trim();
+  if (!state.checkNotas) state.checkNotas = {};
+  state.checkNotas[_editNotaKey] = nota;
+  setSyncStatus('syncing');
+  // Salva como observacao na mesma linha do checklist_states
+  const { error } = await supa.from('checklist_states').upsert({
+    chave: _editNotaKey,
+    marcado: !!state.checkStates[_editNotaKey],
+    observacao: nota || null,
+    atualizado_em: new Date().toISOString()
+  });
+  if (error) { setSyncStatus('error'); } else { setSyncStatus('ok'); }
+  closeModal('modal-nota-checklist');
+  renderChecklist();
+}
+
+async function limparNotaChecklist() {
+  if (!state.checkNotas) state.checkNotas = {};
+  state.checkNotas[_editNotaKey] = '';
+  setSyncStatus('syncing');
+  await supa.from('checklist_states').upsert({
+    chave: _editNotaKey,
+    marcado: !!state.checkStates[_editNotaKey],
+    observacao: null,
+    atualizado_em: new Date().toISOString()
+  });
+  setSyncStatus('ok');
+  closeModal('modal-nota-checklist');
   renderChecklist();
 }
 
@@ -5846,5 +6000,26 @@ document.getElementById('login-email').addEventListener('keydown', e => {
 
 
 </script>
+
+<!-- MODAL: NOTA DO CHECKLIST -->
+<div class="modal-overlay" id="modal-nota-checklist">
+  <div class="modal" style="width:500px">
+    <div class="modal-header">
+      <div class="modal-title">📝 Observação / Pendência</div>
+      <button class="modal-close" onclick="closeModal('modal-nota-checklist')">×</button>
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;background:var(--surface2);border-radius:8px;padding:10px 12px;border-left:3px solid var(--accent3)" id="nota-chk-label"></div>
+    <div class="field">
+      <label style="color:var(--accent3)">⚠ Observação / Pendência</label>
+      <textarea id="nota-chk-input" placeholder="Descreva a pendência, prazo ou observação sobre este documento..." style="min-height:90px"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" style="color:var(--accent-red);margin-right:auto" onclick="limparNotaChecklist()">🗑 Limpar nota</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-nota-checklist')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarNotaChecklist()">💾 Salvar Nota</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
