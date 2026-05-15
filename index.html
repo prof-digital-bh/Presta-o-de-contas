@@ -2558,6 +2558,35 @@
   </div>
 </div>
 
+<!-- MODAL: EDITAR FORNECEDOR -->
+<div class="modal-overlay" id="modal-edit-fornecedor">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">✏️ Editar Fornecedor</div>
+      <button class="modal-close" onclick="closeModal('modal-edit-fornecedor')">×</button>
+    </div>
+    <input type="hidden" id="edit-forn-id">
+    <div class="form-grid">
+      <div class="field form-full">
+        <label>Razão Social / Nome Completo</label>
+        <input type="text" id="edit-forn-nome" placeholder="Ex.: Comercial JL Móveis e Equipamentos Ltda">
+      </div>
+      <div class="field">
+        <label>CNPJ ou CPF</label>
+        <input type="text" id="edit-forn-cnpj" placeholder="00.000.000/0001-00" maxlength="18" oninput="mascaraCNPJ(this)">
+      </div>
+      <div class="field">
+        <label>Principal Responsável</label>
+        <input type="text" id="edit-forn-responsavel" placeholder="Nome do sócio ou responsável">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-edit-fornecedor')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarEdicaoFornecedor()">Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: FORNECEDOR -->
 <div class="modal-overlay" id="modal-fornecedor">
   <div class="modal">
@@ -2644,7 +2673,10 @@ function renderFornecedores() {
       <td style="font-weight:500">${f.nome}</td>
       <td class="td-mono td-muted">${f.cnpj||'—'}</td>
       <td class="td-muted">${f.responsavel||'—'}</td>
-      <td><button class="action-btn del" onclick="removerFornecedor(${f.id})" title="Remover">✕</button></td>
+      <td style="display:flex;gap:6px">
+        <button class="action-btn" onclick="abrirEditarFornecedor(${f.id})" title="Editar">✏️</button>
+        <button class="action-btn del" onclick="removerFornecedor(${f.id})" title="Remover">✕</button>
+      </td>
     </tr>
   `).join('');
 }
@@ -2655,6 +2687,32 @@ async function removerFornecedor(id) {
   await supa.from('fornecedores').delete().eq('id', id);
   setSyncStatus('ok');
   state.fornecedoresCad = (state.fornecedoresCad||[]).filter(f => f.id !== id);
+  renderFornecedores();
+}
+
+function abrirEditarFornecedor(id) {
+  const f = (state.fornecedoresCad||[]).find(f => f.id === id);
+  if (!f) return;
+  document.getElementById('edit-forn-id').value = id;
+  document.getElementById('edit-forn-nome').value = f.nome || '';
+  document.getElementById('edit-forn-cnpj').value = f.cnpj || '';
+  document.getElementById('edit-forn-responsavel').value = f.responsavel || '';
+  openModal('modal-edit-fornecedor');
+}
+
+async function salvarEdicaoFornecedor() {
+  const id = Number(document.getElementById('edit-forn-id').value);
+  const nome = document.getElementById('edit-forn-nome').value.trim();
+  const cnpj = document.getElementById('edit-forn-cnpj').value.trim();
+  const responsavel = document.getElementById('edit-forn-responsavel').value.trim();
+  if (!nome) { alert('Informe o nome do fornecedor.'); return; }
+  setSyncStatus('syncing');
+  const { error } = await supa.from('fornecedores').update({ nome, cnpj, responsavel }).eq('id', id);
+  if (error) { setSyncStatus('error'); alert('Erro ao atualizar fornecedor: ' + error.message); return; }
+  setSyncStatus('ok');
+  const idx = (state.fornecedoresCad||[]).findIndex(f => f.id === id);
+  if (idx >= 0) state.fornecedoresCad[idx] = { ...state.fornecedoresCad[idx], nome, cnpj, responsavel };
+  closeModal('modal-edit-fornecedor');
   renderFornecedores();
 }
 
