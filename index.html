@@ -1451,33 +1451,36 @@
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-        <div>
-          <div id="checklist-area">
-            <div class="empty-state">
-              <div class="empty-icon">☑</div>
-              <div class="empty-title">Nenhuma despesa para checar</div>
-              <div class="empty-sub">Lance despesas na aba Despesas para gerar o checklist</div>
+      <!-- Painel retrátil de Pendências -->
+      <div id="pend-panel" style="margin-bottom:14px;border:1px solid var(--border);border-radius:12px;overflow:hidden">
+        <div onclick="togglePendPanel()" style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;cursor:pointer;background:var(--surface2);user-select:none">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:15px">📋</span>
+            <span style="font-size:13px;font-weight:600;color:var(--text)">Pendências &amp; Progresso</span>
+            <span id="pend-panel-badge" style="display:none;font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(240,80,96,0.18);color:var(--accent-red);border:1px solid rgba(240,80,96,0.3);font-weight:700"></span>
+          </div>
+          <span id="pend-panel-arrow" style="color:var(--text-dim);font-size:13px;transition:transform 0.25s">▶</span>
+        </div>
+        <div id="pend-panel-body" style="display:none;padding:16px 18px;background:var(--surface);border-top:1px solid var(--border)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div>
+              <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:10px">Itens pendentes</div>
+              <div id="pendencias-lista"><div style="font-size:13px;color:var(--text-muted)">Sem pendências</div></div>
+            </div>
+            <div>
+              <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:10px">Progresso geral</div>
+              <div id="progresso-docs"><div style="font-size:13px;color:var(--text-muted)">0 de 0 documentos</div></div>
             </div>
           </div>
         </div>
-        <div>
-          <div class="card">
-            <div class="card-header">
-              <div class="card-title">📋 Pendências Resumidas</div>
-            </div>
-            <div id="pendencias-lista">
-              <div style="font-size:13px;color:var(--text-muted)">Sem pendências</div>
-            </div>
-          </div>
-          <div class="card mt-16">
-            <div class="card-header">
-              <div class="card-title">📊 Progresso Geral</div>
-            </div>
-            <div id="progresso-docs">
-              <div style="font-size:13px;color:var(--text-muted)">0 de 0 documentos</div>
-            </div>
-          </div>
+      </div>
+
+      <!-- Área principal: fornecedores + anexos -->
+      <div id="checklist-area">
+        <div class="empty-state">
+          <div class="empty-icon">☑</div>
+          <div class="empty-title">Nenhuma despesa para checar</div>
+          <div class="empty-sub">Lance despesas na aba Despesas para gerar o checklist</div>
         </div>
       </div>
     </section>
@@ -4027,6 +4030,9 @@ function renderChecklist() {
 
   const tipoLbl = t => ({ CUSTEIO:'Custeio', CAPITAL:'Capital', ALEM_MUROS:'Além dos Muros', OBRAS:'Obras', CAPINA:'Capina' }[t] || t);
 
+  // Two-column grid: fornecedores left, anexos right
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start">';
+  html += '<div>'; // LEFT col: fornecedores
   html += '<div class="check-section-title">Documentos por Fornecedor</div>';
 
   Object.values(fornecedores).forEach((f, fi) => {
@@ -4109,21 +4115,14 @@ function renderChecklist() {
     html += '</div></div></div>';
   });
 
-  // CAPITAL específico
-  const temCapital = despesasFiltradas.some(d => d.tipo === 'CAPITAL');
-  if (temCapital) {
-    html += '<div class="check-section-title">Capital — Bens Permanentes</div>';
-    const keyPat  = 'patrimonio';
-    const keyTerm = 'termo_doacao';
-    html += checkItem(keyPat,  'Comprovante de entrada no Almoxarifado / Patrimônio (SEAD)', 'Necessário para todos os bens permanentes adquiridos', '', !!state.checkStates[keyPat],  !state.checkStates[keyPat]  ? 'pending' : '');
-    html += checkItem(keyTerm, 'Termo de Doação da Caixa Escolar para a Unidade Escolar',    'Obrigatório para bens adquiridos com recursos do TC',   '', !!state.checkStates[keyTerm], !state.checkStates[keyTerm] ? 'pending' : '');
-  }
+  html += '</div>'; // end LEFT col
 
-  // ── DOCUMENTOS NECESSÁRIOS (quando há filtro de parcela ou TC ativo) ──
-  const temFiltroAtivo = !!(filtroTC || filtroParcela);
-  if (temFiltroAtivo) {
-    html += renderDocsNecessarios(despesasFiltradas, filtroTC, filtroParcela, filtroTipo);
-  }
+  // RIGHT col: Anexos obrigatórios (sempre mostra quando há despesas filtradas)
+  html += '<div>';
+  html += renderAnexosObrigatorios(despesasFiltradas, filtroTC, filtroParcela);
+  html += '</div>';
+
+  html += '</div>'; // end 2-col grid
 
   el.innerHTML = html;
   updatePendenciasSummary();
@@ -4135,154 +4134,124 @@ if (!window._docsObrigState) window._docsObrigState = {};
 
 function _doiKey(prefixo, idx) { return 'doi_' + prefixo + '_' + idx; }
 
-function renderDocsNecessarios(despesasFiltradas, filtroTC, filtroParcela, filtroTipo) {
+// ==================== ANEXOS OBRIGATÓRIOS (baseado no Manual SEDUC/FUNEC e Decreto 1134/2024) ====================
+function renderAnexosObrigatorios(despesasFiltradas, filtroTC, filtroParcela) {
   const tipos = new Set(despesasFiltradas.map(d => d.tipo));
-  const temObras   = tipos.has('OBRAS');
-  const temAlem    = tipos.has('ALEM_MUROS');
   const temCapital = tipos.has('CAPITAL');
+  const temAlem    = tipos.has('ALEM_MUROS');
+  const temObras   = tipos.has('OBRAS');
 
-  // Monta lista de seções de docs
-  const secoes = [];
+  // Monta lista de anexos — somente os oficiais do Manual SEDUC/FUNEC
+  // Estrutura: { key, num, label, sub, condicional, tag? }
+  // condicional = '' (sempre), 'CAPITAL', 'ALEM_MUROS', 'OBRAS'
+  const ANEXOS = [
+    { key:'anx1',  num:'I',    label:'Certidão de Execução do Objeto',                     sub:'Assinada pelo Presidente da Caixa Escolar — declara que os objetivos do TC foram alcançados',                   cond:'' },
+    { key:'anx2',  num:'II',   label:'Ata do Conselho Fiscal — Deliberação das Despesas',   sub:'Assinada pela Diretoria e pelo Conselho Fiscal; registra o planejamento e aprovação do uso dos recursos',       cond:'' },
+    { key:'anx3',  num:'III',  label:'Relatório de Execução Físico-Financeiro',              sub:'Resumo das receitas e despesas da parcela; assinado pelo Presidente e Tesoureiro',                               cond:'' },
+    { key:'anx4',  num:'IV',   label:'Relação de Guias Pagas (ISS, DARF etc.)',              sub:'Guias de recolhimento de impostos vinculadas às notas fiscais da prestação de contas',                          cond:'' },
+    { key:'anx5',  num:'V',    label:'Parecer do Conselho Fiscal',                           sub:'Documento emitido pelo Conselho Fiscal aprovando ou não a prestação de contas',                                  cond:'' },
+    { key:'anx6',  num:'VI',   label:'Termo de Doação — Caixa Escolar → Unidade Escolar',   sub:'Obrigatório quando há aquisição de bens permanentes (Capital); transferência formal ao patrimônio municipal',   cond:'CAPITAL',    tag:'Capital' },
+    { key:'anx7',  num:'VII',  label:'Formulário Trabalho de Campo',                         sub:'Obrigatório para despesas "Além dos Muros"; informa destino, data, nº de estudantes e objetivos pedagógicos',  cond:'ALEM_MUROS', tag:'Além dos Muros' },
+    { key:'anx8',  num:'VIII', label:'Termo de Recebimento Definitivo',                      sub:'Obrigatório para reforma, manutenção, reparo e requalificação de imóveis; assinado pelo Engenheiro SEDUC/FUNEC',cond:'OBRAS',      tag:'Obras' },
+    { key:'anx9',  num:'IX',   label:'Relatório dos Assessores Educacionais — Visitas in loco', sub:'Elaborado pelo Assessor Educacional da SEDUC/FUNEC após visita de monitoramento à unidade escolar',         cond:'' },
+    { key:'anx10', num:'X',    label:'Relatório de Análise da Prestação de Contas',          sub:'Elaborado pelo Analista de Prestação de Contas da SEDUC/FUNEC com parecer técnico e financeiro',               cond:'' },
+    { key:'anx11', num:'XI',   label:'Parecer de Aprovação do Ordenador de Despesas',        sub:'Parecer final do Secretário Municipal de Educação ou Presidente da FUNEC aprovando a prestação de contas',     cond:'' },
+  ];
 
-  // 1. Gerais obrigatórios (sempre)
-  secoes.push({
-    id: 'geral',
-    titulo: '📋 Documentos Gerais Obrigatórios',
-    cor: 'var(--accent)',
-    corBg: 'rgba(79,142,247,0.1)',
-    docs: [
-      { label: 'Ata do Conselho Fiscal (Deliberação — Anexo II)', sub: 'Assinada por todos os membros da mesa e conselho fiscal' },
-      { label: 'Extrato da Conta Corrente do período', sub: 'Conta bancária exclusiva do TC — período completo de execução' },
-      { label: 'Extrato do Fundo de Investimento', sub: 'CAIXA FIC GIRO MPE RF REF DI LP ou equivalente' },
-      { label: 'Relatório de Execução Físico-Financeira (Anexo III)', sub: 'Assinado pelo Presidente e Tesoureiro da Caixa Escolar' },
-      { label: 'Nota(s) Fiscal(is) dos fornecedores', sub: 'Original ou cópia autenticada de todas as NFs da parcela' },
-      { label: 'Comprovante(s) de Pagamento', sub: 'Transferência bancária, recibo ou extrato de débito' },
-      { label: '3 Orçamentos / Cotações por fornecedor', sub: 'Com CNPJ, data, validade e valor unitário — menor preço selecionado' },
-      { label: 'Cartão CNPJ dos fornecedores (Receita Federal)', sub: 'Vigente na data da contratação, com CNAE compatível' },
-    ]
+  // Filtra conforme tipos presentes
+  const anexosVisiveis = ANEXOS.filter(a => {
+    if (!a.cond) return true;
+    if (a.cond === 'CAPITAL')    return temCapital;
+    if (a.cond === 'ALEM_MUROS') return temAlem;
+    if (a.cond === 'OBRAS')      return temObras;
+    return true;
   });
 
-  // 2. Obras
-  if (temObras) {
-    secoes.push({
-      id: 'obras',
-      titulo: '🔨 Anexos Obrigatórios — Obras / Reformas',
-      cor: 'var(--obras)',
-      corBg: 'rgba(246,166,35,0.1)',
-      docs: [
-        { label: 'Orçamento detalhado com planilha de serviços (SINAPI/referência)', sub: 'Quantitativos e valores unitários de todos os serviços previstos' },
-        { label: 'ART ou RRT do responsável técnico (Engenheiro/Arquiteto)', sub: 'Anotação de Responsabilidade Técnica registrada no CREA/CAU' },
-        { label: 'Projeto básico ou memorial descritivo da obra', sub: 'Descrição dos serviços, materiais, dimensões e prazo de execução' },
-        { label: 'Termo de Recebimento Definitivo (Anexo VIII)', sub: 'Assinado pelo Engenheiro da SEDUC/FUNEC após vistoria técnica' },
-        { label: 'Registro fotográfico — antes, durante e após a obra', sub: 'Fotos datadas comprovando o estado anterior e a execução' },
-        { label: 'Certidões de Regularidade Fiscal do contratado (CND, FGTS, CNDT)', sub: 'Obrigatórias para serviços contínuos e obras com prazo > 30 dias' },
-        { label: 'Diário de obra (quando aplicável)', sub: 'Para obras de maior porte — registros diários do andamento' },
-      ]
-    });
-  }
+  const total = anexosVisiveis.length;
+  const oks   = anexosVisiveis.filter(a => (_docsObrigState[_doiKey('anx', a.key)]||{}).estado === 'ok').length;
+  const pends = anexosVisiveis.filter(a => (_docsObrigState[_doiKey('anx', a.key)]||{}).estado === 'pendente').length;
+  const pct   = total ? Math.round(oks/total*100) : 0;
 
-  // 3. Além dos Muros
-  if (temAlem) {
-    secoes.push({
-      id: 'alem',
-      titulo: '🚌 Anexos Obrigatórios — Além dos Muros',
-      cor: 'var(--alem)',
-      corBg: 'rgba(181,123,238,0.1)',
-      docs: [
-        { label: 'Formulário Trabalho de Campo (Anexo VII)', sub: 'Preenchido com destino, data, nº de estudantes, horários e objetivos pedagógicos' },
-        { label: 'Lista de presença dos estudantes participantes', sub: 'Assinada pelos alunos ou responsáveis, por atividade realizada' },
-        { label: 'Autorização dos pais/responsáveis (menores de idade)', sub: 'Documento de ciência e autorização para atividade externa' },
-        { label: 'Justificativa pedagógica da atividade', sub: 'Vinculação ao PPP/currículo escolar e objetivos de aprendizagem' },
-        { label: 'Nota Fiscal / Contrato da empresa de transporte', sub: 'Com CNPJ, valor, data e trajeto discriminados' },
-        { label: 'Certidões do transportador (quando contrato > 30 dias)', sub: 'CND, FGTS e CNDT — obrigatórios em contratos continuados' },
-      ]
-    });
-  }
+  const corHeader = pends > 0 ? 'rgba(240,80,96,0.12)' : oks===total ? 'rgba(56,217,169,0.08)' : 'rgba(246,166,35,0.08)';
+  const corBorder = pends > 0 ? 'rgba(240,80,96,0.25)' : oks===total ? 'rgba(56,217,169,0.2)'  : 'rgba(246,166,35,0.2)';
 
-  // 4. Capital
-  if (temCapital) {
-    secoes.push({
-      id: 'capital',
-      titulo: '🖥️ Anexos Obrigatórios — Capital (Bens Permanentes)',
-      cor: 'var(--capital)',
-      corBg: 'rgba(56,217,169,0.1)',
-      docs: [
-        { label: 'Comprovante de entrada no Almoxarifado / Patrimônio (SEAD)', sub: 'Número de tombamento para cada bem adquirido' },
-        { label: 'Termo de Doação (Caixa Escolar → Unidade Escolar — Anexo VI)', sub: 'Transferência formal do bem para o patrimônio escolar' },
-        { label: 'Nota Fiscal com discriminação detalhada dos bens', sub: 'Quantidade, descrição, marca, modelo e número de série' },
-        { label: 'Laudo de recebimento/vistoria dos bens', sub: 'Confirmação de entrega em conformidade com o pedido' },
-        { label: 'Certidões do fornecedor (CND, FGTS, CNDT)', sub: 'Exigidas em aquisições com entrega programada ou parcelada' },
-      ]
-    });
-  }
+  const badge = pends > 0
+    ? `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(240,80,96,0.18);color:var(--accent-red);border:1px solid rgba(240,80,96,0.3);font-weight:700">${pends} pendência${pends>1?'s':''}</span>`
+    : oks===total
+      ? `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(56,217,169,0.15);color:var(--accent2);border:1px solid rgba(56,217,169,0.3);font-weight:700">✓ ${oks}/${total} OK</span>`
+      : `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(246,166,35,0.12);color:var(--accent3);border:1px solid rgba(246,166,35,0.3);font-weight:700">${oks}/${total} verificados</span>`;
 
-  // Monta HTML
-  let h = '<div class="check-section-title" style="margin-top:24px;border-color:var(--accent3);color:var(--accent3)">📑 Documentos Necessários — Parcela Filtrada</div>';
+  let h = `<div class="check-section-title" style="border-color:var(--accent3);color:var(--accent3)">📑 Anexos Obrigatórios — Prestação de Contas</div>`;
 
-  secoes.forEach(sec => {
-    const totalDocs = sec.docs.length;
-    const oks   = sec.docs.filter((_, i) => (_docsObrigState[_doiKey(sec.id, i)]||{}).estado === 'ok').length;
-    const pends = sec.docs.filter((_, i) => (_docsObrigState[_doiKey(sec.id, i)]||{}).estado === 'pendente').length;
-    const pct   = totalDocs ? Math.round(oks/totalDocs*100) : 0;
+  h += `<div style="background:var(--surface);border:1px solid ${corBorder};border-radius:12px;overflow:hidden;margin-bottom:8px">`;
 
-    const resumoBadge = pends > 0
-      ? `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(240,80,96,0.18);color:var(--accent-red);border:1px solid rgba(240,80,96,0.3);font-weight:700">${pends} pendência${pends>1?'s':''}</span>`
-      : oks === totalDocs
-        ? `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(56,217,169,0.15);color:var(--accent2);border:1px solid rgba(56,217,169,0.3);font-weight:700">✓ ${oks}/${totalDocs} OK</span>`
-        : `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(246,166,35,0.12);color:var(--accent3);border:1px solid rgba(246,166,35,0.3);font-weight:700">${oks}/${totalDocs} verificados</span>`;
+  // Header do bloco
+  h += `<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:${corHeader};border-bottom:1px solid ${corBorder}">`;
+  h += `<div style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px">`;
+  h += `<span style="font-size:16px">📎</span>Anexos — Decreto 1134/2024 · Manual SEDUC/FUNEC`;
+  h += `</div>`;
+  h += `<div style="display:flex;align-items:center;gap:10px">${badge}`;
+  h += `<div style="font-size:11px;color:var(--text-dim);font-family:'DM Mono',monospace">${pct}%</div></div>`;
+  h += `</div>`;
 
-    h += `<div class="doc-obrig-section">`;
-    h += `<div class="doc-obrig-header" style="border-color:${sec.cor}33;background:${sec.corBg}">`;
-    h += `<div class="doc-obrig-title" style="color:${sec.cor}">${sec.titulo}</div>`;
-    h += `<div style="display:flex;align-items:center;gap:10px">${resumoBadge}`;
-    h += `<div style="font-size:11px;color:var(--text-dim);font-family:'DM Mono',monospace;min-width:36px;text-align:right">${pct}%</div></div>`;
+  // Progress bar
+  h += `<div style="height:3px;background:var(--surface3)">`;
+  h += `<div style="height:100%;width:${pct}%;background:${pct===100?'var(--accent2)':pends>0?'var(--accent-red)':'var(--accent3)'};transition:width 0.4s"></div></div>`;
+
+  // Lista de anexos
+  h += `<div style="display:flex;flex-direction:column">`;
+  anexosVisiveis.forEach(anx => {
+    const chave = _doiKey('anx', anx.key);
+    const st    = (_docsObrigState[chave]||{}).estado || '';
+    const obs   = (_docsObrigState[chave]||{}).obs || '';
+    const isOk   = st === 'ok';
+    const isPend = st === 'pendente';
+
+    // Tag condicional
+    const tagColors = { CAPITAL:'var(--capital)', ALEM_MUROS:'var(--alem)', OBRAS:'var(--obras)' };
+    const tagBgs    = { CAPITAL:'rgba(56,217,169,0.12)', ALEM_MUROS:'rgba(181,123,238,0.12)', OBRAS:'rgba(246,166,35,0.12)' };
+    const tagBorder = { CAPITAL:'rgba(56,217,169,0.25)', ALEM_MUROS:'rgba(181,123,238,0.25)', OBRAS:'rgba(246,166,35,0.25)' };
+    const tagHtml = anx.cond
+      ? `<span style="font-size:9px;padding:1px 6px;border-radius:8px;font-weight:700;background:${tagBgs[anx.cond]};color:${tagColors[anx.cond]};border:1px solid ${tagBorder[anx.cond]};margin-left:6px;vertical-align:middle">${anx.tag}</span>`
+      : '';
+
+    const rowBg = isOk ? 'rgba(56,217,169,0.04)' : isPend ? 'rgba(240,80,96,0.05)' : '';
+    const rowBorderBot = isPend ? '1px solid rgba(240,80,96,0.15)' : '1px solid var(--border)';
+
+    h += `<div id="doi-item-${chave}" style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:${rowBg};border-bottom:${rowBorderBot};transition:background 0.15s">`;
+
+    // Número do anexo
+    h += `<div style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:700;font-family:'DM Mono',monospace;`;
+    if (isOk)   h += `background:rgba(56,217,169,0.15);color:var(--accent2)`;
+    else if (isPend) h += `background:rgba(240,80,96,0.12);color:var(--accent-red)`;
+    else         h += `background:var(--surface3);color:var(--text-muted)`;
+    h += `" id="doi-numbox-${chave}">${isOk?'✓':isPend?'⚠':anx.num}</div>`;
+
+    h += `<div style="flex:1;min-width:0">`;
+    h += `<div style="font-size:12.5px;font-weight:500;color:var(--text);line-height:1.4">Anexo ${anx.num}${tagHtml} — ${anx.label}</div>`;
+    h += `<div style="font-size:11px;color:var(--text-muted);margin-top:2px;line-height:1.4">${anx.sub}</div>`;
+
+    // Nota de pendência
+    h += `<div id="doi-note-${chave}" style="display:${isPend?'block':'none'};margin-top:6px">`;
+    h += `<textarea id="doi-obs-${chave}" style="width:100%;font-size:12px;padding:6px 10px;background:var(--surface3);border:1px solid rgba(240,80,96,0.3);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;resize:none;min-height:44px;outline:none" placeholder="Descreva o que está faltando ou pendente…">${obs}</textarea>`;
+    h += `<button onclick="salvarDoiObs('${chave}')" style="margin-top:4px;font-size:11px;padding:4px 10px;border-radius:5px;background:var(--accent-red);color:#fff;border:none;cursor:pointer;font-family:Outfit,sans-serif;font-weight:600">💾 Salvar</button>`;
     h += `</div>`;
 
-    // barra de progresso
-    h += `<div style="height:3px;background:var(--surface3);border-left:1px solid ${sec.cor}33;border-right:1px solid ${sec.cor}33">`;
-    h += `<div style="height:100%;width:${pct}%;background:${sec.cor};transition:width 0.4s"></div></div>`;
+    h += `</div>`; // content
 
-    h += `<div class="doc-obrig-grid">`;
-    sec.docs.forEach((doc, i) => {
-      const chave = _doiKey(sec.id, i);
-      const st    = (_docsObrigState[chave]||{}).estado || '';
-      const obs   = (_docsObrigState[chave]||{}).obs || '';
-      const isOk  = st === 'ok';
-      const isPend= st === 'pendente';
+    h += `<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;margin-top:2px">`;
+    h += `<button id="doi-btn-ok-${chave}" class="doi-btn ${isOk?'doi-btn-check active':'doi-btn-check'}" onclick="setDoiEstado('${chave}','ok')" title="Checado">✔</button>`;
+    h += `<button id="doi-btn-pend-${chave}" class="doi-btn ${isPend?'doi-btn-pend active':'doi-btn-pend'}" onclick="setDoiEstado('${chave}','pendente')" title="Pendente">⚠</button>`;
+    h += `</div>`;
 
-      const itemCls = isOk ? 'doi-ok' : isPend ? 'doi-pend' : '';
-      const iconEmoji = isOk ? '✅' : isPend ? '⚠️' : '📄';
-      const iconCls   = isOk ? 'doi-icon-ok' : isPend ? 'doi-icon-pend' : 'doi-icon-neutral';
-
-      const btnCheckCls = isOk ? 'doi-btn-check active' : 'doi-btn-check';
-      const btnPendCls  = isPend ? 'doi-btn-pend active' : 'doi-btn-pend';
-
-      const obsNoteOpen = isPend ? 'open' : '';
-
-      h += `<div class="doc-obrig-item ${itemCls}" id="doi-item-${chave}">`;
-      h += `<div class="doi-icon ${iconCls}">${iconEmoji}</div>`;
-      h += `<div class="doi-content">`;
-      h += `<div class="doi-label">${doc.label}</div>`;
-      h += `<div class="doi-sub">${doc.sub}</div>`;
-
-      // Nota de pendência
-      h += `<div class="doi-pend-note ${obsNoteOpen}" id="doi-note-${chave}">`;
-      h += `<textarea class="doi-pend-input" id="doi-obs-${chave}" placeholder="Descreva o que está pendente ou faltando…">${obs}</textarea>`;
-      h += `<button class="doi-pend-save" onclick="salvarDoiObs('${chave}')">💾 Salvar observação</button>`;
-      h += `</div>`;
-
-      h += `</div>`; // doi-content
-      h += `<div class="doi-actions">`;
-      h += `<button class="doi-btn ${btnCheckCls}" id="doi-btn-ok-${chave}" onclick="setDoiEstado('${chave}','ok')" title="Marcar como Checado">✔ Checado</button>`;
-      h += `<button class="doi-btn ${btnPendCls}" id="doi-btn-pend-${chave}" onclick="setDoiEstado('${chave}','pendente')" title="Marcar como Pendente">⚠ Pendente</button>`;
-      h += `</div>`;
-      h += `</div>`; // doc-obrig-item
-    });
-    h += `</div></div>`; // doc-obrig-grid + doc-obrig-section
+    h += `</div>`; // row
   });
+  h += `</div>`; // lista
+  h += `</div>`; // card
 
   return h;
 }
+
 
 function setDoiEstado(chave, novoEstado) {
   if (!window._docsObrigState) window._docsObrigState = {};
@@ -4293,26 +4262,32 @@ function setDoiEstado(chave, novoEstado) {
   _docsObrigState[chave].estado = estado;
 
   // Atualiza UI sem re-render completo
-  const item = document.getElementById('doi-item-' + chave);
-  const btnOk = document.getElementById('doi-btn-ok-' + chave);
+  const item    = document.getElementById('doi-item-' + chave);
+  const btnOk   = document.getElementById('doi-btn-ok-' + chave);
   const btnPend = document.getElementById('doi-btn-pend-' + chave);
-  const noteEl = document.getElementById('doi-note-' + chave);
-  const iconEl = item ? item.querySelector('.doi-icon') : null;
+  const noteEl  = document.getElementById('doi-note-' + chave);
+  const numbox  = document.getElementById('doi-numbox-' + chave);
 
+  // Row background
   if (item) {
-    item.classList.remove('doi-ok','doi-pend');
-    if (estado === 'ok') item.classList.add('doi-ok');
-    if (estado === 'pendente') item.classList.add('doi-pend');
+    item.style.background = estado==='ok' ? 'rgba(56,217,169,0.04)' : estado==='pendente' ? 'rgba(240,80,96,0.05)' : '';
+    item.style.borderBottom = estado==='pendente' ? '1px solid rgba(240,80,96,0.15)' : '1px solid var(--border)';
   }
   if (btnOk)   btnOk.classList.toggle('active',   estado === 'ok');
   if (btnPend) btnPend.classList.toggle('active',  estado === 'pendente');
-  if (iconEl) {
-    iconEl.textContent = estado === 'ok' ? '✅' : estado === 'pendente' ? '⚠️' : '📄';
-    iconEl.className = 'doi-icon ' + (estado === 'ok' ? 'doi-icon-ok' : estado === 'pendente' ? 'doi-icon-pend' : 'doi-icon-neutral');
+
+  // Number box
+  if (numbox) {
+    // Extract original number from key suffix or from numbox current text
+    const origNum = numbox.dataset.num || numbox.textContent;
+    if (!numbox.dataset.num) numbox.dataset.num = origNum;
+    numbox.textContent = estado==='ok' ? '✓' : estado==='pendente' ? '⚠' : origNum;
+    numbox.style.background = estado==='ok' ? 'rgba(56,217,169,0.15)' : estado==='pendente' ? 'rgba(240,80,96,0.12)' : 'var(--surface3)';
+    numbox.style.color = estado==='ok' ? 'var(--accent2)' : estado==='pendente' ? 'var(--accent-red)' : 'var(--text-muted)';
   }
+
   if (noteEl) {
-    if (estado === 'pendente') noteEl.classList.add('open');
-    else noteEl.classList.remove('open');
+    noteEl.style.display = estado === 'pendente' ? 'block' : 'none';
   }
 
   // Persistir no Supabase — estado no campo marcado, obs em chave separada
@@ -4358,6 +4333,15 @@ function salvarDoiObs(chave) {
   // Flash de confirmação
   const btn = obsEl.nextElementSibling;
   if (btn) { const orig = btn.textContent; btn.textContent = '✓ Salvo!'; setTimeout(()=>btn.textContent=orig,1500); }
+}
+
+function togglePendPanel() {
+  const body  = document.getElementById('pend-panel-body');
+  const arrow = document.getElementById('pend-panel-arrow');
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (arrow) arrow.style.transform = open ? '' : 'rotate(90deg)';
 }
 
 function toggleChkAccordion(id) {
@@ -4439,20 +4423,35 @@ function updatePendenciasSummary() {
     allPendLines.push({ label: labelEl ? labelEl.textContent.trim() : '', pend: pendDiv ? pendDiv.textContent.trim() : '' });
   });
 
-  if (!allPendLines.length) {
+  // Also count doi_ pending items from _docsObrigState
+  const doiPendLines = Object.entries(window._docsObrigState||{}).filter(([k,v]) => v.estado === 'pendente').map(([k,v]) => {
+    // Try to extract a label from the key for display
+    return { label: 'Anexo pendente (' + k.replace('doi_anx_','Anexo ') + ')', pend: v.obs || '' };
+  });
+
+  if (!allPendLines.length && !doiPendLines.length) {
     document.getElementById('pendencias-lista').innerHTML = '<div class="alert alert-success" style="margin:0"><span>✅</span><span>Todos os documentos estão OK!</span></div>';
     document.getElementById('dash-pendencias').innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-icon">✅</div><div class="empty-sub">Sem pendências no momento</div></div>';
   } else {
-    document.getElementById('pendencias-lista').innerHTML = allPendLines.map(p =>
+    const allLines = [...allPendLines, ...doiPendLines];
+    document.getElementById('pendencias-lista').innerHTML = allLines.map(p =>
       '<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 10px;background:rgba(240,80,96,0.06);border:1px solid rgba(240,80,96,0.15);border-radius:7px;margin-bottom:6px;font-size:12.5px;color:var(--text)">' +
       '<span style="color:var(--accent-red);flex-shrink:0">●</span><div><div>' + p.label + '</div>' +
       (p.pend ? '<div style="font-size:11px;color:var(--accent3);margin-top:2px">⚠ ' + p.pend + '</div>' : '') +
       '</div></div>'
     ).join('');
     document.getElementById('dash-pendencias').innerHTML =
-      '<div style="font-size:12px;color:var(--accent-red);font-weight:600;margin-bottom:8px">' + allPendLines.length + ' pendência(s)</div>' +
-      allPendLines.slice(0,3).map(p => '<div style="font-size:12.5px;color:var(--text-muted);padding:5px 0;border-bottom:1px solid var(--border)">⚠ ' + p.label + '</div>').join('') +
-      (allPendLines.length > 3 ? '<div style="font-size:12px;color:var(--text-dim);margin-top:6px">+' + (allPendLines.length-3) + ' mais...</div>' : '');
+      '<div style="font-size:12px;color:var(--accent-red);font-weight:600;margin-bottom:8px">' + allLines.length + ' pendência(s)</div>' +
+      allLines.slice(0,3).map(p => '<div style="font-size:12.5px;color:var(--text-muted);padding:5px 0;border-bottom:1px solid var(--border)">⚠ ' + p.label + '</div>').join('') +
+      (allLines.length > 3 ? '<div style="font-size:12px;color:var(--text-dim);margin-top:6px">+' + (allLines.length-3) + ' mais...</div>' : '');
+  }
+
+  // Update retractable panel badge
+  const pendTotal = allPendLines.length + doiPendLines.length;
+  const panelBadge = document.getElementById('pend-panel-badge');
+  if (panelBadge) {
+    if (pendTotal > 0) { panelBadge.textContent = pendTotal + ' pendência' + (pendTotal>1?'s':''); panelBadge.style.display = 'inline-flex'; }
+    else { panelBadge.style.display = 'none'; }
   }
 }
 
