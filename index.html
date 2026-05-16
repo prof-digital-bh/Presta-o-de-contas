@@ -2563,6 +2563,20 @@
         <label style="color:var(--accent-red)">⚠ Pendência do Cartão CNPJ</label>
         <input type="text" id="d-cartao-cnpj-pend" placeholder="Descreva a pendência...">
       </div>
+
+      <!-- COMPROVANTE DE PAGAMENTO -->
+      <div class="field">
+        <label>Comprovante de Pagamento anexado?</label>
+        <select id="d-comprovante-pgto" onchange="togglePendenciaField('comprovante-pgto')">
+          <option value="sim">Sim</option>
+          <option value="nao">Não (pendente)</option>
+          <option value="na">N/A — Não se Aplica</option>
+        </select>
+      </div>
+      <div class="field" id="field-comprovante-pgto-pend" style="display:none">
+        <label style="color:var(--accent-red)">⚠ Pendência do Comprovante de Pagamento</label>
+        <input type="text" id="d-comprovante-pgto-pend" placeholder="Descreva o motivo ou pendência...">
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modal-despesa')">Cancelar</button>
@@ -2912,7 +2926,8 @@ function togglePendenciaField(campo) {
   const map = {
     'orcamentos': { sel: 'd-orcamentos', pend: 'field-orcamentos-pend', trigger: 'nao' },
     'certidoes':  { sel: 'd-certidoes',  pend: 'field-certidoes-pend',  trigger: 'nao' },
-    'cartao-cnpj':{ sel: 'd-cartao-cnpj',pend: 'field-cartao-cnpj-pend',trigger: 'nao' }
+    'cartao-cnpj':{ sel: 'd-cartao-cnpj',pend: 'field-cartao-cnpj-pend',trigger: 'nao' },
+    'comprovante-pgto':{ sel: 'd-comprovante-pgto',pend: 'field-comprovante-pgto-pend',trigger: 'nao' }
   };
   const m = map[campo]; if (!m) return;
   const val = document.getElementById(m.sel).value;
@@ -2940,6 +2955,8 @@ async function salvarDespesa() {
     certidoesPend: document.getElementById('d-certidoes-pend') ? document.getElementById('d-certidoes-pend').value : '',
     cartaoCnpj: document.getElementById('d-cartao-cnpj').value,
     cartaoCnpjPend: document.getElementById('d-cartao-cnpj-pend') ? document.getElementById('d-cartao-cnpj-pend').value : '',
+    comprovantePgto: document.getElementById('d-comprovante-pgto').value,
+    comprovantePgtoPend: document.getElementById('d-comprovante-pgto-pend') ? document.getElementById('d-comprovante-pgto-pend').value : '',
     id: Date.now()
   };
   if (!d.credor || !d.valor) { alert('Preencha ao menos o credor e o valor.'); return; }
@@ -3071,7 +3088,9 @@ function despesaToRow(d) {
     certidoes: d.certidoes || null,
     certidoes_pend: d.certidoesPend || null,
     cartao_cnpj: d.cartaoCnpj || null,
-    cartao_cnpj_pend: d.cartaoCnpjPend || null
+    cartao_cnpj_pend: d.cartaoCnpjPend || null,
+    comprovante_pgto: d.comprovantePgto || null,
+    comprovante_pgto_pend: d.comprovantePgtoPend || null
   };
 }
 
@@ -3094,7 +3113,9 @@ function rowToDespesa(r) {
     certidoes: r.certidoes,
     certidoesPend: r.certidoes_pend,
     cartaoCnpj: r.cartao_cnpj,
-    cartaoCnpjPend: r.cartao_cnpj_pend
+    cartaoCnpjPend: r.cartao_cnpj_pend,
+    comprovantePgto: r.comprovante_pgto,
+    comprovantePgtoPend: r.comprovante_pgto_pend
   };
 }
 
@@ -3751,6 +3772,7 @@ function renderChecklist() {
         certidoes: d.certidoes, certidoesPend: d.certidoesPend,
         orcamentos: d.orcamentos, orcamentosPend: d.orcamentosPend,
         cartaoCnpj: d.cartaoCnpj, cartaoCnpjPend: d.cartaoCnpjPend,
+        comprovantePgto: d.comprovantePgto, comprovantePgtoPend: d.comprovantePgtoPend,
         nfs: [], parcelas: new Set(), tcs: new Set(), tipos: new Set()
       };
     }
@@ -3773,13 +3795,19 @@ function renderChecklist() {
     const keyCrc  = `crc_${safeKey}`;
     const keyOrc  = `orc_${safeKey}`;
     const keyCnpj = `cnpj_${safeKey}`;
+    const keyComp = `comp_${safeKey}`;
     const nfChecked   = !!state.checkStates[keyNf];
     const crcChecked  = !!state.checkStates[keyCrc];
     const orcChecked  = !!state.checkStates[keyOrc];
     const cnpjChecked = !!state.checkStates[keyCnpj];
+    const compChecked = !!state.checkStates[keyComp];
     const needCert = f.certidoes !== 'na';
     const needOrc  = f.orcamentos === 'sim';
     const needCnpj = f.cartaoCnpj === 'nao';
+    // Comprovante de pagamento: mostra se marcado sim ou nao (não mostra se N/A)
+    const needComp = f.comprovantePgto !== 'na' && f.comprovantePgto != null;
+    // Se marcado como "sim" na despesa, considerar automaticamente verificado no checklist
+    const compAutoSim = f.comprovantePgto === 'sim';
 
     const tcTags     = [...f.tcs].map(t => `<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(79,142,247,0.15);color:var(--accent);border:1px solid rgba(79,142,247,0.25)">${t}</span>`).join(' ');
     const parcelaTags= [...f.parcelas].sort().map(p => `<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(56,217,169,0.12);color:var(--accent2);border:1px solid rgba(56,217,169,0.25)">Parc. ${p}</span>`).join(' ');
@@ -3796,16 +3824,17 @@ function renderChecklist() {
     html += checkItem(keyNf, `Nota(s) Fiscal(is): ${nfNums}`, 'Cópia da NF com dados completos (emitida em nome da Caixa Escolar)', '', nfChecked, !nfChecked ? 'pending' : '');
 
     if (needCert) {
-      html += checkItem(keyCrc, 'Certidões de Regularidade Fiscal', 'CRC válido OU certidões negativas (Mun., Estadual, Federal, FGTS, CNDT)', '', crcChecked, !crcChecked ? 'pending-yellow' : '');
-      if (f.certidoesPend) html += `<div style="margin:-6px 0 8px 32px;font-size:11.5px;color:var(--accent3)">⚠ ${f.certidoesPend}</div>`;
+      html += checkItem(keyCrc, 'Certidões de Regularidade Fiscal', 'CRC válido OU certidões negativas (Mun., Estadual, Federal, FGTS, CNDT)', '', crcChecked, !crcChecked ? 'pending-yellow' : '', f.certidoes === 'nao' ? f.certidoesPend : '');
     }
     if (needOrc) {
-      html += checkItem(keyOrc, 'Três orçamentos / pesquisa de preços', 'Contendo: quantitativo, valor unitário, data, validade e CNPJ', '', orcChecked, !orcChecked ? 'pending-yellow' : '');
-      if (f.orcamentosPend) html += `<div style="margin:-6px 0 8px 32px;font-size:11.5px;color:var(--accent3)">⚠ ${f.orcamentosPend}</div>`;
+      html += checkItem(keyOrc, 'Três orçamentos / pesquisa de preços', 'Contendo: quantitativo, valor unitário, data, validade e CNPJ', '', orcChecked, !orcChecked ? 'pending-yellow' : '', f.orcamentos === 'nao' ? f.orcamentosPend : '');
     }
     if (needCnpj) {
-      html += checkItem(keyCnpj, 'Cartão CNPJ regularizado', 'Verificar situação cadastral na Receita Federal', '', cnpjChecked, !cnpjChecked ? 'pending-yellow' : '');
-      if (f.cartaoCnpjPend) html += `<div style="margin:-6px 0 8px 32px;font-size:11.5px;color:var(--accent3)">⚠ ${f.cartaoCnpjPend}</div>`;
+      html += checkItem(keyCnpj, 'Cartão CNPJ regularizado', 'Verificar situação cadastral na Receita Federal', '', cnpjChecked, !cnpjChecked ? 'pending-yellow' : '', f.cartaoCnpjPend);
+    }
+    if (needComp) {
+      const compEffChecked = compAutoSim || compChecked;
+      html += checkItem(keyComp, 'Comprovante de Pagamento', 'Comprovante de pagamento (recibo, PIX, ordem bancária ou similar)', '', compEffChecked, !compEffChecked ? 'pending' : '', f.comprovantePgto === 'nao' ? f.comprovantePgtoPend : '');
     }
     html += `</div>`;
   });
@@ -3824,14 +3853,19 @@ function renderChecklist() {
   updatePendenciasSummary();
 }
 
-function checkItem(key, label, sub, company, checked, cls) {
+function checkItem(key, label, sub, company, checked, cls, pendText) {
+  const tipAttr = pendText ? 'title="' + pendText.replace(/"/g,'&quot;') + '"' : '';
+  const labelStyle = checked ? 'text-decoration:line-through;opacity:0.6' : '';
+  const infoIcon = (pendText && checked) ? ' <span style="font-size:10px;color:var(--accent2);margin-left:6px">ℹ</span>' : '';
+  const pendBlock = (pendText && !checked) ? '<div style="margin-top:4px;font-size:11px;color:var(--accent3);display:flex;align-items:center;gap:4px"><span>⚠</span><span>' + pendText + '</span></div>' : '';
+  const subBlock = sub ? '<div class="check-sub">' + sub + '</div>' : '';
+  const companyBlock = company ? '<div class="check-company">' + company + '</div>' : '';
   return `
-    <div class="check-item ${cls||''} ${checked?'done':''}" id="ci-${key}">
+    <div class="check-item ${cls||''} ${checked?'done':''}" id="ci-${key}" ${tipAttr} style="cursor:${pendText?'help':'default'}">
       <input class="check-cb" type="checkbox" id="cb-${key}" ${checked?'checked':''} onchange="toggleCheck('${key}')">
-      <div>
-        <div class="check-label">${label}</div>
-        ${sub?`<div class="check-sub">${sub}</div>`:''}
-        ${company?`<div class="check-company">${company}</div>`:''}
+      <div style="flex:1">
+        <div class="check-label" style="${labelStyle}">${label}${infoIcon}</div>
+        ${subBlock}${companyBlock}${pendBlock}
       </div>
     </div>
   `;
@@ -3865,23 +3899,29 @@ function updatePendenciasSummary() {
     </div>
   `;
 
-  // pendencias lista
-  const pendItems = [...document.querySelectorAll('#checklist-area .check-item:not(.done) .check-label')];
+  // pendencias lista — apenas itens NÃO concluídos, com tooltip do texto de pendência
+  const pendItems = [...document.querySelectorAll('#checklist-area .check-item:not(.done)')];
   if (!pendItems.length) {
     document.getElementById('pendencias-lista').innerHTML = `<div class="alert alert-success" style="margin:0"><span>✅</span><span>Todos os documentos estão OK!</span></div>`;
   } else {
-    document.getElementById('pendencias-lista').innerHTML = pendItems.map(p =>
-      `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(240,80,96,0.06);border:1px solid rgba(240,80,96,0.15);border-radius:7px;margin-bottom:6px;font-size:12.5px;color:var(--text)"><span style="color:var(--accent-red)">●</span>${p.textContent}</div>`
-    ).join('');
+    document.getElementById('pendencias-lista').innerHTML = pendItems.map(p => {
+      const labelEl = p.querySelector('.check-label');
+      const labelText = labelEl ? labelEl.textContent.trim() : '';
+      const pendDiv = p.querySelector('[style*="accent3"]');
+      const pendTip = pendDiv ? pendDiv.textContent.trim() : (p.title || '');
+      const tipAttr = pendTip ? `title="${pendTip.replace(/"/g,'&quot;')}" style="cursor:help"` : '';
+      return `<div ${tipAttr} style="display:flex;align-items:flex-start;gap:8px;padding:7px 10px;background:rgba(240,80,96,0.06);border:1px solid rgba(240,80,96,0.15);border-radius:7px;margin-bottom:6px;font-size:12.5px;color:var(--text)"><span style="color:var(--accent-red);flex-shrink:0">●</span><div><div>${labelText}</div>${pendTip?`<div style="font-size:11px;color:var(--accent3);margin-top:2px">⚠ ${pendTip}</div>`:''}</div></div>`;
+    }).join('');
   }
 
   // dash pendencias
   if (!pendItems.length) {
     document.getElementById('dash-pendencias').innerHTML = `<div class="empty-state" style="padding:24px"><div class="empty-icon">✅</div><div class="empty-sub">Sem pendências no momento</div></div>`;
   } else {
-    document.getElementById('dash-pendencias').innerHTML = `<div style="font-size:12px;color:var(--accent-red);font-weight:600;margin-bottom:8px">${pending} pendência(s)</div>` + pendItems.slice(0,3).map(p =>
-      `<div style="font-size:12.5px;color:var(--text-muted);padding:5px 0;border-bottom:1px solid var(--border)">⚠ ${p.textContent}</div>`
-    ).join('') + (pendItems.length > 3 ? `<div style="font-size:12px;color:var(--text-dim);margin-top:6px">+${pendItems.length-3} mais...</div>` : '');
+    document.getElementById('dash-pendencias').innerHTML = `<div style="font-size:12px;color:var(--accent-red);font-weight:600;margin-bottom:8px">${pendItems.length} pendência(s)</div>` + pendItems.slice(0,3).map(p => {
+      const labelEl = p.querySelector('.check-label');
+      return `<div style="font-size:12.5px;color:var(--text-muted);padding:5px 0;border-bottom:1px solid var(--border)">⚠ ${labelEl?labelEl.textContent.trim():''}</div>`;
+    }).join('') + (pendItems.length > 3 ? `<div style="font-size:12px;color:var(--text-dim);margin-top:6px">+${pendItems.length-3} mais...</div>` : '');
   }
 }
 
@@ -3898,9 +3938,15 @@ function refreshPendenciaBadge() {
 }
 
 function imprimirPendencias() {
-  const pendItems = [...document.querySelectorAll('#checklist-area .check-item:not(.done) .check-label')];
+  const pendItems = [...document.querySelectorAll('#checklist-area .check-item:not(.done)')];
   if (!pendItems.length) { alert('Não há pendências!'); return; }
-  const content = pendItems.map((p, i) => `${i+1}. ${p.textContent}`).join('\n');
+  const content = pendItems.map((p, i) => {
+    const labelEl = p.querySelector('.check-label');
+    const pendDiv = p.querySelector('[style*="accent3"]');
+    const label = labelEl ? labelEl.textContent.trim() : '';
+    const pend = pendDiv ? ` — ${pendDiv.textContent.trim()}` : '';
+    return `${i+1}. ${label}${pend}`;
+  }).join('\n');
   const w = window.open('', '', 'width=600,height=500');
   w.document.write(`<pre style="font-family:monospace;font-size:14px;padding:20px">LISTA DE PENDÊNCIAS\n${'='.repeat(40)}\n\n${content}\n\nGerado em: ${new Date().toLocaleDateString('pt-BR')}</pre>`);
   w.print();
