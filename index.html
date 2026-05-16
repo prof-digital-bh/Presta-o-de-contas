@@ -1317,7 +1317,7 @@
           <div class="page-subtitle">Gerenciamento dos TCs e parcelas</div>
         </div>
         <div class="gap-8">
-          <button class="btn btn-secondary" onclick="imprimirAba('tc')">🖨 Imprimir</button>
+          <button class="btn btn-secondary" onclick="abrirFiltroImpressao('tc')">🖨 Imprimir</button>
           <button class="btn btn-primary" onclick="openModal('modal-tc')">+ Novo TC</button>
         </div>
       </div>
@@ -1340,7 +1340,7 @@
           <div class="page-subtitle">Lançamentos por parcela e tipo</div>
         </div>
         <div class="gap-8">
-          <button class="btn btn-secondary" onclick="imprimirAba('despesas')">🖨 Imprimir</button>
+          <button class="btn btn-secondary" onclick="abrirFiltroImpressao('despesas')">🖨 Imprimir</button>
           <button class="btn btn-secondary" onclick="exportarTabela()">⬇ Exportar CSV</button>
           <button class="btn btn-primary" onclick="openModal('modal-despesa')">+ Lançar Despesa</button>
         </div>
@@ -4993,7 +4993,8 @@ function imprimirPendencias() {
 
 
 // ==================== IMPRIMIR ABA ====================
-function imprimirAba(nomeAba) {
+function imprimirAba(nomeAba, filtros) {
+  filtros = filtros || {};
   // ── helpers locais ──────────────────────────────────────────────
   const _pm  = v => { if (!v) return 0; return parseFloat(String(v).replace(/\./g,'').replace(',','.')) || 0; };
   const _fmt = v => 'R$\u00a0' + v.toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2});
@@ -5164,10 +5165,28 @@ function imprimirAba(nomeAba) {
   function gerarTC() {
     const tcs = state.tcs || [];
     const despesas = state.despesas || [];
-    const principais = tcs.filter(t=>!t.tcPaiId);
+    const filtroTcId   = filtros.tcId   || '';
+    const filtroParcela = filtros.parcela || '';
+    const parNomes = {'01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única'};
     const statusLabel = { ativo:'Ativo', a_vencer:'A Vencer', encerrado:'Encerrado', suspenso:'Suspenso' };
     const statusBadge = { ativo:'badge-green', a_vencer:'badge-orange', encerrado:'badge-red', suspenso:'badge-gray' };
-    const parNomes = {'01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única'};
+
+    // Filtra TCs principais — se filtroTcId for um aditivo, busca o pai
+    let principais = tcs.filter(t => !t.tcPaiId);
+    if (filtroTcId) {
+      const tcSel = tcs.find(t => String(t.id) === String(filtroTcId));
+      if (tcSel && tcSel.tcPaiId) {
+        // é aditivo — mostra só o pai com este aditivo destacado
+        principais = tcs.filter(t => String(t.id) === String(tcSel.tcPaiId));
+      } else {
+        principais = tcs.filter(t => String(t.id) === String(filtroTcId));
+      }
+    }
+
+    // Subtítulo dinâmico
+    const parNome = filtroParcela ? ({'01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única'}[filtroParcela] || filtroParcela) + ' Parcela' : '';
+    const tcNome  = filtroTcId ? (() => { const t = tcs.find(x => String(x.id) === String(filtroTcId)); return t ? `TC ${t.numero}` : ''; })() : '';
+    const subtitulo = [tcNome, parNome].filter(Boolean).join(' · ') || `${principais.length} TC(s) cadastrado(s)`;
 
     const blocos = principais.map(tc => {
       const adits = tcs.filter(a=>a.tcPaiId===tc.id);
@@ -5177,20 +5196,39 @@ function imprimirAba(nomeAba) {
       const saldo = totalTC - gastoTC;
       const st = typeof calcStatusTC==='function' && tc.inicio && tc.fim && tc.status!=='suspenso'
         ? calcStatusTC(tc.inicio,tc.fim) : (tc.status||'ativo');
-      const pvRows = (state.parcelaValores||[]).filter(r=>String(r.tcId)===String(tc.id));
-      const sitRows = (state.parcelaSituacoes||[]).filter(r=>String(r.tcId)===String(tc.id));
+
+      // Parcelas: filtra por parcela se selecionada
+      let pvRows = (state.parcelaValores||[]).filter(r=>String(r.tcId)===String(tc.id));
+      let sitRows = (state.parcelaSituacoes||[]).filter(r=>String(r.tcId)===String(tc.id));
+      if (filtroParcela) {
+        pvRows  = pvRows.filter(r => r.parcela === filtroParcela);
+        sitRows = sitRows.filter(r => r.parcela === filtroParcela);
+      }
       const parcelas = [...new Set([...pvRows.map(r=>r.parcela),...sitRows.map(r=>r.parcela)])].sort();
 
+      // Despesas filtradas por parcela para resumo da parcela
+      const despTc = despesas.filter(d => String(d.tcVinculo) === String(tc.id) && (!filtroParcela || d.parcela === filtroParcela));
+      const TIPOS = ['CUSTEIO','CAPITAL','ALEM_MUROS','OBRAS','CAPINA'];
+      const tipoLabel = { CUSTEIO:'Custeio', CAPITAL:'Capital', ALEM_MUROS:'Além dos Muros', OBRAS:'Obras', CAPINA:'Capina' };
+
       const parcelasHtml = parcelas.length ? `
-        <h3>Distribuição por Parcela</h3>
+        <h3>Distribuição por Parcela${filtroParcela ? ' — ' + (parNomes[filtroParcela]||filtroParcela) + ' Parcela' : ''}</h3>
         <table>
-          <thead><tr><th>Parcela</th><th class="right">Custeio</th><th class="right">Capital</th><th class="right">Além dos Muros</th><th class="right">Obras</th><th class="right">Capina</th><th class="right">Total</th><th>Situação</th></tr></thead>
+          <thead><tr>
+            <th>Parcela</th>
+            <th class="right">Custeio</th><th class="right">Capital</th>
+            <th class="right">Além dos Muros</th><th class="right">Obras</th><th class="right">Capina</th>
+            <th class="right">Total Previsto</th><th class="right">Total Gasto</th><th class="right">Saldo</th>
+            <th>Situação</th>
+          </tr></thead>
           <tbody>
             ${parcelas.map(p => {
               const pv = pvRows.find(r=>r.parcela===p)||{};
               const sit = (sitRows.find(r=>r.parcela===p)||{}).situacao||'';
               const cu=_pm(pv.custeio),ca=_pm(pv.capital),al=_pm(pv.alem),ob=_pm(pv.obras),ci=_pm(pv.capina);
-              const tot=cu+ca+al+ob+ci;
+              const prevTot = cu+ca+al+ob+ci;
+              const gastoParc = despTc.filter(d=>d.parcela===p).reduce((s,d)=>s+_pm(d.valor),0);
+              const saldoParc = prevTot - gastoParc;
               return `<tr>
                 <td class="bold">${parNomes[p]||p} Parcela</td>
                 <td class="right mono">${cu?_fmt(cu):'—'}</td>
@@ -5198,12 +5236,43 @@ function imprimirAba(nomeAba) {
                 <td class="right mono">${al?_fmt(al):'—'}</td>
                 <td class="right mono">${ob?_fmt(ob):'—'}</td>
                 <td class="right mono">${ci?_fmt(ci):'—'}</td>
-                <td class="right mono bold">${_fmt(tot)}</td>
+                <td class="right mono bold">${_fmt(prevTot)}</td>
+                <td class="right mono" style="color:#c0392b">${_fmt(gastoParc)}</td>
+                <td class="right mono" style="color:${saldoParc>=0?'#155724':'#c0392b'}">${_fmt(saldoParc)}</td>
                 <td>${sit?`<span class="badge" style="background:${_sc(sit)}20;color:${_sc(sit)}">${_sl(sit)}</span>`:'—'}</td>
               </tr>`;
             }).join('')}
           </tbody>
-        </table>` : '<p class="muted" style="font-size:12px">Nenhuma distribuição de parcelas registrada.</p>';
+        </table>
+
+        ${filtroParcela ? (() => {
+          // Detalhamento das despesas desta parcela
+          const dparcela = despTc;
+          if (!dparcela.length) return '<p class="muted" style="font-size:12px">Nenhuma despesa lançada nesta parcela.</p>';
+          const porTipo = {};
+          dparcela.forEach(d => { if(!porTipo[d.tipo]) porTipo[d.tipo]=[]; porTipo[d.tipo].push(d); });
+          return `<h3>Despesas — ${parNomes[filtroParcela]||filtroParcela} Parcela</h3>` +
+            Object.entries(porTipo).map(([tipo, itens]) => {
+              const subtotal = itens.reduce((s,d)=>s+_pm(d.valor),0);
+              return `<p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#555;margin:10px 0 4px">${tipoLabel[tipo]||tipo}</p>
+              <table>
+                <thead><tr><th>#</th><th>Credor</th><th>CNPJ/CPF</th><th>Nº NF</th><th>Data NF</th><th>Descrição</th><th class="right">Valor</th></tr></thead>
+                <tbody>
+                  ${itens.map((d,i)=>`<tr>
+                    <td class="muted" style="font-size:11px">${i+1}</td>
+                    <td class="bold">${d.credor||'—'}</td>
+                    <td class="mono muted" style="font-size:11px">${d.cnpj||'—'}</td>
+                    <td class="muted" style="font-size:11px">${d.nfNum||'—'}</td>
+                    <td class="muted" style="font-size:11px">${_dt(d.nfData)}</td>
+                    <td class="muted" style="font-size:11px;max-width:140px">${d.descricao||'—'}</td>
+                    <td class="right mono bold">${_fmt(_pm(d.valor))}</td>
+                  </tr>`).join('')}
+                  <tr class="total-row"><td colspan="6" class="right">Subtotal ${tipoLabel[tipo]||tipo}</td><td class="right mono">${_fmt(subtotal)}</td></tr>
+                </tbody>
+              </table>`;
+            }).join('');
+        })() : ''}
+        ` : '<p class="muted" style="font-size:12px">Nenhuma distribuição de parcelas registrada.</p>';
 
       const aditsHtml = adits.length ? `
         <h3>Aditivos Vinculados</h3>
@@ -5239,17 +5308,36 @@ function imprimirAba(nomeAba) {
           ${aditsHtml}
           ${parcelasHtml}
         </div>`;
-    }).join('') || '<div class="no-data">Nenhum TC cadastrado.</div>';
+    }).join('') || '<div class="no-data">Nenhum TC encontrado com os filtros selecionados.</div>';
 
-    return wrapDoc('Termos de Compromisso', `${principais.length} TC(s) cadastrado(s)`, blocos);
+    return wrapDoc('Termos de Compromisso', subtitulo, blocos);
   }
 
   // ════════════════════════════════════════════════════════════════
   //  DESPESAS
   // ════════════════════════════════════════════════════════════════
   function gerarDespesas() {
-    const despesas = state.despesas || [];
-    if (!despesas.length) return wrapDoc('Relação de Despesas', '', '<div class="no-data">Nenhuma despesa lançada.</div>');
+    const filtroTcId    = filtros.tcId    || '';
+    const filtroParcela = filtros.parcela || '';
+    const filtroTipo    = filtros.tipo    || '';
+
+    let despesas = state.despesas || [];
+    if (filtroTcId)    despesas = despesas.filter(d => String(d.tcVinculo) === String(filtroTcId));
+    if (filtroParcela) despesas = despesas.filter(d => d.parcela === filtroParcela);
+    if (filtroTipo)    despesas = despesas.filter(d => d.tipo === filtroTipo);
+
+    if (!despesas.length) return wrapDoc('Relação de Despesas', '', '<div class="no-data">Nenhuma despesa encontrada para os filtros selecionados.</div>');
+
+    // Subtítulo dinâmico
+    const parNomes = {'01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única'};
+    const partesFiltro = [];
+    if (filtroTcId) {
+      const tc = (state.tcs||[]).find(t => String(t.id) === String(filtroTcId));
+      if (tc) partesFiltro.push(`TC ${tc.numero}`);
+    }
+    if (filtroParcela) partesFiltro.push((parNomes[filtroParcela]||filtroParcela) + ' Parcela');
+    if (filtroTipo)    partesFiltro.push({CUSTEIO:'Custeio',CAPITAL:'Capital',ALEM_MUROS:'Além dos Muros',OBRAS:'Obras',CAPINA:'Capina'}[filtroTipo]||filtroTipo);
+    const subtitulo = partesFiltro.length ? partesFiltro.join(' · ') : `${despesas.length} lançamento(s)`;
 
     // Agrupa por tipo
     const grupos = {};
@@ -5287,7 +5375,7 @@ function imprimirAba(nomeAba) {
         <div class="info-box"><div class="lbl">Ticket Médio</div><div class="val mono">${_fmt(despesas.length?totalGeral/despesas.length:0)}</div></div>
       </div>`;
 
-    return wrapDoc('Relação de Despesas', `${despesas.length} lançamento(s)`, resumo + gruposHtml);
+    return wrapDoc('Relação de Despesas', subtitulo, resumo + gruposHtml);
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -7571,7 +7659,108 @@ document.getElementById('login-email').addEventListener('keydown', e => {
   }
 })();
 
+// ==================== FILTRO DE IMPRESSÃO ====================
+let _filtroImpressaoAba = null;
+
+function abrirFiltroImpressao(aba) {
+  _filtroImpressaoAba = aba;
+
+  // Monta opções de TC
+  const selTC = document.getElementById('fi-tc');
+  selTC.innerHTML = '<option value="">Todos os TCs</option>';
+  (state.tcs || []).filter(t => !t.tcPaiId).forEach(tc => {
+    const adits = (state.tcs || []).filter(a => a.tcPaiId === tc.id);
+    const opt = document.createElement('option');
+    opt.value = tc.id;
+    opt.textContent = `TC ${tc.numero}${tc.escola ? ' — ' + tc.escola : ''}`;
+    selTC.appendChild(opt);
+    adits.forEach(a => {
+      const oa = document.createElement('option');
+      oa.value = a.id;
+      oa.textContent = `   ↳ Aditivo ${a.numero}`;
+      selTC.appendChild(oa);
+    });
+  });
+
+  // Monta opções de parcela
+  const parcelas = [...new Set((state.despesas || []).map(d => d.parcela).filter(Boolean))].sort();
+  const parNomes = {'01':'1ª Parcela','02':'2ª Parcela','03':'3ª Parcela','04':'4ª Parcela','05':'5ª Parcela','U':'Parcela Única'};
+  const selParcela = document.getElementById('fi-parcela');
+  selParcela.innerHTML = '<option value="">Todas as Parcelas</option>';
+  parcelas.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p;
+    opt.textContent = parNomes[p] || `Parcela ${p}`;
+    selParcela.appendChild(opt);
+  });
+
+  // Ajusta título do modal
+  const titulos = { tc: 'Termos de Compromisso', despesas: 'Despesas' };
+  document.getElementById('fi-titulo').textContent = `Imprimir — ${titulos[aba] || aba}`;
+
+  // Mostra/oculta campo de tipo (só faz sentido para despesas)
+  document.getElementById('fi-row-tipo').style.display = aba === 'despesas' ? '' : 'none';
+
+  document.getElementById('modal-filtro-impressao').classList.add('open');
+}
+
+function confirmarFiltroImpressao() {
+  const tcId    = document.getElementById('fi-tc').value;
+  const parcela = document.getElementById('fi-parcela').value;
+  const tipo    = document.getElementById('fi-tipo').value;
+  document.getElementById('modal-filtro-impressao').classList.remove('open');
+  imprimirAba(_filtroImpressaoAba, { tcId, parcela, tipo });
+}
+
 
 </script>
+
+<!-- MODAL: FILTRO DE IMPRESSÃO -->
+<div class="modal-overlay" id="modal-filtro-impressao">
+  <div class="modal" style="width:440px;max-width:95vw">
+    <div class="modal-header">
+      <div class="modal-title" id="fi-titulo">Imprimir</div>
+      <button class="modal-close" onclick="document.getElementById('modal-filtro-impressao').classList.remove('open')">✕</button>
+    </div>
+    <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
+
+      <div style="background:rgba(79,142,247,0.08);border:1px solid rgba(79,142,247,0.2);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--text-muted);line-height:1.5">
+        💡 Use os filtros abaixo para gerar o relatório de uma <strong style="color:var(--text)">parcela ou TC específico</strong>, ou deixe em branco para imprimir tudo.
+      </div>
+
+      <div class="field">
+        <label>TC / Aditivo</label>
+        <select id="fi-tc">
+          <option value="">Todos os TCs</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Parcela</label>
+        <select id="fi-parcela">
+          <option value="">Todas as Parcelas</option>
+        </select>
+      </div>
+
+      <div class="field" id="fi-row-tipo">
+        <label>Tipo de Despesa</label>
+        <select id="fi-tipo">
+          <option value="">Todos os tipos</option>
+          <option value="CUSTEIO">Custeio</option>
+          <option value="CAPITAL">Capital</option>
+          <option value="ALEM_MUROS">Além dos Muros</option>
+          <option value="OBRAS">Obras</option>
+          <option value="CAPINA">Capina</option>
+        </select>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;padding-top:4px">
+        <button class="btn btn-ghost" onclick="document.getElementById('modal-filtro-impressao').classList.remove('open')">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmarFiltroImpressao()">🖨 Gerar Impressão</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
