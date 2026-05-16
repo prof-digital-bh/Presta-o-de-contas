@@ -4141,25 +4141,24 @@ function renderAnexosObrigatorios(despesasFiltradas, filtroTC, filtroParcela) {
   const temAlem    = tipos.has('ALEM_MUROS');
   const temObras   = tipos.has('OBRAS');
 
-  // Monta lista de anexos — somente os oficiais do Manual SEDUC/FUNEC
-  // Estrutura: { key, num, label, sub, condicional, tag? }
-  // condicional = '' (sempre), 'CAPITAL', 'ALEM_MUROS', 'OBRAS'
+  // Estrutura: { key, num, label, sub, cond, tag?, bloco }
+  // bloco: 'CE' = Caixa Escolar | 'SF' = SEDUC/FUNEC
   const ANEXOS = [
-    { key:'anx1',  num:'I',    label:'Certidão de Execução do Objeto',                     sub:'Assinada pelo Presidente da Caixa Escolar — declara que os objetivos do TC foram alcançados',                   cond:'' },
-    { key:'anx2',  num:'II',   label:'Ata do Conselho Fiscal — Deliberação das Despesas',   sub:'Assinada pela Diretoria e pelo Conselho Fiscal; registra o planejamento e aprovação do uso dos recursos',       cond:'' },
-    { key:'anx3',  num:'III',  label:'Relatório de Execução Físico-Financeiro',              sub:'Resumo das receitas e despesas da parcela; assinado pelo Presidente e Tesoureiro',                               cond:'' },
-    { key:'anx4',  num:'IV',   label:'Relação de Guias Pagas (ISS, DARF etc.)',              sub:'Guias de recolhimento de impostos vinculadas às notas fiscais da prestação de contas',                          cond:'' },
-    { key:'anx5',  num:'V',    label:'Parecer do Conselho Fiscal',                           sub:'Documento emitido pelo Conselho Fiscal aprovando ou não a prestação de contas',                                  cond:'' },
-    { key:'anx6',  num:'VI',   label:'Termo de Doação — Caixa Escolar → Unidade Escolar',   sub:'Obrigatório quando há aquisição de bens permanentes (Capital); transferência formal ao patrimônio municipal',   cond:'CAPITAL',    tag:'Capital' },
-    { key:'anx7',  num:'VII',  label:'Formulário Trabalho de Campo',                         sub:'Obrigatório para despesas "Além dos Muros"; informa destino, data, nº de estudantes e objetivos pedagógicos',  cond:'ALEM_MUROS', tag:'Além dos Muros' },
-    { key:'anx8',  num:'VIII', label:'Termo de Recebimento Definitivo',                      sub:'Obrigatório para reforma, manutenção, reparo e requalificação de imóveis; assinado pelo Engenheiro SEDUC/FUNEC',cond:'OBRAS',      tag:'Obras' },
-    { key:'anx9',  num:'IX',   label:'Relatório dos Assessores Educacionais — Visitas in loco', sub:'Elaborado pelo Assessor Educacional da SEDUC/FUNEC após visita de monitoramento à unidade escolar',         cond:'' },
-    { key:'anx10', num:'X',    label:'Relatório de Análise da Prestação de Contas',          sub:'Elaborado pelo Analista de Prestação de Contas da SEDUC/FUNEC com parecer técnico e financeiro',               cond:'' },
-    { key:'anx11', num:'XI',   label:'Parecer de Aprovação do Ordenador de Despesas',        sub:'Parecer final do Secretário Municipal de Educação ou Presidente da FUNEC aprovando a prestação de contas',     cond:'' },
+    { key:'anx1',  num:'I',    label:'Certidão de Execução do Objeto',                        sub:'Assinada pelo Presidente da Caixa Escolar — declara que os objetivos do TC foram alcançados',                   cond:'',           bloco:'CE' },
+    { key:'anx2',  num:'II',   label:'Ata do Conselho Fiscal — Deliberação das Despesas',      sub:'Assinada pela Diretoria e pelo Conselho Fiscal; registra o planejamento e aprovação do uso dos recursos',       cond:'',           bloco:'CE' },
+    { key:'anx3',  num:'III',  label:'Relatório de Execução Físico-Financeiro',                sub:'Resumo das receitas e despesas da parcela; assinado pelo Presidente e Tesoureiro',                               cond:'',           bloco:'CE' },
+    { key:'anx4',  num:'IV',   label:'Relação de Guias Pagas (ISS, DARF etc.)',                sub:'Guias de recolhimento de impostos vinculadas às notas fiscais da prestação de contas',                           cond:'',           bloco:'CE' },
+    { key:'anx5',  num:'V',    label:'Parecer do Conselho Fiscal',                             sub:'Documento emitido pelo Conselho Fiscal aprovando ou não a prestação de contas',                                  cond:'',           bloco:'CE' },
+    { key:'anx6',  num:'VI',   label:'Termo de Doação — Caixa Escolar → Unidade Escolar',     sub:'Obrigatório quando há aquisição de bens permanentes (Capital); transferência formal ao patrimônio municipal',    cond:'CAPITAL',    tag:'Capital',        bloco:'CE' },
+    { key:'anx7',  num:'VII',  label:'Formulário Trabalho de Campo',                           sub:'Obrigatório para despesas "Além dos Muros"; informa destino, data, nº de estudantes e objetivos pedagógicos',   cond:'ALEM_MUROS', tag:'Além dos Muros', bloco:'CE' },
+    { key:'anx8',  num:'VIII', label:'Termo de Recebimento Definitivo',                        sub:'Obrigatório para reforma, manutenção, reparo e requalificação de imóveis; assinado pelo Engenheiro SEDUC/FUNEC', cond:'OBRAS',      tag:'Obras',          bloco:'CE' },
+    { key:'anx9',  num:'IX',   label:'Relatório dos Assessores Educacionais — Visitas in loco',sub:'Elaborado pelo Assessor Educacional da SEDUC/FUNEC após visita de monitoramento à unidade escolar',              cond:'',           bloco:'SF' },
+    { key:'anx10', num:'X',    label:'Relatório de Análise da Prestação de Contas',            sub:'Elaborado pelo Analista de Prestação de Contas da SEDUC/FUNEC com parecer técnico e financeiro',                cond:'',           bloco:'SF' },
+    { key:'anx11', num:'XI',   label:'Parecer de Aprovação do Ordenador de Despesas',          sub:'Parecer final do Secretário Municipal de Educação ou Presidente da FUNEC aprovando a prestação de contas',       cond:'',           bloco:'SF' },
   ];
 
-  // Filtra conforme tipos presentes
-  const anexosVisiveis = ANEXOS.filter(a => {
+  // Helper: filtra por condição de tipo
+  const filtrarAnexos = (lista) => lista.filter(a => {
     if (!a.cond) return true;
     if (a.cond === 'CAPITAL')    return temCapital;
     if (a.cond === 'ALEM_MUROS') return temAlem;
@@ -4167,47 +4166,17 @@ function renderAnexosObrigatorios(despesasFiltradas, filtroTC, filtroParcela) {
     return true;
   });
 
-  const total = anexosVisiveis.length;
-  const oks   = anexosVisiveis.filter(a => (_docsObrigState[_doiKey('anx', a.key)]||{}).estado === 'ok').length;
-  const pends = anexosVisiveis.filter(a => (_docsObrigState[_doiKey('anx', a.key)]||{}).estado === 'pendente').length;
-  const pct   = total ? Math.round(oks/total*100) : 0;
+  const anexosCE = filtrarAnexos(ANEXOS.filter(a => a.bloco === 'CE'));
+  const anexosSF = filtrarAnexos(ANEXOS.filter(a => a.bloco === 'SF'));
 
-  const corHeader = pends > 0 ? 'rgba(240,80,96,0.12)' : oks===total ? 'rgba(56,217,169,0.08)' : 'rgba(246,166,35,0.08)';
-  const corBorder = pends > 0 ? 'rgba(240,80,96,0.25)' : oks===total ? 'rgba(56,217,169,0.2)'  : 'rgba(246,166,35,0.2)';
-
-  const badge = pends > 0
-    ? `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(240,80,96,0.18);color:var(--accent-red);border:1px solid rgba(240,80,96,0.3);font-weight:700">${pends} pendência${pends>1?'s':''}</span>`
-    : oks===total
-      ? `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(56,217,169,0.15);color:var(--accent2);border:1px solid rgba(56,217,169,0.3);font-weight:700">✓ ${oks}/${total} OK</span>`
-      : `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(246,166,35,0.12);color:var(--accent3);border:1px solid rgba(246,166,35,0.3);font-weight:700">${oks}/${total} verificados</span>`;
-
-  let h = `<div class="check-section-title" style="border-color:var(--accent3);color:var(--accent3)">📑 Anexos Obrigatórios — Prestação de Contas</div>`;
-
-  h += `<div style="background:var(--surface);border:1px solid ${corBorder};border-radius:12px;overflow:hidden;margin-bottom:8px">`;
-
-  // Header do bloco
-  h += `<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:${corHeader};border-bottom:1px solid ${corBorder}">`;
-  h += `<div style="font-size:13px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px">`;
-  h += `<span style="font-size:16px">📎</span>Anexos — Decreto 1134/2024 · Manual SEDUC/FUNEC`;
-  h += `</div>`;
-  h += `<div style="display:flex;align-items:center;gap:10px">${badge}`;
-  h += `<div style="font-size:11px;color:var(--text-dim);font-family:'DM Mono',monospace">${pct}%</div></div>`;
-  h += `</div>`;
-
-  // Progress bar
-  h += `<div style="height:3px;background:var(--surface3)">`;
-  h += `<div style="height:100%;width:${pct}%;background:${pct===100?'var(--accent2)':pends>0?'var(--accent-red)':'var(--accent3)'};transition:width 0.4s"></div></div>`;
-
-  // Lista de anexos
-  h += `<div style="display:flex;flex-direction:column">`;
-  anexosVisiveis.forEach(anx => {
+  // Helper: renderiza uma linha de anexo
+  const renderLinhaAnexo = (anx) => {
     const chave = _doiKey('anx', anx.key);
     const st    = (_docsObrigState[chave]||{}).estado || '';
     const obs   = (_docsObrigState[chave]||{}).obs || '';
     const isOk   = st === 'ok';
     const isPend = st === 'pendente';
 
-    // Tag condicional
     const tagColors = { CAPITAL:'var(--capital)', ALEM_MUROS:'var(--alem)', OBRAS:'var(--obras)' };
     const tagBgs    = { CAPITAL:'rgba(56,217,169,0.12)', ALEM_MUROS:'rgba(181,123,238,0.12)', OBRAS:'rgba(246,166,35,0.12)' };
     const tagBorder = { CAPITAL:'rgba(56,217,169,0.25)', ALEM_MUROS:'rgba(181,123,238,0.25)', OBRAS:'rgba(246,166,35,0.25)' };
@@ -4218,36 +4187,86 @@ function renderAnexosObrigatorios(despesasFiltradas, filtroTC, filtroParcela) {
     const rowBg = isOk ? 'rgba(56,217,169,0.04)' : isPend ? 'rgba(240,80,96,0.05)' : '';
     const rowBorderBot = isPend ? '1px solid rgba(240,80,96,0.15)' : '1px solid var(--border)';
 
-    h += `<div id="doi-item-${chave}" style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:${rowBg};border-bottom:${rowBorderBot};transition:background 0.15s">`;
+    let r = `<div id="doi-item-${chave}" style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:${rowBg};border-bottom:${rowBorderBot};transition:background 0.15s">`;
 
-    // Número do anexo
-    h += `<div style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:700;font-family:'DM Mono',monospace;`;
-    if (isOk)   h += `background:rgba(56,217,169,0.15);color:var(--accent2)`;
-    else if (isPend) h += `background:rgba(240,80,96,0.12);color:var(--accent-red)`;
-    else         h += `background:var(--surface3);color:var(--text-muted)`;
-    h += `" id="doi-numbox-${chave}">${isOk?'✓':isPend?'⚠':anx.num}</div>`;
+    r += `<div style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:700;font-family:'DM Mono',monospace;`;
+    if (isOk)        r += `background:rgba(56,217,169,0.15);color:var(--accent2)`;
+    else if (isPend) r += `background:rgba(240,80,96,0.12);color:var(--accent-red)`;
+    else             r += `background:var(--surface3);color:var(--text-muted)`;
+    r += `" id="doi-numbox-${chave}">${isOk?'✓':isPend?'⚠':anx.num}</div>`;
 
-    h += `<div style="flex:1;min-width:0">`;
-    h += `<div style="font-size:12.5px;font-weight:500;color:var(--text);line-height:1.4">Anexo ${anx.num}${tagHtml} — ${anx.label}</div>`;
-    h += `<div style="font-size:11px;color:var(--text-muted);margin-top:2px;line-height:1.4">${anx.sub}</div>`;
+    r += `<div style="flex:1;min-width:0">`;
+    r += `<div style="font-size:12.5px;font-weight:500;color:var(--text);line-height:1.4">Anexo ${anx.num}${tagHtml} — ${anx.label}</div>`;
+    r += `<div style="font-size:11px;color:var(--text-muted);margin-top:2px;line-height:1.4">${anx.sub}</div>`;
+    r += `<div id="doi-note-${chave}" style="display:${isPend?'block':'none'};margin-top:6px">`;
+    r += `<textarea id="doi-obs-${chave}" style="width:100%;font-size:12px;padding:6px 10px;background:var(--surface3);border:1px solid rgba(240,80,96,0.3);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;resize:none;min-height:44px;outline:none" placeholder="Descreva o que está faltando ou pendente…">${obs}</textarea>`;
+    r += `<button onclick="salvarDoiObs('${chave}')" style="margin-top:4px;font-size:11px;padding:4px 10px;border-radius:5px;background:var(--accent-red);color:#fff;border:none;cursor:pointer;font-family:Outfit,sans-serif;font-weight:600">💾 Salvar</button>`;
+    r += `</div></div>`;
+    r += `<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;margin-top:2px">`;
+    r += `<button id="doi-btn-ok-${chave}" class="doi-btn ${isOk?'doi-btn-check active':'doi-btn-check'}" onclick="setDoiEstado('${chave}','ok')" title="Checado">✔</button>`;
+    r += `<button id="doi-btn-pend-${chave}" class="doi-btn ${isPend?'doi-btn-pend active':'doi-btn-pend'}" onclick="setDoiEstado('${chave}','pendente')" title="Pendente">⚠</button>`;
+    r += `</div>`;
+    r += `</div>`;
+    return r;
+  };
 
-    // Nota de pendência
-    h += `<div id="doi-note-${chave}" style="display:${isPend?'block':'none'};margin-top:6px">`;
-    h += `<textarea id="doi-obs-${chave}" style="width:100%;font-size:12px;padding:6px 10px;background:var(--surface3);border:1px solid rgba(240,80,96,0.3);border-radius:6px;color:var(--text);font-family:Outfit,sans-serif;resize:none;min-height:44px;outline:none" placeholder="Descreva o que está faltando ou pendente…">${obs}</textarea>`;
-    h += `<button onclick="salvarDoiObs('${chave}')" style="margin-top:4px;font-size:11px;padding:4px 10px;border-radius:5px;background:var(--accent-red);color:#fff;border:none;cursor:pointer;font-family:Outfit,sans-serif;font-weight:600">💾 Salvar</button>`;
-    h += `</div>`;
+  // Helper: renderiza um bloco completo com cabeçalho, barra de progresso e lista
+  const renderBloco = (titulo, icone, corAcento, corAcentoBg, corBorderBase, lista) => {
+    const total = lista.length;
+    const oks   = lista.filter(a => (_docsObrigState[_doiKey('anx', a.key)]||{}).estado === 'ok').length;
+    const pends = lista.filter(a => (_docsObrigState[_doiKey('anx', a.key)]||{}).estado === 'pendente').length;
+    const pct   = total ? Math.round(oks/total*100) : 0;
 
-    h += `</div>`; // content
+    const corHeader = pends > 0 ? 'rgba(240,80,96,0.10)' : oks===total ? 'rgba(56,217,169,0.08)' : corAcentoBg;
+    const corBorder = pends > 0 ? 'rgba(240,80,96,0.28)' : oks===total ? 'rgba(56,217,169,0.22)' : corBorderBase;
+    const barColor  = pct===100 ? 'var(--accent2)' : pends>0 ? 'var(--accent-red)' : corAcento;
 
-    h += `<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;margin-top:2px">`;
-    h += `<button id="doi-btn-ok-${chave}" class="doi-btn ${isOk?'doi-btn-check active':'doi-btn-check'}" onclick="setDoiEstado('${chave}','ok')" title="Checado">✔</button>`;
-    h += `<button id="doi-btn-pend-${chave}" class="doi-btn ${isPend?'doi-btn-pend active':'doi-btn-pend'}" onclick="setDoiEstado('${chave}','pendente')" title="Pendente">⚠</button>`;
-    h += `</div>`;
+    const badge = pends > 0
+      ? `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(240,80,96,0.18);color:var(--accent-red);border:1px solid rgba(240,80,96,0.3);font-weight:700">${pends} pendência${pends>1?'s':''}</span>`
+      : oks===total
+        ? `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(56,217,169,0.15);color:var(--accent2);border:1px solid rgba(56,217,169,0.3);font-weight:700">✓ ${oks}/${total} OK</span>`
+        : `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:${corAcentoBg};color:${corAcento};border:1px solid ${corBorderBase};font-weight:700">${oks}/${total} verificados</span>`;
 
-    h += `</div>`; // row
-  });
-  h += `</div>`; // lista
-  h += `</div>`; // card
+    let b = `<div style="background:var(--surface);border:1px solid ${corBorder};border-radius:12px;overflow:hidden;margin-bottom:14px">`;
+    // Header
+    b += `<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;background:${corHeader};border-bottom:1px solid ${corBorder}">`;
+    b += `<div style="font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px">`;
+    b += `<span style="font-size:15px">${icone}</span>${titulo}`;
+    b += `</div>`;
+    b += `<div style="display:flex;align-items:center;gap:10px">${badge}`;
+    b += `<div style="font-size:11px;color:var(--text-dim);font-family:'DM Mono',monospace">${pct}%</div></div>`;
+    b += `</div>`;
+    // Barra de progresso
+    b += `<div style="height:3px;background:var(--surface3)">`;
+    b += `<div style="height:100%;width:${pct}%;background:${barColor};transition:width 0.4s"></div></div>`;
+    // Lista
+    b += `<div style="display:flex;flex-direction:column">`;
+    lista.forEach(anx => { b += renderLinhaAnexo(anx); });
+    b += `</div></div>`;
+    return b;
+  };
+
+  let h = `<div class="check-section-title" style="border-color:var(--accent3);color:var(--accent3)">📑 Anexos Obrigatórios — Prestação de Contas</div>`;
+
+  // ── BLOCO 1: CAIXA ESCOLAR ──
+  h += renderBloco(
+    '🏫 Caixa Escolar',
+    '🏫',
+    'var(--accent)',
+    'rgba(79,142,247,0.08)',
+    'rgba(79,142,247,0.22)',
+    anexosCE
+  );
+
+  // ── BLOCO 2: SEDUC / FUNEC ──
+  h += renderBloco(
+    '🏛 SEDUC / FUNEC',
+    '🏛',
+    'var(--alem)',
+    'rgba(181,123,238,0.08)',
+    'rgba(181,123,238,0.22)',
+    anexosSF
+  );
 
   return h;
 }
