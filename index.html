@@ -4401,77 +4401,192 @@ async function toggleCheck(key) {
   refreshPendenciaBadge();
 }
 
-function updatePendenciasSummary() {
-  // Count from accordion doc rows (❌) + classic checkboxes (for gerais/capital items)
-  const classicAll     = [...document.querySelectorAll('#checklist-area .check-cb')];
-  const classicTotal   = classicAll.length;
-  const classicDone    = classicAll.filter(c => c.checked).length;
-  const classicPending = classicTotal - classicDone;
+// ── Nomes legíveis dos Anexos para uso no painel de pendências ──
+const _ANEXO_LABELS = {
+  anx1:'Anexo I — Certidão de Execução do Objeto',
+  anx2:'Anexo II — Ata do Conselho Fiscal',
+  anx3:'Anexo III — Relatório de Execução Físico-Financeiro',
+  anx4:'Anexo IV — Relação de Guias Pagas',
+  anx5:'Anexo V — Parecer do Conselho Fiscal',
+  anx6:'Anexo VI — Termo de Doação',
+  anx7:'Anexo VII — Formulário Trabalho de Campo',
+  anx8:'Anexo VIII — Termo de Recebimento Definitivo',
+  anx9:'Anexo IX — Relatório dos Assessores Educacionais',
+  anx10:'Anexo X — Relatório de Análise da Prestação de Contas',
+  anx11:'Anexo XI — Parecer de Aprovação do Ordenador',
+};
 
-  // Accordion pending: rows that contain ❌ (accent-red border)
-  const accordPendRows = [...document.querySelectorAll('#checklist-area [style*="rgba(240,80,96,0.06)"]')];
-  const totalPend = classicPending + accordPendRows.length;
-  const totalOk   = classicDone + [...document.querySelectorAll('#checklist-area [style*="rgba(56,217,169,0.06)"]')].length;
-  const total     = totalPend + totalOk;
+// ── Calcula totais reais de Anexos + Fornecedores a partir dos dados ──
+function _calcProgressData() {
+  // ── 1. ANEXOS OBRIGATÓRIOS ─────────────────────────────────────────────
+  const tipos = new Set((state.despesas||[]).map(d => d.tipo));
+  const TODOS_ANEXOS = ['anx1','anx2','anx3','anx4','anx5','anx6','anx7','anx8','anx9','anx10','anx11'];
+  const COND = { anx6:'CAPITAL', anx7:'ALEM_MUROS', anx8:'OBRAS' };
+  const anexosAtivos = TODOS_ANEXOS.filter(k => {
+    const c = COND[k];
+    return !c || tipos.has(c);
+  });
+
+  let anxOk = 0, anxPend = 0;
+  const anxPendLines = [];
+  anexosAtivos.forEach(k => {
+    const chave = _doiKey('anx', k);
+    const st = (window._docsObrigState[chave]||{}).estado || '';
+    const obs = (window._docsObrigState[chave]||{}).obs || '';
+    if (st === 'ok') { anxOk++; }
+    else {
+      anxPend++;
+      const lbl = _ANEXO_LABELS[k] || ('Anexo ' + k);
+      const isPend = st === 'pendente';
+      anxPendLines.push({ label: lbl, pend: isPend && obs ? obs : (isPend ? 'Marcado como pendente' : 'Não verificado'), tipo: isPend ? 'pendente' : 'nao_verificado' });
+    }
+  });
+  const anxTotal = anexosAtivos.length;
+
+  // ── 2. DOCUMENTOS POR FORNECEDOR ──────────────────────────────────────
+  // Agrupa exatamente como renderChecklist faz
+  const fornecedores = {};
+  (state.despesas||[]).forEach(d => {
+    const key = d.cnpj || d.credor;
+    if (!fornecedores[key]) {
+      fornecedores[key] = {
+        credor: d.credor, cnpj: d.cnpj,
+        orcamentos: d.orcamentos, certidoes: d.certidoes,
+        comprovantePgto: d.comprovantePgto, contratoNf: d.contratoNf,
+        justificativa: d.justificativa,
+        nfs: []
+      };
+    }
+    fornecedores[key].nfs.push({ num: d.nfNum });
+  });
+
+  let fornOk = 0, fornPend = 0;
+  const fornPendLines = [];
+  const itemStatus = v => v === 'sim' || v === 'na' ? 'ok' : v === 'nao' ? 'pend' : 'sem';
+
+  Object.values(fornecedores).forEach(f => {
+    const stNf    = f.nfs.some(n => n.num && n.num.trim() !== '') ? 'ok' : 'pend';
+    const stOrc   = itemStatus(f.orcamentos);
+    const stCert  = itemStatus(f.certidoes);
+    const stComp  = itemStatus(f.comprovantePgto);
+    const stCont  = itemStatus(f.contratoNf);
+    const stJust  = itemStatus(f.justificativa);
+    const items   = [stNf, stOrc, stCert, stComp, stCont, stJust];
+    const nome    = f.credor || f.cnpj || '?';
+    const docNomes = ['NF','Orçamentos','Certidões','Comprovante Pgto','Contrato/NF','Justificativa'];
+    items.forEach((st, i) => {
+      if (st === 'sem') return;
+      if (st === 'ok') { fornOk++; }
+      else { fornPend++; fornPendLines.push({ label: docNomes[i] + ' — ' + nome, pend: '', tipo: 'pend' }); }
+    });
+  });
+  const fornTotal = fornOk + fornPend;
+
+  // ── 3. TOTAIS GERAIS (apenas Anexos + Fornecedores) ───────────────────
+  const grandTotal  = anxTotal + fornTotal;
+  const grandOk     = anxOk   + fornOk;
+  const grandPend   = anxPend + fornPend;
+  const allPendLines = [...anxPendLines, ...fornPendLines];
+
+  return { anxTotal, anxOk, anxPend, anxPendLines,
+           fornTotal, fornOk, fornPend, fornPendLines,
+           grandTotal, grandOk, grandPend, allPendLines };
+}
+
+let _prevWas100 = false; // evita disparar o modal múltiplas vezes
+
+function updatePendenciasSummary() {
+  const d = _calcProgressData();
+  const { grandTotal, grandOk, grandPend, allPendLines } = d;
+
+  // ── Progresso Geral ───────────────────────────────────────────────────
+  const pct = grandTotal ? Math.round(grandOk / grandTotal * 100) : 0;
+  const barColor = pct === 100 ? 'var(--accent2)' : grandPend > 0 ? 'var(--accent-red)' : 'var(--accent3)';
 
   document.getElementById('progresso-docs').innerHTML =
     '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px">' +
-    '<span style="color:var(--text-muted)">' + totalOk + ' de ' + total + ' itens OK</span>' +
-    '<span style="color:var(--accent2);font-family:\'DM Mono\',monospace">' + (total ? Math.round(totalOk/total*100) : 0) + '%</span>' +
-    '</div><div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:' + (total ? totalOk/total*100 : 0) + '%;background:var(--accent2)"></div></div>';
+    '<span style="color:var(--text-muted)">' + grandOk + ' de ' + grandTotal + ' itens OK</span>' +
+    '<span style="color:' + (pct===100?'var(--accent2)':'var(--accent3)') + ';font-family:\'DM Mono\',monospace;font-weight:600">' + pct + '%</span>' +
+    '</div>' +
+    '<div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:' + pct + '%;background:' + barColor + '"></div></div>' +
+    (d.anxTotal ? '<div style="font-size:11px;color:var(--text-dim);margin-top:8px;display:flex;gap:16px">' +
+      '<span>📑 Anexos: <strong style="color:var(--text)">' + d.anxOk + '/' + d.anxTotal + '</strong></span>' +
+      '<span>🏢 Fornecedores: <strong style="color:var(--text)">' + d.fornOk + '/' + d.fornTotal + '</strong></span>' +
+      '</div>' : '');
 
-  // Pendências: accordion rows ❌ + classic unchecked items
-  const classicPendItems = [...document.querySelectorAll('#checklist-area .check-item:not(.done)')];
+  // ── Lista de Pendências ───────────────────────────────────────────────
+  const pendEl   = document.getElementById('pendencias-lista');
+  const dashEl   = document.getElementById('dash-pendencias');
 
-  const allPendLines = [];
-
-  // From accordion rows
-  accordPendRows.forEach(row => {
-    const divs = row.querySelectorAll('div');
-    const labelDiv = divs[0];
-    const label = labelDiv ? labelDiv.textContent.trim() : '';
-    const pendDiv = row.querySelector('[style*="accent3"]');
-    const pendTxt = pendDiv ? pendDiv.textContent.replace('⚠ ','').trim() : '';
-    allPendLines.push({ label, pend: pendTxt });
-  });
-
-  // From classic check items
-  classicPendItems.forEach(p => {
-    const labelEl = p.querySelector('.check-label');
-    const pendDiv = p.querySelector('[style*="accent3"]');
-    allPendLines.push({ label: labelEl ? labelEl.textContent.trim() : '', pend: pendDiv ? pendDiv.textContent.trim() : '' });
-  });
-
-  // Also count doi_ pending items from _docsObrigState
-  const doiPendLines = Object.entries(window._docsObrigState||{}).filter(([k,v]) => v.estado === 'pendente').map(([k,v]) => {
-    // Try to extract a label from the key for display
-    return { label: 'Anexo pendente (' + k.replace('doi_anx_','Anexo ') + ')', pend: v.obs || '' };
-  });
-
-  if (!allPendLines.length && !doiPendLines.length) {
-    document.getElementById('pendencias-lista').innerHTML = '<div class="alert alert-success" style="margin:0"><span>✅</span><span>Todos os documentos estão OK!</span></div>';
-    document.getElementById('dash-pendencias').innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-icon">✅</div><div class="empty-sub">Sem pendências no momento</div></div>';
+  if (!allPendLines.length) {
+    if (pendEl) pendEl.innerHTML = '<div class="alert alert-success" style="margin:0"><span>✅</span><span>Todos os documentos estão OK!</span></div>';
+    if (dashEl) dashEl.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-icon">✅</div><div class="empty-sub">Sem pendências no momento</div></div>';
   } else {
-    const allLines = [...allPendLines, ...doiPendLines];
-    document.getElementById('pendencias-lista').innerHTML = allLines.map(p =>
+    const lineHtml = p =>
       '<div style="display:flex;align-items:flex-start;gap:8px;padding:7px 10px;background:rgba(240,80,96,0.06);border:1px solid rgba(240,80,96,0.15);border-radius:7px;margin-bottom:6px;font-size:12.5px;color:var(--text)">' +
       '<span style="color:var(--accent-red);flex-shrink:0">●</span><div><div>' + p.label + '</div>' +
       (p.pend ? '<div style="font-size:11px;color:var(--accent3);margin-top:2px">⚠ ' + p.pend + '</div>' : '') +
-      '</div></div>'
-    ).join('');
-    document.getElementById('dash-pendencias').innerHTML =
-      '<div style="font-size:12px;color:var(--accent-red);font-weight:600;margin-bottom:8px">' + allLines.length + ' pendência(s)</div>' +
-      allLines.slice(0,3).map(p => '<div style="font-size:12.5px;color:var(--text-muted);padding:5px 0;border-bottom:1px solid var(--border)">⚠ ' + p.label + '</div>').join('') +
-      (allLines.length > 3 ? '<div style="font-size:12px;color:var(--text-dim);margin-top:6px">+' + (allLines.length-3) + ' mais...</div>' : '');
+      '</div></div>';
+
+    if (pendEl) pendEl.innerHTML = allPendLines.map(lineHtml).join('');
+    if (dashEl) dashEl.innerHTML =
+      '<div style="font-size:12px;color:var(--accent-red);font-weight:600;margin-bottom:8px">' + allPendLines.length + ' pendência(s)</div>' +
+      allPendLines.slice(0,3).map(p => '<div style="font-size:12.5px;color:var(--text-muted);padding:5px 0;border-bottom:1px solid var(--border)">⚠ ' + p.label + '</div>').join('') +
+      (allPendLines.length > 3 ? '<div style="font-size:12px;color:var(--text-dim);margin-top:6px">+' + (allPendLines.length-3) + ' mais...</div>' : '');
   }
 
-  // Update retractable panel badge
-  const pendTotal = allPendLines.length + doiPendLines.length;
+  // ── Badge painel retrátil ─────────────────────────────────────────────
   const panelBadge = document.getElementById('pend-panel-badge');
   if (panelBadge) {
-    if (pendTotal > 0) { panelBadge.textContent = pendTotal + ' pendência' + (pendTotal>1?'s':''); panelBadge.style.display = 'inline-flex'; }
-    else { panelBadge.style.display = 'none'; }
+    if (allPendLines.length > 0) {
+      panelBadge.textContent = allPendLines.length + ' pendência' + (allPendLines.length>1?'s':'');
+      panelBadge.style.display = 'inline-flex';
+    } else {
+      panelBadge.style.display = 'none';
+    }
   }
+
+  // ── Modal 100% — dispara apenas na transição para 100% ───────────────
+  if (pct === 100 && grandTotal > 0 && !_prevWas100) {
+    _prevWas100 = true;
+    setTimeout(() => mostrarModalEnvioSEDUC(), 300);
+  } else if (pct < 100) {
+    _prevWas100 = false;
+  }
+}
+
+function mostrarModalEnvioSEDUC() {
+  // Remove se já existe
+  const old = document.getElementById('modal-envio-seduc');
+  if (old) old.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'modal-envio-seduc';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);animation:fadeIn 0.25s ease';
+  overlay.innerHTML = `
+    <div style="background:var(--surface);border:1px solid rgba(56,217,169,0.35);border-radius:20px;padding:36px 32px;width:480px;max-width:95vw;box-shadow:0 8px 48px rgba(0,0,0,0.6);animation:slideUp 0.25s ease;text-align:center">
+      <div style="font-size:52px;margin-bottom:16px;filter:drop-shadow(0 0 16px rgba(56,217,169,0.5))">🎉</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--text);margin-bottom:8px">Prestação de Contas Completa!</div>
+      <div style="font-size:13.5px;color:var(--text-muted);line-height:1.7;margin-bottom:20px">
+        Todos os Anexos Obrigatórios e documentos por fornecedor foram verificados.<br>
+        A documentação está pronta para envio à <strong style="color:var(--accent2)">SEDUC / FUNEC</strong>.
+      </div>
+      <div style="background:rgba(56,217,169,0.07);border:1px solid rgba(56,217,169,0.2);border-radius:12px;padding:16px 20px;margin-bottom:24px;text-align:left">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--accent2);margin-bottom:10px;font-weight:600">📋 Lembrete antes de enviar</div>
+        <div style="font-size:12.5px;color:var(--text-muted);line-height:1.9">
+          ✅ Verifique as assinaturas de todos os anexos<br>
+          ✅ Confirme o período correto no Anexo III<br>
+          ✅ Organize os documentos na ordem dos Anexos<br>
+          ✅ Guarde uma cópia física e digital da prestação
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button onclick="document.getElementById('modal-envio-seduc').remove()" style="padding:10px 22px;border-radius:9px;background:var(--surface2);color:var(--text);border:1px solid var(--border);font-size:13px;font-family:'Outfit',sans-serif;cursor:pointer;font-weight:500">Fechar</button>
+        <button onclick="document.getElementById('modal-envio-seduc').remove();showSection('checklist')" style="padding:10px 22px;border-radius:9px;background:var(--accent2);color:#0e1117;border:none;font-size:13px;font-family:'Outfit',sans-serif;cursor:pointer;font-weight:700">✓ Entendido!</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
 function refreshChecklist() {
@@ -4479,12 +4594,13 @@ function refreshChecklist() {
 }
 
 function refreshPendenciaBadge() {
-  const classicPend  = [...document.querySelectorAll('#checklist-area .check-cb')].filter(c => !c.checked).length;
-  const accordPend   = document.querySelectorAll('#checklist-area [style*="rgba(240,80,96,0.06)"]').length;
-  const pending      = classicPend + accordPend;
+  const d = _calcProgressData();
+  const pending = d.grandPend;
   const badge = document.getElementById('pendencia-badge');
-  if (pending > 0) { badge.textContent = pending; badge.style.display = 'flex'; }
-  else { badge.style.display = 'none'; }
+  if (badge) {
+    if (pending > 0) { badge.textContent = pending; badge.style.display = 'flex'; }
+    else { badge.style.display = 'none'; }
+  }
 }
 
 function imprimirPendencias() {
