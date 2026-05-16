@@ -4994,80 +4994,547 @@ function imprimirPendencias() {
 
 // ==================== IMPRIMIR ABA ====================
 function imprimirAba(nomeAba) {
-  const escola = document.querySelector('.sidebar-title')?.textContent?.trim() || 'Caixa Escolar';
-  const dataHoje = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+  // ── helpers locais ──────────────────────────────────────────────
+  const _pm  = v => { if (!v) return 0; return parseFloat(String(v).replace(/\./g,'').replace(',','.')) || 0; };
+  const _fmt = v => 'R$\u00a0' + v.toLocaleString('pt-BR', {minimumFractionDigits:2,maximumFractionDigits:2});
+  const _dt  = d => { if (!d) return '—'; const p=d.split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d; };
+  const _tl  = t => ({CUSTEIO:'Custeio',CAPITAL:'Capital',ALEM_MUROS:'Além dos Muros',OBRAS:'Obras',CAPINA:'Capina'}[t]||t||'—');
+  const _sl  = v => ({pendente:'Pendente',nao_verificado:'Não Verificado',ok:'OK',nao_aplicavel:'N/A'}[v]||v||'—');
+  const _sc  = v => ({pendente:'#c0392b',nao_verificado:'#856404',ok:'#155724',nao_aplicavel:'#555'}[v]||'#555');
+  const _tcLabel = id => { const t=(state.tcs||[]).find(t=>String(t.id)===String(id)); return t?`TC ${t.numero}`:'—'; };
 
-  const secaoId = 'section-' + nomeAba;
-  const secao = document.getElementById(secaoId);
-  if (!secao) { alert('Seção não encontrada.'); return; }
+  const escola   = (typeof ESCOLA !== 'undefined' ? ESCOLA : null) || document.querySelector('.sidebar-title')?.textContent?.trim() || 'Caixa Escolar';
+  const dataHoje = new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'});
 
-  const clone = secao.cloneNode(true);
-
-  clone.querySelectorAll('button').forEach(b => {
-    const txt = b.textContent || '';
-    if (txt.includes('+') || txt.includes('Imprimir') || txt.includes('Exportar') ||
-        txt.includes('Atualizar') || txt.includes('↺') || txt.includes('✕') ||
-        txt.includes('Novo') || txt.includes('Adicionar') || txt.includes('Lançar') ||
-        txt.includes('Limpar') || txt.includes('Entendido') || txt.includes('CSV')) {
-      b.style.display = 'none';
-    }
-  });
-
-  const pageTitleEl = clone.querySelector('.page-title');
-  const pageTitle = pageTitleEl ? pageTitleEl.textContent.trim() : nomeAba;
-
-  const creditoHtml = `
-    <div style="margin-top:32px;padding-top:14px;border-top:1px solid #dee2e6;font-size:11px;color:#888;display:flex;justify-content:space-between;">
-      <span>Sistema de Prestação de Contas — gerado em ${dataHoje} · Decreto 1134/2024 · Manual SEDUC/FUNEC</span>
-      <span style="font-style:italic">Criado e desenvolvido por Prof. Everton Correa Alves</span>
-    </div>`;
-
-  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
-  <title>${pageTitle} — ${escola}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <style>
+  // ── CSS base ────────────────────────────────────────────────────
+  const CSS = `
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
     @media print {
       @page { size: A4; margin: 16mm 14mm; }
       body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .no-print { display: none !important; }
     }
     *, *::before, *::after { box-sizing: border-box; }
-    body { font-family: 'Outfit', 'Segoe UI', Arial, sans-serif; color: #1a1a2e; margin: 0; padding: 24px 28px; font-size: 13px; background: #fff; }
-    .print-header { border-bottom: 3px solid #1a1a2e; padding-bottom: 14px; margin-bottom: 20px; display:flex; justify-content:space-between; align-items:flex-start; }
-    table { width: 100%; border-collapse: collapse; }
-    th { background: #f5f5f5; text-align: left; padding: 7px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #555; border-bottom: 2px solid #dee2e6; }
-    td { padding: 7px 10px; border-bottom: 1px solid #eee; font-size: 12.5px; vertical-align: middle; }
-    .card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; }
-    .page-header { margin-bottom: 16px; }
-    .page-title { font-size: 20px; font-weight: 800; }
-    .page-subtitle { font-size: 12px; color: #555; }
-    button { display: none !important; }
-    .modal-overlay { display: none !important; }
-    .no-print button { display: inline-block !important; }
-  </style></head><body>
+    body { font-family: 'Outfit','Segoe UI',Arial,sans-serif; color: #1a1a2e; margin: 0; padding: 24px 32px; font-size: 13px; background: #fff; }
+    h2  { font-size:15px; font-weight:700; margin:22px 0 10px; padding-bottom:6px; border-bottom:2px solid #e9ecef; color:#1a1a2e; }
+    h3  { font-size:13px; font-weight:700; margin:16px 0 8px; color:#2c3e6b; }
+    .doc-header { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:3px solid #1a1a2e; padding-bottom:14px; margin-bottom:24px; }
+    .doc-header-left .title { font-size:20px; font-weight:800; color:#1a1a2e; }
+    .doc-header-left .sub   { font-size:11.5px; color:#555; margin-top:3px; }
+    .doc-header-right       { text-align:right; font-size:11px; color:#666; }
+    .doc-header-right strong { display:block; font-size:12px; }
+    table { width:100%; border-collapse:collapse; margin-bottom:16px; }
+    th { background:#f0f2f5; text-align:left; padding:8px 10px; font-size:10.5px; text-transform:uppercase; letter-spacing:0.6px; color:#555; border-bottom:2px solid #dee2e6; font-weight:600; }
+    td { padding:7px 10px; border-bottom:1px solid #eee; font-size:12.5px; vertical-align:top; }
+    tr:last-child td { border-bottom:none; }
+    .mono  { font-family:'DM Mono',monospace; }
+    .right { text-align:right; }
+    .muted { color:#666; }
+    .bold  { font-weight:700; }
+    .badge { display:inline-block; padding:2px 9px; border-radius:20px; font-size:10.5px; font-weight:600; }
+    .badge-green  { background:#d4edda; color:#155724; }
+    .badge-red    { background:#fdecea; color:#c0392b; }
+    .badge-orange { background:#fff3cd; color:#856404; }
+    .badge-blue   { background:#d1ecf1; color:#0c5460; }
+    .badge-gray   { background:#e9ecef; color:#555; }
+    .info-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:18px; }
+    .info-box  { background:#f8f9fa; border:1px solid #dee2e6; border-radius:7px; padding:10px 14px; }
+    .info-box .lbl { font-size:10px; text-transform:uppercase; letter-spacing:0.7px; color:#888; margin-bottom:3px; }
+    .info-box .val { font-size:14px; font-weight:700; color:#1a1a2e; }
+    .info-box .sub { font-size:11px; color:#666; margin-top:2px; }
+    .section-card { border:1px solid #dee2e6; border-radius:8px; padding:14px 16px; margin-bottom:14px; background:#fff; }
+    .section-card.warn  { border-left:4px solid #c0392b; }
+    .section-card.alert { border-left:4px solid #e67e22; }
+    .section-card.info  { border-left:4px solid #2980b9; }
+    .section-card.ok    { border-left:4px solid #27ae60; }
+    .footer { margin-top:32px; padding-top:12px; border-top:1px solid #dee2e6; font-size:10.5px; color:#888; display:flex; justify-content:space-between; }
+    .total-row td { font-weight:700; background:#f0f2f5; color:#1a1a2e; }
+    .no-data { text-align:center; padding:24px; color:#888; font-size:13px; }
+    .pg-break { page-break-after:always; }
+  `;
 
-  <div class="print-header">
-    <div>
-      <div style="font-size:18px;font-weight:800;color:#1a1a2e;">📋 ${pageTitle}</div>
-      <div style="font-size:12px;color:#555;margin-top:3px;">${escola}</div>
-    </div>
-    <div style="text-align:right;font-size:11.5px;color:#555;">
-      <div style="font-weight:600">Data de emissão</div>
-      <div>${dataHoje}</div>
-    </div>
-  </div>
+  // ── cabeçalho e rodapé padrão ───────────────────────────────────
+  const docHeader = (titulo, subtitulo='') => `
+    <div class="doc-header">
+      <div class="doc-header-left">
+        <div class="title">${titulo}</div>
+        <div class="sub">${escola}${subtitulo ? ' · ' + subtitulo : ''}</div>
+      </div>
+      <div class="doc-header-right">
+        <strong>Data de emissão</strong>${dataHoje}<br>
+        Sistema de Prestação de Contas<br>Decreto 1134/2024 · SEDUC/FUNEC
+      </div>
+    </div>`;
 
-  ${clone.innerHTML}
+  const docFooter = `
+    <div class="footer">
+      <span>Decreto 1134/2024 · Manual SEDUC/FUNEC — gerado em ${dataHoje}</span>
+      <span style="font-style:italic">Criado e desenvolvido por Prof. Everton Correa Alves</span>
+    </div>`;
 
-  ${creditoHtml}
+  const docBotoes = `
+    <div class="no-print" style="margin-top:22px;text-align:center">
+      <button onclick="window.print()" style="padding:10px 28px;background:#2c3e6b;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600">🖨 Imprimir / Salvar PDF</button>
+      <button onclick="window.close()" style="padding:10px 20px;background:#eee;color:#333;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-left:10px">Fechar</button>
+    </div>`;
 
-  <div class="no-print" style="margin-top:20px;text-align:center">
-    <button onclick="window.print()" style="padding:10px 28px;background:#2c3e6b;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600">🖨 Imprimir / Salvar PDF</button>
-    <button onclick="window.close()" style="padding:10px 20px;background:#eee;color:#333;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-left:10px">Fechar</button>
-  </div>
-  </body></html>`;
+  const wrapDoc = (titulo, subtitulo, corpo) => `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+    <title>${titulo} — ${escola}</title>
+    <style>${CSS}</style></head><body>
+    ${docHeader(titulo, subtitulo)}
+    ${corpo}
+    ${docFooter}
+    ${docBotoes}
+    </body></html>`;
 
-  const w = window.open('', '_blank', 'width=900,height=750');
+  // ════════════════════════════════════════════════════════════════
+  //  DASHBOARD
+  // ════════════════════════════════════════════════════════════════
+  function gerarDashboard() {
+    const tcs = state.tcs || [];
+    const despesas = state.despesas || [];
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    const statusLabel = { ativo:'Ativo', a_vencer:'A Vencer', encerrado:'Encerrado', suspenso:'Suspenso' };
+    const statusBadge = { ativo:'badge-green', a_vencer:'badge-orange', encerrado:'badge-red', suspenso:'badge-gray' };
+
+    // totais globais
+    const totalDesp = despesas.reduce((s,d) => s+_pm(d.valor), 0);
+    const tcsAtivos = tcs.filter(t => !t.tcPaiId && t.status !== 'encerrado' && t.status !== 'suspenso');
+    const totalRecebido = tcs.filter(t=>!t.tcPaiId).reduce((s,t)=>{
+      const adits = tcs.filter(a=>a.tcPaiId===t.id);
+      return s + _pm(t.valor) + adits.reduce((sa,a)=>sa+_pm(a.valor),0);
+    },0);
+
+    // por tipo
+    const porTipo = {};
+    despesas.forEach(d => { porTipo[d.tipo]=(porTipo[d.tipo]||0)+_pm(d.valor); });
+
+    const tiposLinhas = Object.entries(porTipo).map(([tipo,val]) =>
+      `<tr><td>${_tl(tipo)}</td><td class="right mono">${_fmt(val)}</td><td class="right muted">${totalDesp?Math.round(val/totalDesp*100):0}%</td></tr>`
+    ).join('') || `<tr><td colspan="3" class="no-data">Nenhuma despesa lançada</td></tr>`;
+
+    // por TC
+    const tcsPrincipais = tcs.filter(t=>!t.tcPaiId);
+    const tcLinhas = tcsPrincipais.map(tc => {
+      const adits = tcs.filter(a=>a.tcPaiId===tc.id);
+      const totalTC = _pm(tc.valor) + adits.reduce((s,a)=>s+_pm(a.valor),0);
+      const gasto = despesas.filter(d=>String(d.tcVinculo)===String(tc.id)).reduce((s,d)=>s+_pm(d.valor),0);
+      const saldo = totalTC - gasto;
+      const pct = totalTC ? Math.round(gasto/totalTC*100) : 0;
+      const st = typeof calcStatusTC==='function' && tc.inicio && tc.fim && tc.status!=='suspenso'
+        ? calcStatusTC(tc.inicio,tc.fim) : (tc.status||'ativo');
+      return `<tr>
+        <td class="bold">TC ${tc.numero}</td>
+        <td class="muted" style="font-size:11.5px">${tc.escola||'—'}</td>
+        <td><span class="badge ${statusBadge[st]||'badge-gray'}">${statusLabel[st]||st}</span></td>
+        <td class="right mono">${_fmt(totalTC)}</td>
+        <td class="right mono">${_fmt(gasto)}</td>
+        <td class="right mono" style="color:${saldo>=0?'#155724':'#c0392b'}">${_fmt(saldo)}</td>
+        <td class="right muted">${pct}%</td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="7" class="no-data">Nenhum TC cadastrado</td></tr>`;
+
+    const corpo = `
+      <div class="info-grid">
+        <div class="info-box"><div class="lbl">TCs Ativos</div><div class="val">${tcsAtivos.length}</div><div class="sub">de ${tcsPrincipais.length} total</div></div>
+        <div class="info-box"><div class="lbl">Total Despesas</div><div class="val mono">${_fmt(totalDesp)}</div><div class="sub">${despesas.length} lançamento(s)</div></div>
+        <div class="info-box"><div class="lbl">Total Recebido (TCs)</div><div class="val mono">${_fmt(totalRecebido)}</div><div class="sub">Valor contratado + aditivos</div></div>
+      </div>
+
+      <h2>Resumo por Termo de Compromisso</h2>
+      <table>
+        <thead><tr><th>TC/Aditivo</th><th>Escola</th><th>Status</th><th class="right">Valor Total</th><th class="right">Gasto</th><th class="right">Saldo</th><th class="right">% Exec.</th></tr></thead>
+        <tbody>${tcLinhas}</tbody>
+      </table>
+
+      <h2>Despesas por Tipo</h2>
+      <table>
+        <thead><tr><th>Tipo</th><th class="right">Valor</th><th class="right">% do Total</th></tr></thead>
+        <tbody>${tiposLinhas}
+          <tr class="total-row"><td colspan="1"><strong>TOTAL</strong></td><td class="right mono">${_fmt(totalDesp)}</td><td></td></tr>
+        </tbody>
+      </table>`;
+
+    return wrapDoc('Dashboard — Visão Geral', `Gerado em ${dataHoje}`, corpo);
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  //  TERMOS DE COMPROMISSO
+  // ════════════════════════════════════════════════════════════════
+  function gerarTC() {
+    const tcs = state.tcs || [];
+    const despesas = state.despesas || [];
+    const principais = tcs.filter(t=>!t.tcPaiId);
+    const statusLabel = { ativo:'Ativo', a_vencer:'A Vencer', encerrado:'Encerrado', suspenso:'Suspenso' };
+    const statusBadge = { ativo:'badge-green', a_vencer:'badge-orange', encerrado:'badge-red', suspenso:'badge-gray' };
+    const parNomes = {'01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única'};
+
+    const blocos = principais.map(tc => {
+      const adits = tcs.filter(a=>a.tcPaiId===tc.id);
+      const totalAdit = adits.reduce((s,a)=>s+_pm(a.valor),0);
+      const totalTC = _pm(tc.valor) + totalAdit;
+      const gastoTC = despesas.filter(d=>String(d.tcVinculo)===String(tc.id)).reduce((s,d)=>s+_pm(d.valor),0);
+      const saldo = totalTC - gastoTC;
+      const st = typeof calcStatusTC==='function' && tc.inicio && tc.fim && tc.status!=='suspenso'
+        ? calcStatusTC(tc.inicio,tc.fim) : (tc.status||'ativo');
+      const pvRows = (state.parcelaValores||[]).filter(r=>String(r.tcId)===String(tc.id));
+      const sitRows = (state.parcelaSituacoes||[]).filter(r=>String(r.tcId)===String(tc.id));
+      const parcelas = [...new Set([...pvRows.map(r=>r.parcela),...sitRows.map(r=>r.parcela)])].sort();
+
+      const parcelasHtml = parcelas.length ? `
+        <h3>Distribuição por Parcela</h3>
+        <table>
+          <thead><tr><th>Parcela</th><th class="right">Custeio</th><th class="right">Capital</th><th class="right">Além dos Muros</th><th class="right">Obras</th><th class="right">Capina</th><th class="right">Total</th><th>Situação</th></tr></thead>
+          <tbody>
+            ${parcelas.map(p => {
+              const pv = pvRows.find(r=>r.parcela===p)||{};
+              const sit = (sitRows.find(r=>r.parcela===p)||{}).situacao||'';
+              const cu=_pm(pv.custeio),ca=_pm(pv.capital),al=_pm(pv.alem),ob=_pm(pv.obras),ci=_pm(pv.capina);
+              const tot=cu+ca+al+ob+ci;
+              return `<tr>
+                <td class="bold">${parNomes[p]||p} Parcela</td>
+                <td class="right mono">${cu?_fmt(cu):'—'}</td>
+                <td class="right mono">${ca?_fmt(ca):'—'}</td>
+                <td class="right mono">${al?_fmt(al):'—'}</td>
+                <td class="right mono">${ob?_fmt(ob):'—'}</td>
+                <td class="right mono">${ci?_fmt(ci):'—'}</td>
+                <td class="right mono bold">${_fmt(tot)}</td>
+                <td>${sit?`<span class="badge" style="background:${_sc(sit)}20;color:${_sc(sit)}">${_sl(sit)}</span>`:'—'}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>` : '<p class="muted" style="font-size:12px">Nenhuma distribuição de parcelas registrada.</p>';
+
+      const aditsHtml = adits.length ? `
+        <h3>Aditivos Vinculados</h3>
+        <table>
+          <thead><tr><th>Nº</th><th>Vigência</th><th class="right">Valor</th><th>Obs.</th></tr></thead>
+          <tbody>
+            ${adits.map(a => `<tr>
+              <td class="bold">${a.numero}</td>
+              <td class="muted">${_dt(a.inicio)} → ${_dt(a.fim)}</td>
+              <td class="right mono">${_fmt(_pm(a.valor))}</td>
+              <td class="muted" style="font-size:11.5px">${a.obs||'—'}</td>
+            </tr>`).join('')}
+            <tr class="total-row"><td colspan="2">Total (TC + Aditivos)</td><td class="right mono">${_fmt(totalTC)}</td><td></td></tr>
+          </tbody>
+        </table>` : '';
+
+      return `
+        <div class="section-card" style="margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+            <div>
+              <div style="font-size:15px;font-weight:800;color:#1a1a2e">TC ${tc.numero} — ${tc.escola||'—'}</div>
+              <div style="font-size:11.5px;color:#555;margin-top:3px">CNPJ: ${tc.cnpj||'—'} · Presidente: ${tc.presidente||'—'}</div>
+            </div>
+            <span class="badge ${statusBadge[st]||'badge-gray'}" style="font-size:11px">${statusLabel[st]||st}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
+            <div class="info-box"><div class="lbl">Vigência Início</div><div class="val" style="font-size:13px">${_dt(tc.inicio)||'—'}</div></div>
+            <div class="info-box"><div class="lbl">Vigência Fim</div><div class="val" style="font-size:13px">${_dt(tc.fim)||'—'}</div></div>
+            <div class="info-box"><div class="lbl">Valor Contratado</div><div class="val mono" style="font-size:13px">${_fmt(_pm(tc.valor))}</div></div>
+            <div class="info-box"><div class="lbl">Saldo Disponível</div><div class="val mono" style="font-size:13px;color:${saldo>=0?'#155724':'#c0392b'}">${_fmt(saldo)}</div></div>
+          </div>
+          ${tc.obs?`<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:8px 12px;font-size:12px;color:#856404;margin-bottom:12px">📝 ${tc.obs}</div>`:''}
+          ${aditsHtml}
+          ${parcelasHtml}
+        </div>`;
+    }).join('') || '<div class="no-data">Nenhum TC cadastrado.</div>';
+
+    return wrapDoc('Termos de Compromisso', `${principais.length} TC(s) cadastrado(s)`, blocos);
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  //  DESPESAS
+  // ════════════════════════════════════════════════════════════════
+  function gerarDespesas() {
+    const despesas = state.despesas || [];
+    if (!despesas.length) return wrapDoc('Relação de Despesas', '', '<div class="no-data">Nenhuma despesa lançada.</div>');
+
+    // Agrupa por tipo
+    const grupos = {};
+    despesas.forEach(d => { if(!grupos[d.tipo]) grupos[d.tipo]=[]; grupos[d.tipo].push(d); });
+
+    let totalGeral = 0;
+    const gruposHtml = Object.entries(grupos).map(([tipo, itens]) => {
+      const totalTipo = itens.reduce((s,d)=>s+_pm(d.valor),0);
+      totalGeral += totalTipo;
+      const linhas = itens.map((d,i) => `<tr>
+        <td class="muted" style="font-size:11px">${i+1}</td>
+        <td class="muted mono" style="font-size:11px">${_tcLabel(d.tcVinculo)}</td>
+        <td class="muted" style="font-size:11px">Parc. ${d.parcela||'—'}</td>
+        <td class="bold">${d.credor||'—'}</td>
+        <td class="muted mono" style="font-size:11px">${d.cnpj||'—'}</td>
+        <td class="muted" style="font-size:11px">${d.nfNum||'—'}</td>
+        <td class="muted" style="font-size:11px">${_dt(d.nfData)}</td>
+        <td class="muted" style="font-size:11px;max-width:140px;overflow:hidden">${d.descricao||'—'}</td>
+        <td class="right mono bold">${_fmt(_pm(d.valor))}</td>
+      </tr>`).join('');
+      return `
+        <h2>${_tl(tipo)} <span style="font-weight:400;font-size:13px;color:#555">(${itens.length} lançamento${itens.length!==1?'s':''} · ${_fmt(totalTipo)})</span></h2>
+        <table>
+          <thead><tr><th>#</th><th>TC</th><th>Parcela</th><th>Credor</th><th>CNPJ/CPF</th><th>Nº NF</th><th>Data NF</th><th>Descrição</th><th class="right">Valor</th></tr></thead>
+          <tbody>${linhas}
+            <tr class="total-row"><td colspan="8" class="right">Subtotal ${_tl(tipo)}</td><td class="right mono">${_fmt(totalTipo)}</td></tr>
+          </tbody>
+        </table>`;
+    }).join('');
+
+    const resumo = `
+      <div class="info-grid">
+        <div class="info-box"><div class="lbl">Total de Lançamentos</div><div class="val">${despesas.length}</div></div>
+        <div class="info-box"><div class="lbl">Total Geral</div><div class="val mono">${_fmt(totalGeral)}</div></div>
+        <div class="info-box"><div class="lbl">Ticket Médio</div><div class="val mono">${_fmt(despesas.length?totalGeral/despesas.length:0)}</div></div>
+      </div>`;
+
+    return wrapDoc('Relação de Despesas', `${despesas.length} lançamento(s)`, resumo + gruposHtml);
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  //  FORNECEDORES
+  // ════════════════════════════════════════════════════════════════
+  function gerarFornecedores() {
+    const fors = state.fornecedoresCad || [];
+    const despesas = state.despesas || [];
+
+    const linhas = fors.map((f,i) => {
+      const desp = despesas.filter(d => d.cnpj === f.cnpj || d.credor === f.nome);
+      const total = desp.reduce((s,d)=>s+_pm(d.valor),0);
+      return `<tr>
+        <td class="muted" style="font-size:11px">${i+1}</td>
+        <td class="bold">${f.nome||'—'}</td>
+        <td class="mono muted" style="font-size:11.5px">${f.cnpj||'—'}</td>
+        <td class="muted">${f.responsavel||'—'}</td>
+        <td class="right">${desp.length}</td>
+        <td class="right mono bold">${total?_fmt(total):'—'}</td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="6" class="no-data">Nenhum fornecedor cadastrado.</td></tr>`;
+
+    const totalPago = fors.reduce((s,f)=>{
+      return s + despesas.filter(d=>d.cnpj===f.cnpj||d.credor===f.nome).reduce((ss,d)=>ss+_pm(d.valor),0);
+    },0);
+
+    const corpo = `
+      <div class="info-grid">
+        <div class="info-box"><div class="lbl">Fornecedores Cadastrados</div><div class="val">${fors.length}</div></div>
+        <div class="info-box"><div class="lbl">Com Despesas Vinculadas</div><div class="val">${fors.filter(f=>despesas.some(d=>d.cnpj===f.cnpj||d.credor===f.nome)).length}</div></div>
+        <div class="info-box"><div class="lbl">Total Pago (cadastrados)</div><div class="val mono">${_fmt(totalPago)}</div></div>
+      </div>
+      <table>
+        <thead><tr><th>#</th><th>Razão Social</th><th>CNPJ/CPF</th><th>Responsável</th><th class="right">Despesas</th><th class="right">Total Pago</th></tr></thead>
+        <tbody>${linhas}</tbody>
+      </table>`;
+
+    return wrapDoc('Fornecedores / Tomadores', `${fors.length} cadastrado(s)`, corpo);
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  //  CHECKLIST
+  // ════════════════════════════════════════════════════════════════
+  function gerarChecklist() {
+    const despesas = state.despesas || [];
+    const checkStates = state.checkStates || {};
+    const hoje = new Date().toLocaleDateString('pt-BR');
+
+    // Docs gerais
+    const gerais = [
+      { key:'ata_conselho', label:'Ata do Conselho Fiscal assinada (Deliberação — Anexo II)', sub:'Assinatura de todos os membros da mesa e conselho fiscal' },
+      { key:'extrato_cc',   label:'Extrato da Conta Corrente do período',                     sub:'Conta bancária exclusiva do TC — período de execução' },
+      { key:'extrato_inv',  label:'Extrato do Fundo de Investimento do período',               sub:'CAIXA FIC GIRO MPE RF REF DI LP ou equivalente' },
+      { key:'anexo3',       label:'Relatório de Execução Físico-Financeira (Anexo III)',       sub:'Assinado pelo Presidente e Tesoureiro da Caixa Escolar' },
+    ];
+
+    const statusCell = (ok, pend) => {
+      if (ok) return '<td><span class="badge badge-green">✓ OK</span></td>';
+      if (pend) return `<td><span class="badge badge-orange">Pendente: ${pend}</span></td>`;
+      return '<td><span class="badge badge-red">Pendente</span></td>';
+    };
+
+    const geraisHtml = gerais.map(g => `<tr>
+      <td class="bold">${g.label}</td>
+      <td class="muted" style="font-size:11.5px">${g.sub}</td>
+      ${statusCell(!!checkStates[g.key], '')}
+      <td style="width:80px"><div style="border:1.5px solid #ccc;border-radius:4px;height:22px;width:70px"></div></td>
+    </tr>`).join('');
+
+    // Agrupa por fornecedor
+    const fornMap = {};
+    despesas.forEach(d => {
+      const key = d.cnpj || d.credor;
+      if (!fornMap[key]) fornMap[key] = { credor:d.credor, cnpj:d.cnpj, despesas:[], ...d };
+      fornMap[key].despesas.push(d);
+    });
+
+    const fornLinhas = Object.values(fornMap).map(f => {
+      const docs = [
+        { label:'Orçamentos/Cotações',        ok:f.orcamentos,      pend:f.orcamentosPend },
+        { label:'Certidões Fiscais',           ok:f.certidoes,       pend:f.certidoesPend },
+        { label:'Cartão CNPJ',                 ok:f.cartaoCnpj,      pend:f.cartaoCnpjPend },
+        { label:'Comprovante de Pagamento',    ok:f.comprovantePgto, pend:f.comprovantePgtoPend },
+        { label:'Contrato / NF Original',      ok:f.contratoNf,      pend:f.contratoNfPend },
+        { label:'Justificativa (se aplicável)',ok:f.justificativa,   pend:f.justificativaPend },
+      ].filter(d => d.ok || d.pend);
+      const totalForn = f.despesas.reduce((s,d)=>s+_pm(d.valor),0);
+      const allOk = docs.every(d=>d.ok) && docs.length>0;
+      return `
+        <tr style="background:#f8f9fa">
+          <td colspan="3" class="bold" style="padding-top:10px">
+            🏢 ${f.credor||'—'} <span class="muted mono" style="font-size:11px">${f.cnpj?'— '+f.cnpj:''}</span>
+            <span class="badge ${allOk?'badge-green':'badge-red'}" style="margin-left:8px;font-size:10px">${allOk?'Completo':'Com Pendências'}</span>
+          </td>
+          <td class="right mono bold">${_fmt(totalForn)}</td>
+        </tr>
+        ${docs.map(d => `<tr>
+          <td style="padding-left:24px;font-size:12px">${d.label}</td>
+          <td class="muted" style="font-size:11.5px">${f.despesas.map(dd=>`NF ${dd.nfNum||'—'} (${_dt(dd.nfData)})`).join(', ')}</td>
+          ${statusCell(!!d.ok, d.pend)}
+          <td><div style="border:1.5px solid #ccc;border-radius:4px;height:22px;width:70px"></div></td>
+        </tr>`).join('')}`;
+    }).join('') || `<tr><td colspan="4" class="no-data">Nenhuma despesa para gerar checklist.</td></tr>`;
+
+    const corpo = `
+      <h2>Documentos Gerais (sempre obrigatórios)</h2>
+      <table>
+        <thead><tr><th>Documento</th><th>Observação</th><th>Situação</th><th style="width:90px">✔ Recebido</th></tr></thead>
+        <tbody>${geraisHtml}</tbody>
+      </table>
+      <h2>Documentos por Fornecedor</h2>
+      <table>
+        <thead><tr><th>Documento</th><th>Referência (NFs)</th><th>Situação</th><th class="right" style="width:90px">Total / ✔ Rec.</th></tr></thead>
+        <tbody>${fornLinhas}</tbody>
+      </table>
+      <div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:40px">
+        <div style="border-top:1.5px solid #333;padding-top:6px;text-align:center;font-size:11.5px;color:#333">
+          Presidente da Caixa Escolar<br><span style="font-size:10px;color:#888">Data: ___/___/______</span>
+        </div>
+        <div style="border-top:1.5px solid #333;padding-top:6px;text-align:center;font-size:11.5px;color:#333">
+          Responsável pelo levantamento<br><span style="font-size:10px;color:#888">Data: ___/___/______</span>
+        </div>
+      </div>`;
+
+    return wrapDoc('Checklist de Documentos', `Gerado em ${hoje}`, corpo);
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  //  ALERTAS
+  // ════════════════════════════════════════════════════════════════
+  function gerarAlertas() {
+    const tcs = state.tcs || [];
+    const despesas = state.despesas || [];
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    const alertas = [];
+
+    // Cópia da lógica de renderAlertas
+    const parcelaNomesAlerta = {'01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única'};
+    (state.parcelaValores||[]).forEach(pv => {
+      if (!pv.dataTermino) return;
+      const tcItem = tcs.find(t=>String(t.id)===String(pv.tcId));
+      if (!tcItem) return;
+      try {
+        const termino = new Date(pv.dataTermino+'T00:00:00');
+        const limite = new Date(termino); limite.setDate(limite.getDate()+30);
+        const diff = Math.round((limite-hoje)/(864e5));
+        const nP = parcelaNomesAlerta[pv.parcela]||pv.parcela;
+        const nTC = tcItem.tcPaiId?`Aditivo ${tcItem.numero}`:`TC ${tcItem.numero}`;
+        const lFmt = limite.toLocaleDateString('pt-BR');
+        const tFmt = termino.toLocaleDateString('pt-BR');
+        if (diff<0)       alertas.push({tipo:'red',    msg:`${nTC} — Parc. ${nP}: PRAZO VENCIDO há ${Math.abs(diff)} dia(s) (término ${tFmt} → limite ${lFmt}).`});
+        else if (diff<=15) alertas.push({tipo:'red',    msg:`${nTC} — Parc. ${nP}: Vence em ${diff} dia(s) — ${lFmt}. URGENTE.`});
+        else if (diff<=30) alertas.push({tipo:'orange', msg:`${nTC} — Parc. ${nP}: Vence em ${diff} dia(s) — ${lFmt}. Organize a documentação.`});
+        else if (diff<=60) alertas.push({tipo:'blue',   msg:`${nTC} — Parc. ${nP}: Vence em ${diff} dia(s) — ${lFmt}. Planeje a prestação de contas.`});
+      } catch(e){}
+    });
+
+    tcs.filter(t=>!t.tcPaiId).forEach(tc => {
+      if (!tc.fim) return;
+      const fim = new Date(tc.fim+'T00:00:00');
+      const diff = Math.round((fim-hoje)/(864e5));
+      if (diff<0)        alertas.push({tipo:'red',    msg:`TC ${tc.numero} — VENCIDO há ${Math.abs(diff)} dia(s). Apresente a PC final em até 30 dias.`});
+      else if (diff<=30) alertas.push({tipo:'orange', msg:`TC ${tc.numero} — Vence em ${diff} dia(s) (${_dt(tc.fim)}). Solicite aditivo se necessário.`});
+      else if (diff<=60) alertas.push({tipo:'blue',   msg:`TC ${tc.numero} — Vence em ${diff} dia(s) (${_dt(tc.fim)}). Planeje a PC parcial.`});
+
+      const fornMap = {};
+      despesas.filter(d=>String(d.tcVinculo)===String(tc.id)).forEach(d=>{
+        const k=d.cnpj||d.credor; if(!fornMap[k]) fornMap[k]={nome:d.credor,total:0}; fornMap[k].total+=_pm(d.valor);
+      });
+      Object.values(fornMap).forEach(f=>{
+        if(f.total>50000) alertas.push({tipo:'orange',msg:`TC ${tc.numero} — Fornecedor "${f.nome}": total R$ ${_fmt(f.total)} ultrapassa R$ 50.000. Verifique procedimento competitivo (Art. 16/Decreto 1134/2024).`});
+      });
+    });
+
+    const capitals=despesas.filter(d=>d.tipo==='CAPITAL');
+    if(capitals.length) alertas.push({tipo:'blue',msg:`${capitals.length} despesa(s) de Capital. Gere o Anexo VI (Termo de Doação) e incorpore ao patrimônio municipal.`});
+    const obras=despesas.filter(d=>d.tipo==='OBRAS');
+    if(obras.length) alertas.push({tipo:'blue',msg:`${obras.length} despesa(s) de Obras. Gere o Anexo VIII (Recebimento Definitivo) e obtenha ART/RRT do responsável técnico.`});
+
+    const bgMap={red:'#fdecea',orange:'#fff3cd',blue:'#d1ecf1'};
+    const clMap={red:'#c0392b',orange:'#856404',blue:'#0c5460'};
+    const bdMap={red:'#f5c6cb',orange:'#ffc107',blue:'#bee5eb'};
+    const icMap={red:'🚨',orange:'⚠️',blue:'ℹ️'};
+
+    const urgentes=alertas.filter(a=>a.tipo==='red'||a.tipo==='orange');
+    const info=alertas.filter(a=>a.tipo==='blue');
+
+    const renderAlerts = arr => arr.map(a=>`
+      <div style="background:${bgMap[a.tipo]};border:1px solid ${bdMap[a.tipo]};border-left:4px solid ${clMap[a.tipo]};border-radius:7px;padding:10px 14px;margin-bottom:8px;font-size:12.5px;color:${clMap[a.tipo]}">
+        ${icMap[a.tipo]} ${a.msg}
+      </div>`).join('') || '<div class="no-data">Nenhum.</div>';
+
+    const corpo = !alertas.length
+      ? '<div style="background:#d4edda;border:1px solid #c3e6cb;border-radius:8px;padding:20px;text-align:center;font-size:14px;color:#155724;font-weight:600">✅ Nenhum alerta no momento.</div>'
+      : `
+        <div class="info-grid">
+          <div class="info-box" style="border-left:4px solid #c0392b"><div class="lbl">Urgentes / Críticos</div><div class="val" style="color:#c0392b">${urgentes.length}</div></div>
+          <div class="info-box" style="border-left:4px solid #2980b9"><div class="lbl">Informativos</div><div class="val" style="color:#2980b9">${info.length}</div></div>
+          <div class="info-box"><div class="lbl">Total de Alertas</div><div class="val">${alertas.length}</div></div>
+        </div>
+        ${urgentes.length?`<h2>🚨 Alertas Críticos e Urgentes</h2>${renderAlerts(urgentes)}`:''}
+        ${info.length?`<h2>ℹ️ Informativos</h2>${renderAlerts(info)}`:''}`;
+
+    return wrapDoc('Alertas e Prazos', `${alertas.length} alerta(s) ativo(s)`, corpo);
+  }
+
+  // ════════════════════════════════════════════════════════════════
+  //  LINKS RÁPIDOS
+  // ════════════════════════════════════════════════════════════════
+  function gerarLinks() {
+    const links = typeof linksData !== 'undefined' ? linksData : [];
+    const catLabel = {prestacao:'Prestação de Contas',portal:'Portal / Sistema',decreto:'Decreto / Normativa',planilha:'Planilha / Relatório',outro:'Outro'};
+    const grupos = {};
+    links.forEach(l=>{ const c=l.cat||'outro'; if(!grupos[c]) grupos[c]=[]; grupos[c].push(l); });
+
+    const corpo = !links.length
+      ? '<div class="no-data">Nenhum link cadastrado.</div>'
+      : Object.entries(grupos).map(([cat,itens])=>`
+          <h2>${catLabel[cat]||cat}</h2>
+          <table>
+            <thead><tr><th>Título</th><th>URL</th><th>Descrição</th></tr></thead>
+            <tbody>${itens.map(l=>`<tr>
+              <td class="bold">${l.titulo||'—'}</td>
+              <td class="mono muted" style="font-size:11px;word-break:break-all">${l.url||'—'}</td>
+              <td class="muted" style="font-size:11.5px">${l.desc||'—'}</td>
+            </tr>`).join('')}</tbody>
+          </table>`).join('');
+
+    return wrapDoc('Links Rápidos', `${links.length} link(s) cadastrado(s)`, corpo);
+  }
+
+  // ── despacha para o gerador correto ─────────────────────────────
+  const geradores = {
+    dashboard:    gerarDashboard,
+    tc:           gerarTC,
+    despesas:     gerarDespesas,
+    fornecedores: gerarFornecedores,
+    checklist:    gerarChecklist,
+    alertas:      gerarAlertas,
+    links:        gerarLinks
+  };
+
+  const gerador = geradores[nomeAba];
+  if (!gerador) { alert('Impressão não disponível para esta aba.'); return; }
+
+  const html = gerador();
+  const w = window.open('', '_blank', 'width=940,height=800');
   if (!w) { alert('Permita pop-ups para imprimir.'); return; }
   w.document.write(html);
   w.document.close();
