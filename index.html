@@ -747,6 +747,180 @@
 
   .gap-8 { display: flex; gap: 8px; align-items: center; }
   .gap-12 { display: flex; gap: 12px; align-items: center; }
+
+  /* DOCS OBRIGATÓRIOS CARDS */
+  .doc-obrig-section {
+    margin-bottom: 20px;
+  }
+  .doc-obrig-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px 12px 0 0;
+    border-bottom: none;
+  }
+  .doc-obrig-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .doc-obrig-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0 0 12px 12px;
+    overflow: hidden;
+  }
+  .doc-obrig-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+    position: relative;
+  }
+  .doc-obrig-item:last-child { border-bottom: none; }
+  .doc-obrig-item:hover { background: rgba(255,255,255,0.02); }
+  .doc-obrig-item.doi-ok {
+    background: rgba(56,217,169,0.04);
+  }
+  .doc-obrig-item.doi-pend {
+    background: rgba(240,80,96,0.05);
+    border-color: rgba(240,80,96,0.15);
+  }
+  .doc-obrig-item.doi-info {
+    background: rgba(246,166,35,0.05);
+  }
+  .doi-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .doi-icon-ok { background: rgba(56,217,169,0.15); }
+  .doi-icon-pend { background: rgba(240,80,96,0.12); }
+  .doi-icon-neutral { background: rgba(79,142,247,0.12); }
+  .doi-content { flex: 1; min-width: 0; }
+  .doi-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.4;
+  }
+  .doi-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+  .doi-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .doi-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 11px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    font-family: 'Outfit', sans-serif;
+    white-space: nowrap;
+  }
+  .doi-btn-check {
+    background: rgba(56,217,169,0.12);
+    color: var(--accent2);
+    border-color: rgba(56,217,169,0.25);
+  }
+  .doi-btn-check:hover { background: rgba(56,217,169,0.22); }
+  .doi-btn-check.active {
+    background: var(--accent2);
+    color: #0e1117;
+    border-color: var(--accent2);
+  }
+  .doi-btn-pend {
+    background: rgba(240,80,96,0.1);
+    color: var(--accent-red);
+    border-color: rgba(240,80,96,0.25);
+  }
+  .doi-btn-pend:hover { background: rgba(240,80,96,0.2); }
+  .doi-btn-pend.active {
+    background: var(--accent-red);
+    color: #fff;
+    border-color: var(--accent-red);
+  }
+  .doi-pend-note {
+    margin-top: 6px;
+    display: none;
+  }
+  .doi-pend-note.open { display: block; }
+  .doi-pend-input {
+    width: 100%;
+    font-size: 12px;
+    padding: 6px 10px;
+    background: var(--surface3);
+    border: 1px solid rgba(240,80,96,0.3);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    resize: none;
+    min-height: 48px;
+  }
+  .doi-pend-input:focus { outline: none; border-color: var(--accent-red); }
+  .doi-pend-save {
+    margin-top: 5px;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 5px;
+    background: var(--accent-red);
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    transition: background 0.15s;
+  }
+  .doi-pend-save:hover { background: #f27080; }
+  .doi-status-badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 700;
+    margin-left: 6px;
+    white-space: nowrap;
+  }
+  .doi-tipo-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-weight: 600;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
   .flex-wrap { flex-wrap: wrap; }
   .ml-auto { margin-left: auto; }
   .mt-16 { margin-top: 16px; }
@@ -3185,7 +3359,30 @@ async function carregarDados() {
   state.despesas = (despesasData || []).map(rowToDespesa);
   state.fornecedoresCad = (fornsData || []).map(r => ({ id: r.id, nome: r.nome, cnpj: r.cnpj, responsavel: r.responsavel }));
   state.checkStates = {};
-  (checksData || []).forEach(r => { state.checkStates[r.chave] = r.marcado; });
+  window._docsObrigState = {};
+  const doiMeta = {}; // chave -> marcado (pendente=true)
+  (checksData || []).forEach(r => {
+    if (r.chave.endsWith('__meta')) {
+      doiMeta[r.chave.replace('__meta','')] = r.marcado; // marcado=true means pendente
+    } else {
+      state.checkStates[r.chave] = r.marcado;
+    }
+  });
+  // Build _docsObrigState from doi_ entries
+  Object.keys(state.checkStates).forEach(chave => {
+    if (!chave.startsWith('doi_')) return;
+    const isOk   = !!state.checkStates[chave];
+    const isPend = !!doiMeta[chave];
+    const estado = isOk ? 'ok' : isPend ? 'pendente' : '';
+    window._docsObrigState[chave] = { estado, obs: '' };
+  });
+  // Also cover meta entries with no matching ok entry
+  Object.keys(doiMeta).forEach(chave => {
+    if (!chave.startsWith('doi_')) return;
+    if (!window._docsObrigState[chave]) {
+      window._docsObrigState[chave] = { estado: doiMeta[chave] ? 'pendente' : '', obs: '' };
+    }
+  });
   (confsData || []).forEach(r => {
     if (r.chave === 'tc_ativo') state.tcAtivo = r.valor ? Number(r.valor) : null;
     if (r.chave === 'parcela_filtro') state.parcelaFiltro = r.valor || 'todas';
@@ -3922,8 +4119,245 @@ function renderChecklist() {
     html += checkItem(keyTerm, 'Termo de Doação da Caixa Escolar para a Unidade Escolar',    'Obrigatório para bens adquiridos com recursos do TC',   '', !!state.checkStates[keyTerm], !state.checkStates[keyTerm] ? 'pending' : '');
   }
 
+  // ── DOCUMENTOS NECESSÁRIOS (quando há filtro de parcela ou TC ativo) ──
+  const temFiltroAtivo = !!(filtroTC || filtroParcela);
+  if (temFiltroAtivo) {
+    html += renderDocsNecessarios(despesasFiltradas, filtroTC, filtroParcela, filtroTipo);
+  }
+
   el.innerHTML = html;
   updatePendenciasSummary();
+}
+
+// ==================== DOCS NECESSÁRIOS POR PARCELA ====================
+// Estado local dos docs obrigatórios: { [chave]: { estado: 'ok'|'pendente'|'', obs: '' } }
+if (!window._docsObrigState) window._docsObrigState = {};
+
+function _doiKey(prefixo, idx) { return 'doi_' + prefixo + '_' + idx; }
+
+function renderDocsNecessarios(despesasFiltradas, filtroTC, filtroParcela, filtroTipo) {
+  const tipos = new Set(despesasFiltradas.map(d => d.tipo));
+  const temObras   = tipos.has('OBRAS');
+  const temAlem    = tipos.has('ALEM_MUROS');
+  const temCapital = tipos.has('CAPITAL');
+
+  // Monta lista de seções de docs
+  const secoes = [];
+
+  // 1. Gerais obrigatórios (sempre)
+  secoes.push({
+    id: 'geral',
+    titulo: '📋 Documentos Gerais Obrigatórios',
+    cor: 'var(--accent)',
+    corBg: 'rgba(79,142,247,0.1)',
+    docs: [
+      { label: 'Ata do Conselho Fiscal (Deliberação — Anexo II)', sub: 'Assinada por todos os membros da mesa e conselho fiscal' },
+      { label: 'Extrato da Conta Corrente do período', sub: 'Conta bancária exclusiva do TC — período completo de execução' },
+      { label: 'Extrato do Fundo de Investimento', sub: 'CAIXA FIC GIRO MPE RF REF DI LP ou equivalente' },
+      { label: 'Relatório de Execução Físico-Financeira (Anexo III)', sub: 'Assinado pelo Presidente e Tesoureiro da Caixa Escolar' },
+      { label: 'Nota(s) Fiscal(is) dos fornecedores', sub: 'Original ou cópia autenticada de todas as NFs da parcela' },
+      { label: 'Comprovante(s) de Pagamento', sub: 'Transferência bancária, recibo ou extrato de débito' },
+      { label: '3 Orçamentos / Cotações por fornecedor', sub: 'Com CNPJ, data, validade e valor unitário — menor preço selecionado' },
+      { label: 'Cartão CNPJ dos fornecedores (Receita Federal)', sub: 'Vigente na data da contratação, com CNAE compatível' },
+    ]
+  });
+
+  // 2. Obras
+  if (temObras) {
+    secoes.push({
+      id: 'obras',
+      titulo: '🔨 Anexos Obrigatórios — Obras / Reformas',
+      cor: 'var(--obras)',
+      corBg: 'rgba(246,166,35,0.1)',
+      docs: [
+        { label: 'Orçamento detalhado com planilha de serviços (SINAPI/referência)', sub: 'Quantitativos e valores unitários de todos os serviços previstos' },
+        { label: 'ART ou RRT do responsável técnico (Engenheiro/Arquiteto)', sub: 'Anotação de Responsabilidade Técnica registrada no CREA/CAU' },
+        { label: 'Projeto básico ou memorial descritivo da obra', sub: 'Descrição dos serviços, materiais, dimensões e prazo de execução' },
+        { label: 'Termo de Recebimento Definitivo (Anexo VIII)', sub: 'Assinado pelo Engenheiro da SEDUC/FUNEC após vistoria técnica' },
+        { label: 'Registro fotográfico — antes, durante e após a obra', sub: 'Fotos datadas comprovando o estado anterior e a execução' },
+        { label: 'Certidões de Regularidade Fiscal do contratado (CND, FGTS, CNDT)', sub: 'Obrigatórias para serviços contínuos e obras com prazo > 30 dias' },
+        { label: 'Diário de obra (quando aplicável)', sub: 'Para obras de maior porte — registros diários do andamento' },
+      ]
+    });
+  }
+
+  // 3. Além dos Muros
+  if (temAlem) {
+    secoes.push({
+      id: 'alem',
+      titulo: '🚌 Anexos Obrigatórios — Além dos Muros',
+      cor: 'var(--alem)',
+      corBg: 'rgba(181,123,238,0.1)',
+      docs: [
+        { label: 'Formulário Trabalho de Campo (Anexo VII)', sub: 'Preenchido com destino, data, nº de estudantes, horários e objetivos pedagógicos' },
+        { label: 'Lista de presença dos estudantes participantes', sub: 'Assinada pelos alunos ou responsáveis, por atividade realizada' },
+        { label: 'Autorização dos pais/responsáveis (menores de idade)', sub: 'Documento de ciência e autorização para atividade externa' },
+        { label: 'Justificativa pedagógica da atividade', sub: 'Vinculação ao PPP/currículo escolar e objetivos de aprendizagem' },
+        { label: 'Nota Fiscal / Contrato da empresa de transporte', sub: 'Com CNPJ, valor, data e trajeto discriminados' },
+        { label: 'Certidões do transportador (quando contrato > 30 dias)', sub: 'CND, FGTS e CNDT — obrigatórios em contratos continuados' },
+      ]
+    });
+  }
+
+  // 4. Capital
+  if (temCapital) {
+    secoes.push({
+      id: 'capital',
+      titulo: '🖥️ Anexos Obrigatórios — Capital (Bens Permanentes)',
+      cor: 'var(--capital)',
+      corBg: 'rgba(56,217,169,0.1)',
+      docs: [
+        { label: 'Comprovante de entrada no Almoxarifado / Patrimônio (SEAD)', sub: 'Número de tombamento para cada bem adquirido' },
+        { label: 'Termo de Doação (Caixa Escolar → Unidade Escolar — Anexo VI)', sub: 'Transferência formal do bem para o patrimônio escolar' },
+        { label: 'Nota Fiscal com discriminação detalhada dos bens', sub: 'Quantidade, descrição, marca, modelo e número de série' },
+        { label: 'Laudo de recebimento/vistoria dos bens', sub: 'Confirmação de entrega em conformidade com o pedido' },
+        { label: 'Certidões do fornecedor (CND, FGTS, CNDT)', sub: 'Exigidas em aquisições com entrega programada ou parcelada' },
+      ]
+    });
+  }
+
+  // Monta HTML
+  let h = '<div class="check-section-title" style="margin-top:24px;border-color:var(--accent3);color:var(--accent3)">📑 Documentos Necessários — Parcela Filtrada</div>';
+
+  secoes.forEach(sec => {
+    const totalDocs = sec.docs.length;
+    const oks   = sec.docs.filter((_, i) => (_docsObrigState[_doiKey(sec.id, i)]||{}).estado === 'ok').length;
+    const pends = sec.docs.filter((_, i) => (_docsObrigState[_doiKey(sec.id, i)]||{}).estado === 'pendente').length;
+    const pct   = totalDocs ? Math.round(oks/totalDocs*100) : 0;
+
+    const resumoBadge = pends > 0
+      ? `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(240,80,96,0.18);color:var(--accent-red);border:1px solid rgba(240,80,96,0.3);font-weight:700">${pends} pendência${pends>1?'s':''}</span>`
+      : oks === totalDocs
+        ? `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(56,217,169,0.15);color:var(--accent2);border:1px solid rgba(56,217,169,0.3);font-weight:700">✓ ${oks}/${totalDocs} OK</span>`
+        : `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(246,166,35,0.12);color:var(--accent3);border:1px solid rgba(246,166,35,0.3);font-weight:700">${oks}/${totalDocs} verificados</span>`;
+
+    h += `<div class="doc-obrig-section">`;
+    h += `<div class="doc-obrig-header" style="border-color:${sec.cor}33;background:${sec.corBg}">`;
+    h += `<div class="doc-obrig-title" style="color:${sec.cor}">${sec.titulo}</div>`;
+    h += `<div style="display:flex;align-items:center;gap:10px">${resumoBadge}`;
+    h += `<div style="font-size:11px;color:var(--text-dim);font-family:'DM Mono',monospace;min-width:36px;text-align:right">${pct}%</div></div>`;
+    h += `</div>`;
+
+    // barra de progresso
+    h += `<div style="height:3px;background:var(--surface3);border-left:1px solid ${sec.cor}33;border-right:1px solid ${sec.cor}33">`;
+    h += `<div style="height:100%;width:${pct}%;background:${sec.cor};transition:width 0.4s"></div></div>`;
+
+    h += `<div class="doc-obrig-grid">`;
+    sec.docs.forEach((doc, i) => {
+      const chave = _doiKey(sec.id, i);
+      const st    = (_docsObrigState[chave]||{}).estado || '';
+      const obs   = (_docsObrigState[chave]||{}).obs || '';
+      const isOk  = st === 'ok';
+      const isPend= st === 'pendente';
+
+      const itemCls = isOk ? 'doi-ok' : isPend ? 'doi-pend' : '';
+      const iconEmoji = isOk ? '✅' : isPend ? '⚠️' : '📄';
+      const iconCls   = isOk ? 'doi-icon-ok' : isPend ? 'doi-icon-pend' : 'doi-icon-neutral';
+
+      const btnCheckCls = isOk ? 'doi-btn-check active' : 'doi-btn-check';
+      const btnPendCls  = isPend ? 'doi-btn-pend active' : 'doi-btn-pend';
+
+      const obsNoteOpen = isPend ? 'open' : '';
+
+      h += `<div class="doc-obrig-item ${itemCls}" id="doi-item-${chave}">`;
+      h += `<div class="doi-icon ${iconCls}">${iconEmoji}</div>`;
+      h += `<div class="doi-content">`;
+      h += `<div class="doi-label">${doc.label}</div>`;
+      h += `<div class="doi-sub">${doc.sub}</div>`;
+
+      // Nota de pendência
+      h += `<div class="doi-pend-note ${obsNoteOpen}" id="doi-note-${chave}">`;
+      h += `<textarea class="doi-pend-input" id="doi-obs-${chave}" placeholder="Descreva o que está pendente ou faltando…">${obs}</textarea>`;
+      h += `<button class="doi-pend-save" onclick="salvarDoiObs('${chave}')">💾 Salvar observação</button>`;
+      h += `</div>`;
+
+      h += `</div>`; // doi-content
+      h += `<div class="doi-actions">`;
+      h += `<button class="doi-btn ${btnCheckCls}" id="doi-btn-ok-${chave}" onclick="setDoiEstado('${chave}','ok')" title="Marcar como Checado">✔ Checado</button>`;
+      h += `<button class="doi-btn ${btnPendCls}" id="doi-btn-pend-${chave}" onclick="setDoiEstado('${chave}','pendente')" title="Marcar como Pendente">⚠ Pendente</button>`;
+      h += `</div>`;
+      h += `</div>`; // doc-obrig-item
+    });
+    h += `</div></div>`; // doc-obrig-grid + doc-obrig-section
+  });
+
+  return h;
+}
+
+function setDoiEstado(chave, novoEstado) {
+  if (!window._docsObrigState) window._docsObrigState = {};
+  const atual = (_docsObrigState[chave]||{}).estado || '';
+  // Toggle: se clicar no mesmo estado ativo, limpa
+  const estado = atual === novoEstado ? '' : novoEstado;
+  if (!_docsObrigState[chave]) _docsObrigState[chave] = { estado: '', obs: '' };
+  _docsObrigState[chave].estado = estado;
+
+  // Atualiza UI sem re-render completo
+  const item = document.getElementById('doi-item-' + chave);
+  const btnOk = document.getElementById('doi-btn-ok-' + chave);
+  const btnPend = document.getElementById('doi-btn-pend-' + chave);
+  const noteEl = document.getElementById('doi-note-' + chave);
+  const iconEl = item ? item.querySelector('.doi-icon') : null;
+
+  if (item) {
+    item.classList.remove('doi-ok','doi-pend');
+    if (estado === 'ok') item.classList.add('doi-ok');
+    if (estado === 'pendente') item.classList.add('doi-pend');
+  }
+  if (btnOk)   btnOk.classList.toggle('active',   estado === 'ok');
+  if (btnPend) btnPend.classList.toggle('active',  estado === 'pendente');
+  if (iconEl) {
+    iconEl.textContent = estado === 'ok' ? '✅' : estado === 'pendente' ? '⚠️' : '📄';
+    iconEl.className = 'doi-icon ' + (estado === 'ok' ? 'doi-icon-ok' : estado === 'pendente' ? 'doi-icon-pend' : 'doi-icon-neutral');
+  }
+  if (noteEl) {
+    if (estado === 'pendente') noteEl.classList.add('open');
+    else noteEl.classList.remove('open');
+  }
+
+  // Persistir no Supabase — estado no campo marcado, obs em chave separada
+  const obsAtual = (_docsObrigState[chave]||{}).obs || '';
+  supa.from('checklist_states').upsert({
+    chave: chave,
+    marcado: estado === 'ok',
+    atualizado_em: new Date().toISOString()
+  }).then(({ error }) => {
+    if (error) setSyncStatus('error'); else setSyncStatus('ok');
+  });
+  // Guarda o estado completo (ok/pendente/vazio) e obs numa segunda entrada
+  supa.from('checklist_states').upsert({
+    chave: chave + '__meta',
+    marcado: estado === 'pendente',
+    atualizado_em: new Date().toISOString()
+  });
+
+  updatePendenciasSummary();
+  refreshPendenciaBadge();
+}
+
+function salvarDoiObs(chave) {
+  if (!window._docsObrigState) window._docsObrigState = {};
+  const obsEl = document.getElementById('doi-obs-' + chave);
+  if (!obsEl) return;
+  if (!_docsObrigState[chave]) _docsObrigState[chave] = { estado: '', obs: '' };
+  _docsObrigState[chave].obs = obsEl.value.trim();
+  const estado = _docsObrigState[chave].estado || '';
+  // Persiste o estado atual (obs fica só local por ora, estado no Supabase)
+  supa.from('checklist_states').upsert({
+    chave: chave,
+    marcado: estado === 'ok',
+    atualizado_em: new Date().toISOString()
+  }).then(({ error }) => {
+    if (error) setSyncStatus('error'); else setSyncStatus('ok');
+  });
+  supa.from('checklist_states').upsert({
+    chave: chave + '__meta',
+    marcado: estado === 'pendente',
+    atualizado_em: new Date().toISOString()
+  });
+  // Flash de confirmação
+  const btn = obsEl.nextElementSibling;
+  if (btn) { const orig = btn.textContent; btn.textContent = '✓ Salvo!'; setTimeout(()=>btn.textContent=orig,1500); }
 }
 
 function toggleChkAccordion(id) {
