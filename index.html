@@ -4167,6 +4167,13 @@ function renderChecklist() {
   html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start">';
   html += '<div>'; // LEFT col: fornecedores
   html += '<div class="check-section-title">Documentos por Fornecedor</div>';
+  html += '<div style="display:flex;align-items:flex-start;gap:10px;background:rgba(79,142,247,0.07);border:1px solid rgba(79,142,247,0.22);border-radius:9px;padding:10px 14px;margin-bottom:12px">' +
+    '<span style="font-size:16px;flex-shrink:0;margin-top:1px">ℹ️</span>' +
+    '<div style="font-size:12px;color:var(--text-muted);line-height:1.6">' +
+      '<strong style="color:var(--accent);display:block;margin-bottom:2px">Situação somente leitura</strong>' +
+      'O status de cada documento é definido diretamente no lançamento da despesa. Para corrigir ou atualizar, acesse a aba <strong style="color:var(--text)">Despesas</strong> e clique em <strong style="color:var(--text)">✏️ Editar</strong> no lançamento correspondente.' +
+    '</div>' +
+  '</div>';
 
   Object.values(fornecedores).forEach((f, fi) => {
     const safeKey   = (f.cnpj || f.credor).replace(/[^a-zA-Z0-9]/g, '_');
@@ -4224,46 +4231,33 @@ function renderChecklist() {
     html += '<div id="' + accordId + '" style="display:none;border-top:1px solid var(--border)">';
     html += '<div style="padding:10px 14px;display:flex;flex-direction:column;gap:6px">';
 
-    // Helper inline para renderizar cada linha do checklist dentro do accordion
-    const docRow = (status, label, pendText, doiChave) => {
-      const isOk   = status === 'ok';
-      const isPend = status === 'pend';
-      const isSem  = status === 'sem';
-      if (isSem) return ''; // não exibe campo sem informação
-      // Estado manual sobrepõe o estado calculado do lançamento
-      const manualSt     = doiChave ? ((_docsObrigState[doiChave]||{}).estado || '') : '';
-      const resolvedOk   = manualSt === 'ok'       || (isOk   && manualSt !== 'pendente');
-      const resolvedPend = manualSt === 'pendente'  || (isPend && manualSt !== 'ok');
-      const icon   = resolvedOk ? '✅' : '❌';
-      const bg     = resolvedOk ? 'rgba(56,217,169,0.06)' : 'rgba(240,80,96,0.06)';
-      const border = resolvedOk ? 'rgba(56,217,169,0.15)' : 'rgba(240,80,96,0.2)';
-      let row = '<div style="background:' + bg + ';border:1px solid ' + border + ';border-radius:7px;padding:8px 12px;transition:background 0.15s">';
+    // Helper inline — somente leitura, com tooltip no hover
+    const docRow = (status, label, pendText) => {
+      if (status === 'sem') return ''; // não exibe campo sem informação
+      const isOk = status === 'ok';
+      const icon   = isOk ? '✅' : '❌';
+      const bg     = isOk ? 'rgba(56,217,169,0.06)' : 'rgba(240,80,96,0.06)';
+      const border = isOk ? 'rgba(56,217,169,0.15)' : 'rgba(240,80,96,0.2)';
+      const tipText = pendText ? (isOk ? '✔ OK — ' + pendText : '⚠ Pendência: ' + pendText) : (isOk ? '✔ Documento OK' : '❌ Pendente');
+      const tipAttr = 'title="' + tipText.replace(/"/g, '&quot;') + '"';
+      let row = '<div ' + tipAttr + ' style="background:' + bg + ';border:1px solid ' + border + ';border-radius:7px;padding:8px 12px;cursor:help">';
       row += '<div style="display:flex;align-items:center;gap:8px">';
       row += '<span style="font-size:14px;flex-shrink:0">' + icon + '</span>';
       row += '<div style="flex:1">';
       row += '<div style="font-size:12.5px;font-weight:500;color:var(--text)">' + label + '</div>';
-      if (resolvedPend && pendText) {
+      if (!isOk && pendText) {
         row += '<div style="font-size:11px;color:var(--accent3);margin-top:3px">⚠ ' + pendText + '</div>';
       }
-      row += '</div>';
-      if (doiChave) {
-        const btnOkActive   = manualSt === 'ok';
-        const btnPendActive = manualSt === 'pendente';
-        row += '<div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0">';
-        row += '<button id="doi-btn-ok-' + doiChave + '" class="doi-btn doi-btn-check' + (btnOkActive?' active':'') + '" onclick="setDoiEstado(\'' + doiChave + '\',\'ok\')" title="Marcar OK">✔</button>';
-        row += '<button id="doi-btn-pend-' + doiChave + '" class="doi-btn doi-btn-pend' + (btnPendActive?' active':'') + '" onclick="setDoiEstado(\'' + doiChave + '\',\'pendente\')" title="Pendente">⚠</button>';
-        row += '</div>';
-      }
-      row += '</div></div>';
+      row += '</div></div></div>';
       return row;
     };
 
-    html += docRow(stNf,       'Nota Fiscal' + (nfNums !== '?' ? ' — ' + nfNums : ''), '', '');
-    html += docRow(stOrc,      'Orçamentos (3 cotações)',  f.orcamentosPend || '', _doiKey('forn_orc',  safeKey));
-    html += docRow(stCert,     'CNDs — Certidões de Regularidade Fiscal', f.certidoesPend || '', _doiKey('forn_cert', safeKey));
-    html += docRow(stComp,     'Comprovante de Pagamento', f.comprovantePgtoPend || '', _doiKey('forn_comp', safeKey));
-    html += docRow(stContrato, 'Contrato / NF de Contrato', f.contratoNfPend || '', _doiKey('forn_cont', safeKey));
-    html += docRow(stJust,     'Justificativa', f.justificativaPend || '', _doiKey('forn_just', safeKey));
+    html += docRow(stNf,       'Nota Fiscal' + (nfNums !== '?' ? ' — ' + nfNums : ''), '');
+    html += docRow(stOrc,      'Orçamentos (3 cotações)',  f.orcamentosPend || '');
+    html += docRow(stCert,     'CNDs — Certidões de Regularidade Fiscal', f.certidoesPend || '');
+    html += docRow(stComp,     'Comprovante de Pagamento', f.comprovantePgtoPend || '');
+    html += docRow(stContrato, 'Contrato / NF de Contrato', f.contratoNfPend || '');
+    html += docRow(stJust,     'Justificativa', f.justificativaPend || '');
 
     html += '</div></div></div>';
   });
@@ -4339,8 +4333,10 @@ function renderAnexosObrigatorios(despesasFiltradas, filtroTC, filtroParcela) {
 
     const rowBg = isOk ? 'rgba(56,217,169,0.04)' : isPend ? 'rgba(240,80,96,0.05)' : '';
     const rowBorderBot = isPend ? '1px solid rgba(240,80,96,0.15)' : '1px solid var(--border)';
+    const tipText = isOk ? ('✔ OK' + (obs ? ' — ' + obs : '')) : isPend ? ('⚠ Pendente' + (obs ? ': ' + obs : '')) : 'Não verificado — clique ✔ para marcar como OK';
+    const tipAttr = `title="${tipText.replace(/"/g, '&quot;')}"`;
 
-    let r = `<div id="doi-item-${chave}" style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:${rowBg};border-bottom:${rowBorderBot};transition:background 0.15s">`;
+    let r = `<div id="doi-item-${chave}" ${tipAttr} style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:${rowBg};border-bottom:${rowBorderBot};transition:background 0.15s;cursor:help">`;
 
     r += `<div style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:700;font-family:'DM Mono',monospace;`;
     if (isOk)        r += `background:rgba(56,217,169,0.15);color:var(--accent2)`;
@@ -4645,9 +4641,11 @@ function _calcProgressData() {
     if (!fornecedores[key]) {
       fornecedores[key] = {
         credor: d.credor, cnpj: d.cnpj,
-        orcamentos: d.orcamentos, certidoes: d.certidoes,
-        comprovantePgto: d.comprovantePgto, contratoNf: d.contratoNf,
-        justificativa: d.justificativa,
+        orcamentos: d.orcamentos, orcamentosPend: d.orcamentosPend,
+        certidoes: d.certidoes, certidoesPend: d.certidoesPend,
+        comprovantePgto: d.comprovantePgto, comprovantePgtoPend: d.comprovantePgtoPend,
+        contratoNf: d.contratoNf, contratoNfPend: d.contratoNfPend,
+        justificativa: d.justificativa, justificativaPend: d.justificativaPend,
         nfs: []
       };
     }
@@ -4679,11 +4677,12 @@ function _calcProgressData() {
     const stJust  = resolveManual(itemStatus(f.justificativa),   manualJust);
     const items   = [stNf, stOrc, stCert, stComp, stCont, stJust];
     const nome    = f.credor || f.cnpj || '?';
-    const docNomes = ['NF','Orçamentos','Certidões','Comprovante Pgto','Contrato/NF','Justificativa'];
+    const docNomes  = ['NF','Orçamentos','Certidões','Comprovante Pgto','Contrato/NF','Justificativa'];
+    const pendTexts = ['', f.orcamentosPend||'', f.certidoesPend||'', f.comprovantePgtoPend||'', f.contratoNfPend||'', f.justificativaPend||''];
     items.forEach((st, i) => {
       if (st === 'sem') return;
       if (st === 'ok') { fornOk++; }
-      else { fornPend++; fornPendLines.push({ label: docNomes[i] + ' — ' + nome, pend: '', tipo: 'pend' }); }
+      else { fornPend++; fornPendLines.push({ label: docNomes[i] + ' — ' + nome, pend: pendTexts[i], tipo: 'pend' }); }
     });
   });
   const fornTotal = fornOk + fornPend;
@@ -4840,7 +4839,7 @@ function imprimirPendencias() {
         <td style="width:28px;color:#999;font-size:12px;padding:8px 6px 8px 0;vertical-align:top">${i+1}.</td>
         <td style="padding:8px 0;border-bottom:1px solid #eee">
           <div style="font-weight:600;font-size:13px;color:#1a1a2e">${p.label}</div>
-          ${p.pend && p.tipo==='pendente' ? `<div style="font-size:11.5px;color:#c0392b;margin-top:3px">⚠ ${p.pend}</div>` : ''}
+          ${p.pend ? `<div style="font-size:11.5px;color:#c0392b;margin-top:3px">⚠ ${p.pend}</div>` : ''}
         </td>
         <td style="width:80px;text-align:center;padding:8px 0;border-bottom:1px solid #eee;vertical-align:top">
           <span style="font-size:10px;padding:2px 8px;border-radius:10px;background:${p.tipo==='pendente'?'#fdecea':'#fff3cd'};color:${p.tipo==='pendente'?'#c0392b':'#856404'};border:1px solid ${p.tipo==='pendente'?'#f5c6cb':'#ffc107'};font-weight:700">${p.tipo==='pendente'?'PENDENTE':'NÃO VERIF.'}</span>
