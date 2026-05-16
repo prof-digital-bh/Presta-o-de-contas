@@ -1212,7 +1212,7 @@
           <div class="page-subtitle">Visão geral das prestações de contas</div>
         </div>
         <div class="gap-8">
-          <button class="btn btn-secondary" onclick="imprimirAba('dashboard')">🖨 Imprimir</button>
+          <button class="btn btn-secondary" onclick="abrirFiltroImpressao('dashboard')">🖨 Imprimir</button>
           <button class="btn btn-primary" onclick="showSection('despesas'); openModal('modal-despesa')">+ Lançar Despesa</button>
         </div>
       </div>
@@ -5092,71 +5092,147 @@ function imprimirAba(nomeAba, filtros) {
   //  DASHBOARD
   // ════════════════════════════════════════════════════════════════
   function gerarDashboard() {
-    const tcs = state.tcs || [];
-    const despesas = state.despesas || [];
-    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    const filtroTcId    = filtros.tcId    || '';
+    const filtroParcela = filtros.parcela || '';
+    const filtroTipo    = filtros.tipo    || '';
+    const parNomes = {'01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única'};
+
+    const tcsAll = state.tcs || [];
+    const despesasAll = state.despesas || [];
     const statusLabel = { ativo:'Ativo', a_vencer:'A Vencer', encerrado:'Encerrado', suspenso:'Suspenso' };
     const statusBadge = { ativo:'badge-green', a_vencer:'badge-orange', encerrado:'badge-red', suspenso:'badge-gray' };
 
-    // totais globais
+    // ── Filtra TCs principais ──
+    let tcsPrincipais = tcsAll.filter(t => !t.tcPaiId);
+    if (filtroTcId) {
+      const tcSel = tcsAll.find(t => String(t.id) === String(filtroTcId));
+      if (tcSel && tcSel.tcPaiId) {
+        tcsPrincipais = tcsAll.filter(t => String(t.id) === String(tcSel.tcPaiId));
+      } else {
+        tcsPrincipais = tcsAll.filter(t => String(t.id) === String(filtroTcId));
+      }
+    }
+
+    // ── Filtra despesas ──
+    let despesas = despesasAll;
+    if (filtroTcId)    despesas = despesas.filter(d => String(d.tcVinculo) === String(filtroTcId));
+    if (filtroParcela) despesas = despesas.filter(d => d.parcela === filtroParcela);
+    if (filtroTipo)    despesas = despesas.filter(d => d.tipo === filtroTipo);
+
+    // ── Subtítulo dinâmico ──
+    const tcNome  = filtroTcId ? (() => { const t = tcsAll.find(x => String(x.id) === String(filtroTcId)); return t ? `TC ${t.numero}` : ''; })() : '';
+    const parNome = filtroParcela ? (parNomes[filtroParcela] || filtroParcela) + 'ª Parcela' : '';
+    const tipoNome = filtroTipo ? _tl(filtroTipo) : '';
+    const subtitulo = [tcNome, parNome, tipoNome].filter(Boolean).join(' · ') || `Gerado em ${dataHoje}`;
+
+    // ── Totais gerais (respeitando filtros) ──
     const totalDesp = despesas.reduce((s,d) => s+_pm(d.valor), 0);
-    const tcsAtivos = tcs.filter(t => !t.tcPaiId && t.status !== 'encerrado' && t.status !== 'suspenso');
-    const totalRecebido = tcs.filter(t=>!t.tcPaiId).reduce((s,t)=>{
-      const adits = tcs.filter(a=>a.tcPaiId===t.id);
-      return s + _pm(t.valor) + adits.reduce((sa,a)=>sa+_pm(a.valor),0);
+    const tcsAtivos = tcsAll.filter(t => !t.tcPaiId && t.status !== 'encerrado' && t.status !== 'suspenso');
+    const totalContratado = tcsPrincipais.reduce((s,tc) => {
+      const adits = tcsAll.filter(a=>a.tcPaiId===tc.id);
+      return s + _pm(tc.valor) + adits.reduce((sa,a)=>sa+_pm(a.valor),0);
     },0);
 
-    // por tipo
-    const porTipo = {};
-    despesas.forEach(d => { porTipo[d.tipo]=(porTipo[d.tipo]||0)+_pm(d.valor); });
+    // ── Helper: verifica se parcela está não creditada ──
+    function isNaoCreditada(tcId, parcela) {
+      if (!parcela) return false;
+      const sit = (state.parcelaSituacoes||[]).find(
+        s => String(s.tcId) === String(tcId) && s.parcela === parcela
+      );
+      return sit && sit.situacao === 'nao_creditada';
+    }
 
-    const tiposLinhas = Object.entries(porTipo).map(([tipo,val]) =>
-      `<tr><td>${_tl(tipo)}</td><td class="right mono">${_fmt(val)}</td><td class="right muted">${totalDesp?Math.round(val/totalDesp*100):0}%</td></tr>`
-    ).join('') || `<tr><td colspan="3" class="no-data">Nenhuma despesa lançada</td></tr>`;
-
-    // por TC
-    const tcsPrincipais = tcs.filter(t=>!t.tcPaiId);
+    // ── Tabela por TC ──
     const tcLinhas = tcsPrincipais.map(tc => {
-      const adits = tcs.filter(a=>a.tcPaiId===tc.id);
+      const adits = tcsAll.filter(a=>a.tcPaiId===tc.id);
       const totalTC = _pm(tc.valor) + adits.reduce((s,a)=>s+_pm(a.valor),0);
-      const gasto = despesas.filter(d=>String(d.tcVinculo)===String(tc.id)).reduce((s,d)=>s+_pm(d.valor),0);
-      const saldo = totalTC - gasto;
+
+      // Despesas deste TC respeitando os filtros de parcela e tipo
+      const despTc = despesas.filter(d => String(d.tcVinculo) === String(tc.id));
+      const gasto  = despTc.reduce((s,d) => s+_pm(d.valor), 0);
+
+      // Saldo: se filtrou por parcela, compara previsto da parcela vs gasto da parcela
+      let saldoHtml;
+      if (filtroParcela && isNaoCreditada(tc.id, filtroParcela)) {
+        saldoHtml = `<span class="badge badge-red">Indisponível</span>`;
+      } else if (filtroParcela) {
+        const pv = (state.parcelaValores||[]).find(r => String(r.tcId)===String(tc.id) && r.parcela===filtroParcela);
+        const previsto = pv ? _pm(pv.custeio)+_pm(pv.capital)+_pm(pv.alem)+_pm(pv.obras)+_pm(pv.capina) : 0;
+        const saldo = previsto - gasto;
+        saldoHtml = `<span style="color:${saldo>=0?'#155724':'#c0392b'}" class="mono">${_fmt(saldo)}</span>`;
+      } else {
+        const saldo = totalTC - gasto;
+        saldoHtml = `<span style="color:${saldo>=0?'#155724':'#c0392b'}" class="mono">${_fmt(saldo)}</span>`;
+      }
+
       const pct = totalTC ? Math.round(gasto/totalTC*100) : 0;
       const st = typeof calcStatusTC==='function' && tc.inicio && tc.fim && tc.status!=='suspenso'
         ? calcStatusTC(tc.inicio,tc.fim) : (tc.status||'ativo');
+
+      // Situação da parcela filtrada (se houver)
+      const sitParc = filtroParcela
+        ? (() => { const s=(state.parcelaSituacoes||[]).find(r=>String(r.tcId)===String(tc.id)&&r.parcela===filtroParcela); return s?s.situacao:''; })()
+        : '';
+      const sitHtml = sitParc
+        ? `<span class="badge" style="background:${_sc(sitParc)}20;color:${_sc(sitParc)}">${_sl(sitParc)}</span>`
+        : '';
+
       return `<tr>
         <td class="bold">TC ${tc.numero}</td>
         <td class="muted" style="font-size:11.5px">${tc.escola||'—'}</td>
-        <td><span class="badge ${statusBadge[st]||'badge-gray'}">${statusLabel[st]||st}</span></td>
-        <td class="right mono">${_fmt(totalTC)}</td>
+        <td><span class="badge ${statusBadge[st]||'badge-gray'}">${statusLabel[st]||st}</span>${sitHtml ? ' ' + sitHtml : ''}</td>
+        <td class="right mono">${filtroParcela ? (() => { const pv=(state.parcelaValores||[]).find(r=>String(r.tcId)===String(tc.id)&&r.parcela===filtroParcela); return pv?_fmt(_pm(pv.custeio)+_pm(pv.capital)+_pm(pv.alem)+_pm(pv.obras)+_pm(pv.capina)):'—'; })() : _fmt(totalTC)}</td>
         <td class="right mono">${_fmt(gasto)}</td>
-        <td class="right mono" style="color:${saldo>=0?'#155724':'#c0392b'}">${_fmt(saldo)}</td>
+        <td class="right">${saldoHtml}</td>
         <td class="right muted">${pct}%</td>
       </tr>`;
-    }).join('') || `<tr><td colspan="7" class="no-data">Nenhum TC cadastrado</td></tr>`;
+    }).join('') || `<tr><td colspan="7" class="no-data">Nenhum TC encontrado para os filtros selecionados</td></tr>`;
+
+    // ── Despesas por tipo ──
+    const porTipo = {};
+    despesas.forEach(d => { porTipo[d.tipo]=(porTipo[d.tipo]||0)+_pm(d.valor); });
+    const tiposLinhas = Object.entries(porTipo).map(([tipo,val]) =>
+      `<tr><td>${_tl(tipo)}</td><td class="right mono">${_fmt(val)}</td><td class="right muted">${totalDesp?Math.round(val/totalDesp*100):0}%</td></tr>`
+    ).join('') || `<tr><td colspan="3" class="no-data">Nenhuma despesa para os filtros selecionados</td></tr>`;
+
+    // ── Bloco de aviso se houver parcelas não creditadas nos TCs exibidos ──
+    const avisoNaoCreditadas = (() => {
+      const naoCred = tcsPrincipais.filter(tc => filtroParcela
+        ? isNaoCreditada(tc.id, filtroParcela)
+        : (state.parcelaSituacoes||[]).some(s => String(s.tcId)===String(tc.id) && s.situacao==='nao_creditada')
+      );
+      if (!naoCred.length) return '';
+      return `<div class="section-card warn" style="margin-bottom:16px;font-size:12.5px">
+        ⚠️ <strong>Atenção:</strong> ${naoCred.map(t=>`TC ${t.numero}`).join(', ')} possu${naoCred.length>1?'em':'i'} parcela${filtroParcela?'':' (s)'} com situação <strong>Não Creditada</strong>. O saldo dessas parcelas está marcado como <strong>Indisponível</strong>.
+      </div>`;
+    })();
+
+    // ── Colunas de cabeçalho dinâmicas ──
+    const thValor = filtroParcela ? 'Previsto Parcela' : 'Valor Contratado';
 
     const corpo = `
+      ${avisoNaoCreditadas}
       <div class="info-grid">
-        <div class="info-box"><div class="lbl">TCs Ativos</div><div class="val">${tcsAtivos.length}</div><div class="sub">de ${tcsPrincipais.length} total</div></div>
-        <div class="info-box"><div class="lbl">Total Despesas</div><div class="val mono">${_fmt(totalDesp)}</div><div class="sub">${despesas.length} lançamento(s)</div></div>
-        <div class="info-box"><div class="lbl">Total Recebido (TCs)</div><div class="val mono">${_fmt(totalRecebido)}</div><div class="sub">Valor contratado + aditivos</div></div>
+        <div class="info-box"><div class="lbl">TCs ${filtroTcId?'Selecionado':'Ativos'}</div><div class="val">${filtroTcId?tcsPrincipais.length:tcsAtivos.length}</div><div class="sub">${filtroTcId?'TC filtrado':'de '+tcsAll.filter(t=>!t.tcPaiId).length+' total'}</div></div>
+        <div class="info-box"><div class="lbl">Total Despesas${filtroParcela?' (Parcela)':''}</div><div class="val mono">${_fmt(totalDesp)}</div><div class="sub">${despesas.length} lançamento(s)</div></div>
+        <div class="info-box"><div class="lbl">${filtroParcela?'Total Previsto (Parcela)':'Total Contratado'}</div><div class="val mono">${_fmt(totalContratado)}</div><div class="sub">${filtroParcela?(parNomes[filtroParcela]||filtroParcela)+' Parcela':'Valor + aditivos'}</div></div>
       </div>
 
-      <h2>Resumo por Termo de Compromisso</h2>
+      <h2>Resumo por Termo de Compromisso${filtroParcela?' — '+(parNomes[filtroParcela]||filtroParcela)+' Parcela':''}${filtroTipo?' — '+_tl(filtroTipo):''}</h2>
       <table>
-        <thead><tr><th>TC/Aditivo</th><th>Escola</th><th>Status</th><th class="right">Valor Total</th><th class="right">Gasto</th><th class="right">Saldo</th><th class="right">% Exec.</th></tr></thead>
+        <thead><tr><th>TC</th><th>Escola</th><th>Status / Situação</th><th class="right">${thValor}</th><th class="right">Gasto</th><th class="right">Saldo</th><th class="right">% Exec.</th></tr></thead>
         <tbody>${tcLinhas}</tbody>
       </table>
 
-      <h2>Despesas por Tipo</h2>
+      <h2>Despesas por Tipo${filtroParcela?' — '+(parNomes[filtroParcela]||filtroParcela)+' Parcela':''}${filtroTipo?' — '+_tl(filtroTipo):''}</h2>
       <table>
         <thead><tr><th>Tipo</th><th class="right">Valor</th><th class="right">% do Total</th></tr></thead>
         <tbody>${tiposLinhas}
-          <tr class="total-row"><td colspan="1"><strong>TOTAL</strong></td><td class="right mono">${_fmt(totalDesp)}</td><td></td></tr>
+          <tr class="total-row"><td><strong>TOTAL</strong></td><td class="right mono">${_fmt(totalDesp)}</td><td></td></tr>
         </tbody>
       </table>`;
 
-    return wrapDoc('Dashboard — Visão Geral', `Gerado em ${dataHoje}`, corpo);
+    return wrapDoc('Dashboard — Visão Geral', subtitulo, corpo);
   }
 
   // ════════════════════════════════════════════════════════════════
@@ -5236,6 +5312,10 @@ function imprimirAba(nomeAba, filtros) {
               const prevTot = cu+ca+al+ob+ci;
               const gastoParc = despTc.filter(d=>d.parcela===p).reduce((s,d)=>s+_pm(d.valor),0);
               const saldoParc = prevTot - gastoParc;
+              const naoCreditada = sit === 'nao_creditada';
+              const saldoHtml = naoCreditada
+                ? `<span class="badge badge-red">Indisponível</span>`
+                : `<span class="mono" style="color:${saldoParc>=0?'#155724':'#c0392b'}">${_fmt(saldoParc)}</span>`;
               return `<tr>
                 <td class="bold">${parNomes[p]||p} Parcela</td>
                 <td class="right mono">${cu?_fmt(cu):'—'}</td>
@@ -5245,7 +5325,7 @@ function imprimirAba(nomeAba, filtros) {
                 <td class="right mono">${ci?_fmt(ci):'—'}</td>
                 <td class="right mono bold">${_fmt(prevTot)}</td>
                 <td class="right mono" style="color:#c0392b">${_fmt(gastoParc)}</td>
-                <td class="right mono" style="color:${saldoParc>=0?'#155724':'#c0392b'}">${_fmt(saldoParc)}</td>
+                <td class="right">${saldoHtml}</td>
                 <td>${sit?`<span class="badge" style="background:${_sc(sit)}20;color:${_sc(sit)}">${_sl(sit)}</span>`:'—'}</td>
               </tr>`;
             }).join('')}
@@ -7702,7 +7782,7 @@ function abrirFiltroImpressao(aba) {
   });
 
   // Ajusta título do modal
-  const titulos = { tc: 'Termos de Compromisso', despesas: 'Despesas' };
+  const titulos = { dashboard: 'Dashboard', tc: 'Termos de Compromisso', despesas: 'Despesas' };
   document.getElementById('fi-titulo').textContent = `Imprimir — ${titulos[aba] || aba}`;
 
   // Mostra/oculta campo de tipo (só faz sentido para despesas)
