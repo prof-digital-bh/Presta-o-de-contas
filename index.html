@@ -5095,144 +5095,233 @@ function imprimirAba(nomeAba, filtros) {
     const filtroTcId    = filtros.tcId    || '';
     const filtroParcela = filtros.parcela || '';
     const filtroTipo    = filtros.tipo    || '';
-    const parNomes = {'01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única'};
 
-    const tcsAll = state.tcs || [];
-    const despesasAll = state.despesas || [];
-    const statusLabel = { ativo:'Ativo', a_vencer:'A Vencer', encerrado:'Encerrado', suspenso:'Suspenso' };
-    const statusBadge = { ativo:'badge-green', a_vencer:'badge-orange', encerrado:'badge-red', suspenso:'badge-gray' };
+    // ── Sem filtro de TC+Parcela: visão geral resumida ──
+    if (!filtroTcId || !filtroParcela) {
+      const parNomes = {'01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única'};
+      const tcsAll = state.tcs || [];
+      const despesasAll = state.despesas || [];
+      const statusLabel = { ativo:'Ativo', a_vencer:'A Vencer', encerrado:'Encerrado', suspenso:'Suspenso' };
+      const statusBadge = { ativo:'badge-green', a_vencer:'badge-orange', encerrado:'badge-red', suspenso:'badge-gray' };
 
-    // ── Filtra TCs principais ──
-    let tcsPrincipais = tcsAll.filter(t => !t.tcPaiId);
-    if (filtroTcId) {
-      const tcSel = tcsAll.find(t => String(t.id) === String(filtroTcId));
-      if (tcSel && tcSel.tcPaiId) {
-        tcsPrincipais = tcsAll.filter(t => String(t.id) === String(tcSel.tcPaiId));
-      } else {
+      let tcsPrincipais = tcsAll.filter(t => !t.tcPaiId);
+      if (filtroTcId) {
         tcsPrincipais = tcsAll.filter(t => String(t.id) === String(filtroTcId));
       }
-    }
+      let despesas = despesasAll;
+      if (filtroTcId)    despesas = despesas.filter(d => String(d.tcVinculo) === String(filtroTcId));
+      if (filtroTipo)    despesas = despesas.filter(d => d.tipo === filtroTipo);
 
-    // ── Filtra despesas ──
-    let despesas = despesasAll;
-    if (filtroTcId)    despesas = despesas.filter(d => String(d.tcVinculo) === String(filtroTcId));
-    if (filtroParcela) despesas = despesas.filter(d => d.parcela === filtroParcela);
-    if (filtroTipo)    despesas = despesas.filter(d => d.tipo === filtroTipo);
+      const totalDesp = despesas.reduce((s,d) => s+_pm(d.valor), 0);
+      const tcsAtivos = tcsAll.filter(t => !t.tcPaiId && t.status !== 'encerrado' && t.status !== 'suspenso');
+      const totalContratado = tcsPrincipais.reduce((s,tc) => {
+        const adits = tcsAll.filter(a=>a.tcPaiId===tc.id);
+        return s + _pm(tc.valor) + adits.reduce((sa,a)=>sa+_pm(a.valor),0);
+      },0);
 
-    // ── Subtítulo dinâmico ──
-    const tcNome  = filtroTcId ? (() => { const t = tcsAll.find(x => String(x.id) === String(filtroTcId)); return t ? `TC ${t.numero}` : ''; })() : '';
-    const parNome = filtroParcela ? (parNomes[filtroParcela] || filtroParcela) + 'ª Parcela' : '';
-    const tipoNome = filtroTipo ? _tl(filtroTipo) : '';
-    const subtitulo = [tcNome, parNome, tipoNome].filter(Boolean).join(' · ') || `Gerado em ${dataHoje}`;
-
-    // ── Totais gerais (respeitando filtros) ──
-    const totalDesp = despesas.reduce((s,d) => s+_pm(d.valor), 0);
-    const tcsAtivos = tcsAll.filter(t => !t.tcPaiId && t.status !== 'encerrado' && t.status !== 'suspenso');
-    const totalContratado = tcsPrincipais.reduce((s,tc) => {
-      const adits = tcsAll.filter(a=>a.tcPaiId===tc.id);
-      return s + _pm(tc.valor) + adits.reduce((sa,a)=>sa+_pm(a.valor),0);
-    },0);
-
-    // ── Helper: verifica se parcela está não creditada ──
-    function isNaoCreditada(tcId, parcela) {
-      if (!parcela) return false;
-      const sit = (state.parcelaSituacoes||[]).find(
-        s => String(s.tcId) === String(tcId) && s.parcela === parcela
-      );
-      return sit && sit.situacao === 'nao_creditada';
-    }
-
-    // ── Tabela por TC ──
-    const tcLinhas = tcsPrincipais.map(tc => {
-      const adits = tcsAll.filter(a=>a.tcPaiId===tc.id);
-      const totalTC = _pm(tc.valor) + adits.reduce((s,a)=>s+_pm(a.valor),0);
-
-      // Despesas deste TC respeitando os filtros de parcela e tipo
-      const despTc = despesas.filter(d => String(d.tcVinculo) === String(tc.id));
-      const gasto  = despTc.reduce((s,d) => s+_pm(d.valor), 0);
-
-      // Saldo: se filtrou por parcela, compara previsto da parcela vs gasto da parcela
-      let saldoHtml;
-      if (filtroParcela && isNaoCreditada(tc.id, filtroParcela)) {
-        saldoHtml = `<span class="badge badge-red">Indisponível</span>`;
-      } else if (filtroParcela) {
-        const pv = (state.parcelaValores||[]).find(r => String(r.tcId)===String(tc.id) && r.parcela===filtroParcela);
-        const previsto = pv ? _pm(pv.custeio)+_pm(pv.capital)+_pm(pv.alem)+_pm(pv.obras)+_pm(pv.capina) : 0;
-        const saldo = previsto - gasto;
-        saldoHtml = `<span style="color:${saldo>=0?'#155724':'#c0392b'}" class="mono">${_fmt(saldo)}</span>`;
-      } else {
+      const tcLinhas = tcsPrincipais.map(tc => {
+        const adits = tcsAll.filter(a=>a.tcPaiId===tc.id);
+        const totalTC = _pm(tc.valor) + adits.reduce((s,a)=>s+_pm(a.valor),0);
+        const despTc = despesas.filter(d => String(d.tcVinculo) === String(tc.id));
+        const gasto = despTc.reduce((s,d)=>s+_pm(d.valor),0);
         const saldo = totalTC - gasto;
-        saldoHtml = `<span style="color:${saldo>=0?'#155724':'#c0392b'}" class="mono">${_fmt(saldo)}</span>`;
-      }
+        const pct = totalTC ? Math.round(gasto/totalTC*100) : 0;
+        const st = typeof calcStatusTC==='function' && tc.inicio && tc.fim && tc.status!=='suspenso'
+          ? calcStatusTC(tc.inicio,tc.fim) : (tc.status||'ativo');
+        return `<tr>
+          <td class="bold">TC ${tc.numero}</td>
+          <td class="muted" style="font-size:11.5px">${tc.escola||'—'}</td>
+          <td><span class="badge ${statusBadge[st]||'badge-gray'}">${statusLabel[st]||st}</span></td>
+          <td class="right mono">${_fmt(totalTC)}</td>
+          <td class="right mono">${_fmt(gasto)}</td>
+          <td class="right mono" style="color:${saldo>=0?'#155724':'#c0392b'}">${_fmt(saldo)}</td>
+          <td class="right muted">${pct}%</td>
+        </tr>`;
+      }).join('') || `<tr><td colspan="7" class="no-data">Nenhum TC cadastrado</td></tr>`;
 
-      const pct = totalTC ? Math.round(gasto/totalTC*100) : 0;
-      const st = typeof calcStatusTC==='function' && tc.inicio && tc.fim && tc.status!=='suspenso'
-        ? calcStatusTC(tc.inicio,tc.fim) : (tc.status||'ativo');
+      const porTipo = {};
+      despesas.forEach(d => { porTipo[d.tipo]=(porTipo[d.tipo]||0)+_pm(d.valor); });
+      const tiposLinhas = Object.entries(porTipo).map(([tipo,val]) =>
+        `<tr><td>${_tl(tipo)}</td><td class="right mono">${_fmt(val)}</td><td class="right muted">${totalDesp?Math.round(val/totalDesp*100):0}%</td></tr>`
+      ).join('') || `<tr><td colspan="3" class="no-data">Nenhuma despesa lançada</td></tr>`;
 
-      // Situação da parcela filtrada (se houver)
-      const sitParc = filtroParcela
-        ? (() => { const s=(state.parcelaSituacoes||[]).find(r=>String(r.tcId)===String(tc.id)&&r.parcela===filtroParcela); return s?s.situacao:''; })()
-        : '';
-      const sitHtml = sitParc
-        ? `<span class="badge" style="background:${_sc(sitParc)}20;color:${_sc(sitParc)}">${_sl(sitParc)}</span>`
-        : '';
+      const corpo = `
+        <div class="info-grid">
+          <div class="info-box"><div class="lbl">TCs Ativos</div><div class="val">${tcsAtivos.length}</div><div class="sub">de ${tcsAll.filter(t=>!t.tcPaiId).length} total</div></div>
+          <div class="info-box"><div class="lbl">Total Despesas</div><div class="val mono">${_fmt(totalDesp)}</div><div class="sub">${despesas.length} lançamento(s)</div></div>
+          <div class="info-box"><div class="lbl">Total Contratado</div><div class="val mono">${_fmt(totalContratado)}</div><div class="sub">Valor + aditivos</div></div>
+        </div>
+        <h2>Resumo por Termo de Compromisso</h2>
+        <table>
+          <thead><tr><th>TC</th><th>Escola</th><th>Status</th><th class="right">Valor Contratado</th><th class="right">Gasto</th><th class="right">Saldo</th><th class="right">% Exec.</th></tr></thead>
+          <tbody>${tcLinhas}</tbody>
+        </table>
+        <h2>Despesas por Tipo</h2>
+        <table>
+          <thead><tr><th>Tipo</th><th class="right">Valor</th><th class="right">% do Total</th></tr></thead>
+          <tbody>${tiposLinhas}
+            <tr class="total-row"><td><strong>TOTAL</strong></td><td class="right mono">${_fmt(totalDesp)}</td><td></td></tr>
+          </tbody>
+        </table>`;
+      return wrapDoc('Dashboard — Visão Geral', `Gerado em ${dataHoje}`, corpo);
+    }
 
-      return `<tr>
-        <td class="bold">TC ${tc.numero}</td>
-        <td class="muted" style="font-size:11.5px">${tc.escola||'—'}</td>
-        <td><span class="badge ${statusBadge[st]||'badge-gray'}">${statusLabel[st]||st}</span>${sitHtml ? ' ' + sitHtml : ''}</td>
-        <td class="right mono">${filtroParcela ? (() => { const pv=(state.parcelaValores||[]).find(r=>String(r.tcId)===String(tc.id)&&r.parcela===filtroParcela); return pv?_fmt(_pm(pv.custeio)+_pm(pv.capital)+_pm(pv.alem)+_pm(pv.obras)+_pm(pv.capina)):'—'; })() : _fmt(totalTC)}</td>
-        <td class="right mono">${_fmt(gasto)}</td>
-        <td class="right">${saldoHtml}</td>
-        <td class="right muted">${pct}%</td>
-      </tr>`;
-    }).join('') || `<tr><td colspan="7" class="no-data">Nenhum TC encontrado para os filtros selecionados</td></tr>`;
+    // ════════════════════════════════════════════════════════════════
+    // MODO ACOMPANHAMENTO DE PARCELA — reproduz fielmente a tela
+    // ════════════════════════════════════════════════════════════════
+    const parNomes = {'01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única'};
+    const TIPOS = ['CUSTEIO','CAPITAL','ALEM_MUROS','OBRAS','CAPINA'];
+    const tipoKey = { CUSTEIO:'custeio', CAPITAL:'capital', ALEM_MUROS:'alem', OBRAS:'obras', CAPINA:'capina' };
+    const tipoColor = { CUSTEIO:'#4f8ef7', CAPITAL:'#38d9a9', ALEM_MUROS:'#b57bee', OBRAS:'#f6a623', CAPINA:'#60c689' };
 
-    // ── Despesas por tipo ──
-    const porTipo = {};
-    despesas.forEach(d => { porTipo[d.tipo]=(porTipo[d.tipo]||0)+_pm(d.valor); });
-    const tiposLinhas = Object.entries(porTipo).map(([tipo,val]) =>
-      `<tr><td>${_tl(tipo)}</td><td class="right mono">${_fmt(val)}</td><td class="right muted">${totalDesp?Math.round(val/totalDesp*100):0}%</td></tr>`
-    ).join('') || `<tr><td colspan="3" class="no-data">Nenhuma despesa para os filtros selecionados</td></tr>`;
+    const tcsAll = state.tcs || [];
+    const tc = tcsAll.find(t => String(t.id) === String(filtroTcId));
+    if (!tc) return wrapDoc('Dashboard', 'TC não encontrado', '<p class="no-data">TC não encontrado.</p>');
 
-    // ── Bloco de aviso se houver parcelas não creditadas nos TCs exibidos ──
-    const avisoNaoCreditadas = (() => {
-      const naoCred = tcsPrincipais.filter(tc => filtroParcela
-        ? isNaoCreditada(tc.id, filtroParcela)
-        : (state.parcelaSituacoes||[]).some(s => String(s.tcId)===String(tc.id) && s.situacao==='nao_creditada')
-      );
-      if (!naoCred.length) return '';
-      return `<div class="section-card warn" style="margin-bottom:16px;font-size:12.5px">
-        ⚠️ <strong>Atenção:</strong> ${naoCred.map(t=>`TC ${t.numero}`).join(', ')} possu${naoCred.length>1?'em':'i'} parcela${filtroParcela?'':' (s)'} com situação <strong>Não Creditada</strong>. O saldo dessas parcelas está marcado como <strong>Indisponível</strong>.
+    const tcLabel = tc.ehAditivo ? `Aditivo ${tc.numero}` : `TC ${tc.numero}`;
+    const parLabel = (parNomes[filtroParcela]||filtroParcela) + 'ª Parcela';
+    const tiposParaExibir = filtroTipo ? [filtroTipo] : TIPOS;
+
+    // Despesas filtradas
+    let despesas = (state.despesas||[]).filter(d =>
+      String(d.tcVinculo) === String(filtroTcId) && d.parcela === filtroParcela
+    );
+    if (filtroTipo) despesas = despesas.filter(d => d.tipo === filtroTipo);
+
+    // Valores distribuídos
+    const pvRow = (state.parcelaValores||[]).find(pv => String(pv.tcId)===String(filtroTcId) && pv.parcela===filtroParcela);
+    const sit = (state.parcelaSituacoes||[]).find(s => String(s.tcId)===String(filtroTcId) && s.parcela===filtroParcela);
+    const situacao = sit ? sit.situacao : '';
+    const naoCreditada = situacao === 'nao_creditada';
+
+    const totalGasto    = despesas.reduce((s,d) => s+_pm(d.valor), 0);
+    const totalPrevisto = pvRow ? tiposParaExibir.reduce((s,t2) => s+_pm(pvRow[tipoKey[t2]]||'0'), 0) : 0;
+    const saldoGeral    = totalPrevisto - totalGasto;
+    const pct           = totalPrevisto > 0 ? Math.min(totalGasto/totalPrevisto*100, 100) : 0;
+
+    // Situação badge
+    const sitLabels = {pendente:'Pendente',nao_verificado:'Não Verificado',ok:'OK',nao_aplicavel:'N/A',
+      nao_creditada:'Não Creditada',em_andamento:'Em Andamento',montagem:'Montagem de Prestação',
+      analise:'Em Análise',aprovada:'Aprovada',liquidada:'Liquidada',ajuste:'Em Ajuste',
+      ressalvas:'Aprovada com Ressalvas',reprovada:'Reprovada'};
+    const sitColors = {nao_creditada:'#c0392b',em_andamento:'#2980b9',montagem:'#856404',
+      analise:'#0c5460',aprovada:'#155724',liquidada:'#155724',ajuste:'#856404',
+      ressalvas:'#856404',reprovada:'#c0392b',pendente:'#c0392b',ok:'#155724'};
+    const sitBg = {nao_creditada:'#fdecea',em_andamento:'#d1ecf1',montagem:'#fff3cd',
+      analise:'#d1ecf1',aprovada:'#d4edda',liquidada:'#d4edda',ajuste:'#fff3cd',
+      ressalvas:'#fff3cd',reprovada:'#fdecea',pendente:'#fdecea',ok:'#d4edda'};
+    const sitHtml = situacao
+      ? `<span class="badge" style="background:${sitBg[situacao]||'#eee'};color:${sitColors[situacao]||'#555'}">${sitLabels[situacao]||situacao}</span>`
+      : '';
+
+    // ── Cards de totais ──
+    const saldoCardHtml = naoCreditada
+      ? `<span class="badge badge-red" style="font-size:13px;padding:4px 12px">Indisponível</span>`
+      : `<span style="font-size:18px;font-weight:700;color:${saldoGeral<0?'#c0392b':'#155724'}">${totalPrevisto>0?_fmt(saldoGeral):'—'}</span>`;
+
+    const cardsHtml = `
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+        <div class="info-box">
+          <div class="lbl">Previsto (Parcela)</div>
+          <div class="val mono">${totalPrevisto>0?_fmt(totalPrevisto):'Não configurado'}</div>
+        </div>
+        <div class="info-box">
+          <div class="lbl">Lançado (${despesas.length} desp.)</div>
+          <div class="val mono" style="color:#c0392b">${_fmt(totalGasto)}</div>
+        </div>
+        <div class="info-box" style="border-left:3px solid ${saldoGeral<0||naoCreditada?'#c0392b':'#27ae60'}">
+          <div class="lbl">Saldo</div>
+          <div class="val">${saldoCardHtml}</div>
+        </div>
       </div>`;
-    })();
 
-    // ── Colunas de cabeçalho dinâmicas ──
-    const thValor = filtroParcela ? 'Previsto Parcela' : 'Valor Contratado';
+    // ── Barra de progresso ──
+    const barColor = pct > 90 ? '#c0392b' : '#27ae60';
+    const barraHtml = totalPrevisto > 0 ? `
+      <div style="margin-bottom:20px">
+        <div style="background:#e9ecef;border-radius:20px;height:10px;overflow:hidden">
+          <div style="height:100%;border-radius:20px;background:${barColor};width:${pct}%"></div>
+        </div>
+        <div style="font-size:11px;color:#888;margin-top:5px">${Math.round(pct)}% utilizado da parcela</div>
+      </div>` : '';
+
+    // ── Tabela de rubricas ──
+    const rubricas = tiposParaExibir.filter(t2 => {
+      const prev  = pvRow ? _pm(pvRow[tipoKey[t2]]||'0') : 0;
+      const gasto = despesas.filter(d=>d.tipo===t2).reduce((s,d)=>s+_pm(d.valor),0);
+      return prev > 0 || gasto > 0;
+    });
+
+    const rubricasHtml = rubricas.length ? `
+      <h2>Rubricas</h2>
+      <table>
+        <thead><tr>
+          <th>Rubrica</th>
+          <th class="right">Previsto</th>
+          <th class="right">Lançado</th>
+          <th class="right">Saldo</th>
+        </tr></thead>
+        <tbody>
+          ${rubricas.map(t2 => {
+            const prev  = pvRow ? _pm(pvRow[tipoKey[t2]]||'0') : 0;
+            const gasto = despesas.filter(d=>d.tipo===t2).reduce((s,d)=>s+_pm(d.valor),0);
+            const sld   = prev - gasto;
+            const naoCred = naoCreditada;
+            return `<tr>
+              <td><span style="font-weight:600;color:${tipoColor[t2]||'#333'}">${_tl(t2)}</span></td>
+              <td class="right mono muted">${prev>0?_fmt(prev):'—'}</td>
+              <td class="right mono" style="color:#c0392b">${gasto>0?_fmt(gasto):'—'}</td>
+              <td class="right">${naoCred
+                ? '<span class="badge badge-red">Indisponível</span>'
+                : prev>0
+                  ? `<span class="mono" style="color:${sld<0?'#c0392b':'#155724'}">${_fmt(sld)}</span>`
+                  : gasto>0 ? '<span style="color:#856404;font-size:11px">Sem previsão</span>' : '—'
+              }</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>` : '';
+
+    // ── Lista de despesas ──
+    const despesasHtml = despesas.length ? `
+      <h2>Despesas desta Parcela (${despesas.length})</h2>
+      <table>
+        <thead><tr>
+          <th>Tipo</th><th>Credor</th><th>NF</th><th>Data NF</th><th class="right">Valor</th>
+        </tr></thead>
+        <tbody>
+          ${despesas.map(d => `<tr>
+            <td><span style="font-size:11px;font-weight:600;color:${tipoColor[d.tipo]||'#333'}">${_tl(d.tipo)}</span></td>
+            <td class="bold">${d.credor||'—'}</td>
+            <td class="muted mono" style="font-size:11px">${d.nfNum||'—'}</td>
+            <td class="muted" style="font-size:11px">${_dt(d.nfData)}</td>
+            <td class="right mono" style="color:#155724">${_fmt(_pm(d.valor))}</td>
+          </tr>`).join('')}
+          <tr class="total-row">
+            <td colspan="4" class="right">Total</td>
+            <td class="right mono">${_fmt(totalGasto)}</td>
+          </tr>
+        </tbody>
+      </table>` :
+      `<p class="muted" style="font-size:12px;margin-top:16px">Nenhuma despesa lançada para esta parcela${filtroTipo?' com o tipo selecionado':''}.</p>`;
+
+    // ── Título e subtítulo ──
+    const tituloDoc = `Acompanhamento de Parcela`;
+    const subtituloDoc = [tcLabel, parLabel, filtroTipo?_tl(filtroTipo):''].filter(Boolean).join(' · ');
 
     const corpo = `
-      ${avisoNaoCreditadas}
-      <div class="info-grid">
-        <div class="info-box"><div class="lbl">TCs ${filtroTcId?'Selecionado':'Ativos'}</div><div class="val">${filtroTcId?tcsPrincipais.length:tcsAtivos.length}</div><div class="sub">${filtroTcId?'TC filtrado':'de '+tcsAll.filter(t=>!t.tcPaiId).length+' total'}</div></div>
-        <div class="info-box"><div class="lbl">Total Despesas${filtroParcela?' (Parcela)':''}</div><div class="val mono">${_fmt(totalDesp)}</div><div class="sub">${despesas.length} lançamento(s)</div></div>
-        <div class="info-box"><div class="lbl">${filtroParcela?'Total Previsto (Parcela)':'Total Contratado'}</div><div class="val mono">${_fmt(totalContratado)}</div><div class="sub">${filtroParcela?(parNomes[filtroParcela]||filtroParcela)+' Parcela':'Valor + aditivos'}</div></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+        <span style="font-size:14px;font-weight:700;color:#1a1a2e">${tcLabel}</span>
+        <span style="font-size:13px;color:#555">· ${parLabel}</span>
+        ${filtroTipo ? `<span style="background:${sitBg['analise']||'#d1ecf1'};color:${tipoColor[filtroTipo]||'#333'};padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600">${_tl(filtroTipo)}</span>` : ''}
+        ${sitHtml}
       </div>
+      ${cardsHtml}
+      ${barraHtml}
+      ${rubricasHtml}
+      ${despesasHtml}`;
 
-      <h2>Resumo por Termo de Compromisso${filtroParcela?' — '+(parNomes[filtroParcela]||filtroParcela)+' Parcela':''}${filtroTipo?' — '+_tl(filtroTipo):''}</h2>
-      <table>
-        <thead><tr><th>TC</th><th>Escola</th><th>Status / Situação</th><th class="right">${thValor}</th><th class="right">Gasto</th><th class="right">Saldo</th><th class="right">% Exec.</th></tr></thead>
-        <tbody>${tcLinhas}</tbody>
-      </table>
-
-      <h2>Despesas por Tipo${filtroParcela?' — '+(parNomes[filtroParcela]||filtroParcela)+' Parcela':''}${filtroTipo?' — '+_tl(filtroTipo):''}</h2>
-      <table>
-        <thead><tr><th>Tipo</th><th class="right">Valor</th><th class="right">% do Total</th></tr></thead>
-        <tbody>${tiposLinhas}
-          <tr class="total-row"><td><strong>TOTAL</strong></td><td class="right mono">${_fmt(totalDesp)}</td><td></td></tr>
-        </tbody>
-      </table>`;
-
-    return wrapDoc('Dashboard — Visão Geral', subtitulo, corpo);
+    return wrapDoc(tituloDoc, subtituloDoc, corpo);
   }
 
   // ════════════════════════════════════════════════════════════════
