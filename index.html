@@ -4179,11 +4179,19 @@ function renderChecklist() {
     // NF: sempre presente — ok se há NF número registrado
     const nfOk        = f.nfs.some(n => n.num && n.num.trim() !== '');
     const stNf        = nfOk ? 'ok' : 'pend';
-    const stOrc       = itemStatus(f.orcamentos);
-    const stCert      = itemStatus(f.certidoes);
-    const stComp      = itemStatus(f.comprovantePgto);
-    const stContrato  = itemStatus(f.contratoNf);
-    const stJust      = itemStatus(f.justificativa);
+
+    // Aplica estado manual (_docsObrigState) sobre o campo da despesa
+    const resolveManual = (calcSt, chaveManual) => {
+      const manual = ((_docsObrigState[chaveManual]||{}).estado || '');
+      if (manual === 'ok') return 'ok';
+      if (manual === 'pendente') return 'pend';
+      return calcSt;
+    };
+    const stOrc       = resolveManual(itemStatus(f.orcamentos),      _doiKey('forn_orc',  safeKey));
+    const stCert      = resolveManual(itemStatus(f.certidoes),       _doiKey('forn_cert', safeKey));
+    const stComp      = resolveManual(itemStatus(f.comprovantePgto), _doiKey('forn_comp', safeKey));
+    const stContrato  = resolveManual(itemStatus(f.contratoNf),      _doiKey('forn_cont', safeKey));
+    const stJust      = resolveManual(itemStatus(f.justificativa),   _doiKey('forn_just', safeKey));
 
     const allItems    = [stNf, stOrc, stCert, stComp, stContrato, stJust];
     const totalItems  = allItems.filter(s => s !== 'sem').length;
@@ -4425,33 +4433,72 @@ function setDoiEstado(chave, novoEstado) {
   if (!_docsObrigState[chave]) _docsObrigState[chave] = { estado: '', obs: '' };
   _docsObrigState[chave].estado = estado;
 
-  // Atualiza UI sem re-render completo
-  const item    = document.getElementById('doi-item-' + chave);
+  // Atualiza botões (compartilhado entre Anexos e docRow de fornecedores)
   const btnOk   = document.getElementById('doi-btn-ok-' + chave);
   const btnPend = document.getElementById('doi-btn-pend-' + chave);
-  const noteEl  = document.getElementById('doi-note-' + chave);
-  const numbox  = document.getElementById('doi-numbox-' + chave);
+  if (btnOk)   btnOk.classList.toggle('active',  estado === 'ok');
+  if (btnPend) btnPend.classList.toggle('active', estado === 'pendente');
 
-  // Row background
+  // Atualiza UI dos Anexos (elementos específicos que só existem nos Anexos)
+  const item   = document.getElementById('doi-item-' + chave);
+  const noteEl = document.getElementById('doi-note-' + chave);
+  const numbox = document.getElementById('doi-numbox-' + chave);
   if (item) {
-    item.style.background = estado==='ok' ? 'rgba(56,217,169,0.04)' : estado==='pendente' ? 'rgba(240,80,96,0.05)' : '';
+    item.style.background   = estado==='ok' ? 'rgba(56,217,169,0.04)' : estado==='pendente' ? 'rgba(240,80,96,0.05)' : '';
     item.style.borderBottom = estado==='pendente' ? '1px solid rgba(240,80,96,0.15)' : '1px solid var(--border)';
   }
-  if (btnOk)   btnOk.classList.toggle('active',   estado === 'ok');
-  if (btnPend) btnPend.classList.toggle('active',  estado === 'pendente');
-
-  // Number box
   if (numbox) {
-    // Extract original number from key suffix or from numbox current text
     const origNum = numbox.dataset.num || numbox.textContent;
     if (!numbox.dataset.num) numbox.dataset.num = origNum;
-    numbox.textContent = estado==='ok' ? '✓' : estado==='pendente' ? '⚠' : origNum;
-    numbox.style.background = estado==='ok' ? 'rgba(56,217,169,0.15)' : estado==='pendente' ? 'rgba(240,80,96,0.12)' : 'var(--surface3)';
-    numbox.style.color = estado==='ok' ? 'var(--accent2)' : estado==='pendente' ? 'var(--accent-red)' : 'var(--text-muted)';
+    numbox.textContent     = estado==='ok' ? '✓' : estado==='pendente' ? '⚠' : origNum;
+    numbox.style.background= estado==='ok' ? 'rgba(56,217,169,0.15)' : estado==='pendente' ? 'rgba(240,80,96,0.12)' : 'var(--surface3)';
+    numbox.style.color     = estado==='ok' ? 'var(--accent2)' : estado==='pendente' ? 'var(--accent-red)' : 'var(--text-muted)';
   }
+  if (noteEl) noteEl.style.display = estado === 'pendente' ? 'block' : 'none';
 
-  if (noteEl) {
-    noteEl.style.display = estado === 'pendente' ? 'block' : 'none';
+  // Atualiza visual do docRow dos fornecedores (ícone + fundo da linha + header do accordion)
+  if (btnOk) {
+    const rowEl = btnOk.closest('div[style*="border-radius:7px"]');
+    if (rowEl) {
+      const isOk   = estado === 'ok';
+      const isPend = estado === 'pendente';
+      rowEl.style.background = isOk ? 'rgba(56,217,169,0.06)' : isPend ? 'rgba(240,80,96,0.06)' : '';
+      rowEl.style.border     = '1px solid ' + (isOk ? 'rgba(56,217,169,0.15)' : isPend ? 'rgba(240,80,96,0.2)' : 'var(--border)');
+      const iconEl = rowEl.querySelector('span[style*="font-size:14px"]');
+      if (iconEl) iconEl.textContent = isOk ? '✅' : '❌';
+
+      // Recalcula badge e borda do card-header do fornecedor (accordion externo)
+      // Sobe: rowEl → div.padding → div#accId → div.header+body container
+      const accBody = rowEl.closest('div[id^="acc_"]');
+      if (accBody) {
+        const accCard = accBody.parentElement; // div com border-radius:10px
+        if (accCard) {
+          // Conta pendências restantes dentro deste accordion
+          const allRows = accCard.querySelectorAll('div[style*="border-radius:7px"]');
+          let pendCount = 0;
+          allRows.forEach(r => {
+            const ic = r.querySelector('span[style*="font-size:14px"]');
+            if (ic && ic.textContent.trim() === '❌') pendCount++;
+          });
+          const badgeEl = accCard.querySelector('span[style*="border-radius:10px"][style*="font-weight:700"]');
+          if (badgeEl) {
+            if (pendCount > 0) {
+              badgeEl.style.background = 'rgba(240,80,96,0.18)';
+              badgeEl.style.color      = '#f05060';
+              badgeEl.style.border     = '1px solid rgba(240,80,96,0.35)';
+              badgeEl.textContent      = pendCount + ' pendência' + (pendCount > 1 ? 's' : '');
+            } else {
+              badgeEl.style.background = 'rgba(56,217,169,0.15)';
+              badgeEl.style.color      = 'var(--accent2)';
+              badgeEl.style.border     = '1px solid rgba(56,217,169,0.3)';
+              badgeEl.textContent      = '✓ OK';
+            }
+          }
+          // Atualiza borda do card inteiro
+          accCard.style.border = '1px solid ' + (pendCount > 0 ? 'rgba(240,80,96,0.25)' : 'rgba(56,217,169,0.15)');
+        }
+      }
+    }
   }
 
   // Persistir no Supabase — estado no campo marcado, obs em chave separada
@@ -4612,12 +4659,24 @@ function _calcProgressData() {
   const itemStatus = v => v === 'sim' || v === 'na' ? 'ok' : v === 'nao' ? 'pend' : 'sem';
 
   Object.values(fornecedores).forEach(f => {
+    const safeKey = (f.cnpj || f.credor).replace(/[^a-zA-Z0-9]/g, '_');
+    // Lê estado manual dos botões ✔/⚠ (sobrepõe o campo da despesa)
+    const manualOrc  = ((_docsObrigState[_doiKey('forn_orc',  safeKey)]||{}).estado || '');
+    const manualCert = ((_docsObrigState[_doiKey('forn_cert', safeKey)]||{}).estado || '');
+    const manualComp = ((_docsObrigState[_doiKey('forn_comp', safeKey)]||{}).estado || '');
+    const manualCont = ((_docsObrigState[_doiKey('forn_cont', safeKey)]||{}).estado || '');
+    const manualJust = ((_docsObrigState[_doiKey('forn_just', safeKey)]||{}).estado || '');
+    const resolveManual = (calcSt, manual) => {
+      if (manual === 'ok') return 'ok';
+      if (manual === 'pendente') return 'pend';
+      return calcSt;
+    };
     const stNf    = f.nfs.some(n => n.num && n.num.trim() !== '') ? 'ok' : 'pend';
-    const stOrc   = itemStatus(f.orcamentos);
-    const stCert  = itemStatus(f.certidoes);
-    const stComp  = itemStatus(f.comprovantePgto);
-    const stCont  = itemStatus(f.contratoNf);
-    const stJust  = itemStatus(f.justificativa);
+    const stOrc   = resolveManual(itemStatus(f.orcamentos),      manualOrc);
+    const stCert  = resolveManual(itemStatus(f.certidoes),       manualCert);
+    const stComp  = resolveManual(itemStatus(f.comprovantePgto), manualComp);
+    const stCont  = resolveManual(itemStatus(f.contratoNf),      manualCont);
+    const stJust  = resolveManual(itemStatus(f.justificativa),   manualJust);
     const items   = [stNf, stOrc, stCert, stComp, stCont, stJust];
     const nome    = f.credor || f.cnpj || '?';
     const docNomes = ['NF','Orçamentos','Certidões','Comprovante Pgto','Contrato/NF','Justificativa'];
@@ -4738,6 +4797,16 @@ function mostrarModalEnvioSEDUC() {
 
 function refreshChecklist() {
   renderChecklist();
+  updatePendenciasSummary();
+  refreshPendenciaBadge();
+  // Feedback visual no botão
+  const btn = document.querySelector('[onclick="refreshChecklist()"]');
+  if (btn) {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✓ Atualizado!';
+    btn.disabled = true;
+    setTimeout(() => { btn.innerHTML = orig; btn.disabled = false; }, 1200);
+  }
 }
 
 function refreshPendenciaBadge() {
