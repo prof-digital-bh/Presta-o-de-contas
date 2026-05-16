@@ -2593,6 +2593,90 @@
         <label>Descrição / Objeto</label>
         <input type="text" id="edit-desp-descricao" placeholder="Ex.: Material de papelaria...">
       </div>
+
+      <!-- ORÇAMENTOS -->
+      <div class="field">
+        <label>3 Orçamentos obtidos?</label>
+        <select id="edit-d-orcamentos" onchange="toggleEditPendenciaField('orcamentos')">
+          <option value="sim">Sim</option>
+          <option value="nao">Não</option>
+          <option value="na">N/A (entrega imediata)</option>
+        </select>
+      </div>
+      <div class="field" id="edit-field-orcamentos-pend" style="display:none">
+        <label style="color:var(--accent3)">⚠ Justificativa / Pendência (Orçamentos)</label>
+        <input type="text" id="edit-d-orcamentos-pend" placeholder="Descreva o motivo ou pendência...">
+      </div>
+
+      <!-- CERTIDÕES -->
+      <div class="field">
+        <label>Certidões do fornecedor OK?</label>
+        <select id="edit-d-certidoes" onchange="toggleEditPendenciaField('certidoes')">
+          <option value="sim">Sim — regulares</option>
+          <option value="nao">Não (pendente)</option>
+          <option value="na">N/A (entrega imediata ≤ 30 dias)</option>
+        </select>
+      </div>
+      <div class="field" id="edit-field-certidoes-pend" style="display:none">
+        <label style="color:var(--accent-red)">⚠ Pendência de Certidões</label>
+        <input type="text" id="edit-d-certidoes-pend" placeholder="Ex.: CND Federal vencida, CNDT pendente...">
+      </div>
+
+      <!-- CARTÃO CNPJ -->
+      <div class="field">
+        <label>Cartão CNPJ em dia?</label>
+        <select id="edit-d-cartao-cnpj" onchange="toggleEditPendenciaField('cartao-cnpj')">
+          <option value="sim">Sim</option>
+          <option value="nao">Não (pendente)</option>
+          <option value="na">N/A</option>
+        </select>
+      </div>
+      <div class="field" id="edit-field-cartao-cnpj-pend" style="display:none">
+        <label style="color:var(--accent-red)">⚠ Pendência do Cartão CNPJ</label>
+        <input type="text" id="edit-d-cartao-cnpj-pend" placeholder="Descreva a pendência...">
+      </div>
+
+      <!-- COMPROVANTE DE PAGAMENTO -->
+      <div class="field">
+        <label>Comprovante de Pagamento anexado?</label>
+        <select id="edit-d-comprovante-pgto" onchange="toggleEditPendenciaField('comprovante-pgto')">
+          <option value="sim">Sim</option>
+          <option value="nao">Não</option>
+          <option value="na">N/A — Não se Aplica</option>
+        </select>
+      </div>
+      <div class="field" id="edit-field-comprovante-pgto-pend" style="display:none">
+        <label style="color:var(--accent-red)">⚠ Pendência — Comprovante de Pagamento</label>
+        <input type="text" id="edit-d-comprovante-pgto-pend" placeholder="Descreva o motivo ou pendência...">
+      </div>
+
+      <!-- CONTRATO / NF CONTRATO -->
+      <div class="field">
+        <label>Contrato / NF de Contrato anexado?</label>
+        <select id="edit-d-contrato-nf" onchange="toggleEditPendenciaField('contrato-nf')">
+          <option value="sim">Sim</option>
+          <option value="nao">Não</option>
+          <option value="na">N/A — Não se Aplica</option>
+        </select>
+      </div>
+      <div class="field" id="edit-field-contrato-nf-pend" style="display:none">
+        <label style="color:var(--accent-red)">⚠ Pendência — Contrato / NF de Contrato</label>
+        <input type="text" id="edit-d-contrato-nf-pend" placeholder="Descreva o motivo ou pendência...">
+      </div>
+
+      <!-- JUSTIFICATIVA -->
+      <div class="field">
+        <label>Justificativa anexada?</label>
+        <select id="edit-d-justificativa" onchange="toggleEditPendenciaField('justificativa')">
+          <option value="sim">Sim</option>
+          <option value="nao">Não</option>
+          <option value="na">N/A — Não se Aplica</option>
+        </select>
+      </div>
+      <div class="field" id="edit-field-justificativa-pend" style="display:none">
+        <label style="color:var(--accent-red)">⚠ Pendência — Justificativa</label>
+        <input type="text" id="edit-d-justificativa-pend" placeholder="Descreva o motivo ou pendência...">
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modal-edit-despesa')">Cancelar</button>
@@ -3138,6 +3222,23 @@ function togglePendenciaField(campo) {
   };
   const m = map[campo]; if (!m) return;
   const val = document.getElementById(m.sel).value;
+  const fieldEl = document.getElementById(m.pend);
+  if (fieldEl) fieldEl.style.display = (val === m.trigger) ? '' : 'none';
+}
+
+function toggleEditPendenciaField(campo) {
+  const map = {
+    'orcamentos':       { sel: 'edit-d-orcamentos',       pend: 'edit-field-orcamentos-pend',       trigger: 'nao' },
+    'certidoes':        { sel: 'edit-d-certidoes',        pend: 'edit-field-certidoes-pend',        trigger: 'nao' },
+    'cartao-cnpj':      { sel: 'edit-d-cartao-cnpj',      pend: 'edit-field-cartao-cnpj-pend',      trigger: 'nao' },
+    'comprovante-pgto': { sel: 'edit-d-comprovante-pgto', pend: 'edit-field-comprovante-pgto-pend', trigger: 'nao' },
+    'contrato-nf':      { sel: 'edit-d-contrato-nf',      pend: 'edit-field-contrato-nf-pend',      trigger: 'nao' },
+    'justificativa':    { sel: 'edit-d-justificativa',    pend: 'edit-field-justificativa-pend',    trigger: 'nao' }
+  };
+  const m = map[campo]; if (!m) return;
+  const selEl = document.getElementById(m.sel);
+  if (!selEl) return;
+  const val = selEl.value;
   const fieldEl = document.getElementById(m.pend);
   if (fieldEl) fieldEl.style.display = (val === m.trigger) ? '' : 'none';
 }
@@ -3855,6 +3956,23 @@ function editarDespesa(id) {
   const hasU = [...ps.options].some(o => o.value === 'U');
   if (!hasU) { const o = document.createElement('option'); o.value='U'; o.textContent='Parcela Única'; ps.appendChild(o); }
   ps.value = d.parcela || '01';
+  // Preenche campos de documentos
+  const setEditSel = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || 'sim'; };
+  const setEditInp = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+  setEditSel('edit-d-orcamentos',      d.orcamentos      || 'sim');
+  setEditInp('edit-d-orcamentos-pend', d.orcamentosPend);
+  setEditSel('edit-d-certidoes',       d.certidoes       || 'sim');
+  setEditInp('edit-d-certidoes-pend',  d.certidoesPend);
+  setEditSel('edit-d-cartao-cnpj',     d.cartaoCnpj      || 'sim');
+  setEditInp('edit-d-cartao-cnpj-pend',d.cartaoCnpjPend);
+  setEditSel('edit-d-comprovante-pgto',     d.comprovantePgto      || 'sim');
+  setEditInp('edit-d-comprovante-pgto-pend',d.comprovantePgtoPend);
+  setEditSel('edit-d-contrato-nf',     d.contratoNf      || 'sim');
+  setEditInp('edit-d-contrato-nf-pend',d.contratoNfPend);
+  setEditSel('edit-d-justificativa',   d.justificativa   || 'sim');
+  setEditInp('edit-d-justificativa-pend',d.justificativaPend);
+  // Mostra/esconde campos de pendência conforme valor atual
+  ['orcamentos','certidoes','cartao-cnpj','comprovante-pgto','contrato-nf','justificativa'].forEach(k => toggleEditPendenciaField(k));
   openModal('modal-edit-despesa');
   // init money mask
   const vi = document.getElementById('edit-desp-valor');
@@ -3875,6 +3993,21 @@ async function salvarEdicaoDespesa() {
   d.nfData = document.getElementById('edit-desp-nf-data').value;
   d.valor = document.getElementById('edit-desp-valor').value.trim();
   d.descricao = document.getElementById('edit-desp-descricao').value.trim();
+  // Campos de documentos
+  const getEditSel = (id) => { const el = document.getElementById(id); return el ? el.value : ''; };
+  const getEditInp = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  d.orcamentos          = getEditSel('edit-d-orcamentos');
+  d.orcamentosPend      = getEditInp('edit-d-orcamentos-pend');
+  d.certidoes           = getEditSel('edit-d-certidoes');
+  d.certidoesPend       = getEditInp('edit-d-certidoes-pend');
+  d.cartaoCnpj          = getEditSel('edit-d-cartao-cnpj');
+  d.cartaoCnpjPend      = getEditInp('edit-d-cartao-cnpj-pend');
+  d.comprovantePgto     = getEditSel('edit-d-comprovante-pgto');
+  d.comprovantePgtoPend = getEditInp('edit-d-comprovante-pgto-pend');
+  d.contratoNf          = getEditSel('edit-d-contrato-nf');
+  d.contratoNfPend      = getEditInp('edit-d-contrato-nf-pend');
+  d.justificativa       = getEditSel('edit-d-justificativa');
+  d.justificativaPend   = getEditInp('edit-d-justificativa-pend');
   if (!d.credor || !d.valor) { alert('Preencha ao menos o credor e o valor.'); return; }
   setSyncStatus('syncing');
   const { error } = await supa.from('despesas').update(despesaToRow(d)).eq('id', id);
@@ -4084,33 +4217,45 @@ function renderChecklist() {
     html += '<div style="padding:10px 14px;display:flex;flex-direction:column;gap:6px">';
 
     // Helper inline para renderizar cada linha do checklist dentro do accordion
-    const docRow = (status, label, pendText) => {
+    const docRow = (status, label, pendText, doiChave) => {
       const isOk   = status === 'ok';
       const isPend = status === 'pend';
       const isSem  = status === 'sem';
       if (isSem) return ''; // não exibe campo sem informação
-      const icon   = isOk ? '✅' : '❌';
-      const color  = isOk ? 'var(--accent2)' : 'var(--accent-red)';
-      const bg     = isOk ? 'rgba(56,217,169,0.06)' : 'rgba(240,80,96,0.06)';
-      const border = isOk ? 'rgba(56,217,169,0.15)' : 'rgba(240,80,96,0.2)';
-      let row = '<div style="background:' + bg + ';border:1px solid ' + border + ';border-radius:7px;padding:8px 12px">';
+      // Estado manual sobrepõe o estado calculado do lançamento
+      const manualSt     = doiChave ? ((_docsObrigState[doiChave]||{}).estado || '') : '';
+      const resolvedOk   = manualSt === 'ok'       || (isOk   && manualSt !== 'pendente');
+      const resolvedPend = manualSt === 'pendente'  || (isPend && manualSt !== 'ok');
+      const icon   = resolvedOk ? '✅' : '❌';
+      const bg     = resolvedOk ? 'rgba(56,217,169,0.06)' : 'rgba(240,80,96,0.06)';
+      const border = resolvedOk ? 'rgba(56,217,169,0.15)' : 'rgba(240,80,96,0.2)';
+      let row = '<div style="background:' + bg + ';border:1px solid ' + border + ';border-radius:7px;padding:8px 12px;transition:background 0.15s">';
       row += '<div style="display:flex;align-items:center;gap:8px">';
       row += '<span style="font-size:14px;flex-shrink:0">' + icon + '</span>';
       row += '<div style="flex:1">';
-      row += '<div style="font-size:12.5px;font-weight:500;color:' + (isOk ? 'var(--text)' : 'var(--text)') + '">' + label + '</div>';
-      if (isPend && pendText) {
+      row += '<div style="font-size:12.5px;font-weight:500;color:var(--text)">' + label + '</div>';
+      if (resolvedPend && pendText) {
         row += '<div style="font-size:11px;color:var(--accent3);margin-top:3px">⚠ ' + pendText + '</div>';
       }
-      row += '</div></div></div>';
+      row += '</div>';
+      if (doiChave) {
+        const btnOkActive   = manualSt === 'ok';
+        const btnPendActive = manualSt === 'pendente';
+        row += '<div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0">';
+        row += '<button id="doi-btn-ok-' + doiChave + '" class="doi-btn doi-btn-check' + (btnOkActive?' active':'') + '" onclick="setDoiEstado(\'' + doiChave + '\',\'ok\')" title="Marcar OK">✔</button>';
+        row += '<button id="doi-btn-pend-' + doiChave + '" class="doi-btn doi-btn-pend' + (btnPendActive?' active':'') + '" onclick="setDoiEstado(\'' + doiChave + '\',\'pendente\')" title="Pendente">⚠</button>';
+        row += '</div>';
+      }
+      row += '</div></div>';
       return row;
     };
 
-    html += docRow(stNf,       'Nota Fiscal' + (nfNums !== '?' ? ' — ' + nfNums : ''), '');
-    html += docRow(stOrc,      'Orçamentos (3 cotações)',  f.orcamentosPend || '');
-    html += docRow(stCert,     'CNDs — Certidões de Regularidade Fiscal', f.certidoesPend || '');
-    html += docRow(stComp,     'Comprovante de Pagamento', f.comprovantePgtoPend || '');
-    html += docRow(stContrato, 'Contrato / NF de Contrato', f.contratoNfPend || '');
-    html += docRow(stJust,     'Justificativa', f.justificativaPend || '');
+    html += docRow(stNf,       'Nota Fiscal' + (nfNums !== '?' ? ' — ' + nfNums : ''), '', '');
+    html += docRow(stOrc,      'Orçamentos (3 cotações)',  f.orcamentosPend || '', _doiKey('forn_orc',  safeKey));
+    html += docRow(stCert,     'CNDs — Certidões de Regularidade Fiscal', f.certidoesPend || '', _doiKey('forn_cert', safeKey));
+    html += docRow(stComp,     'Comprovante de Pagamento', f.comprovantePgtoPend || '', _doiKey('forn_comp', safeKey));
+    html += docRow(stContrato, 'Contrato / NF de Contrato', f.contratoNfPend || '', _doiKey('forn_cont', safeKey));
+    html += docRow(stJust,     'Justificativa', f.justificativaPend || '', _doiKey('forn_just', safeKey));
 
     html += '</div></div></div>';
   });
