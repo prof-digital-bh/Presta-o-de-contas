@@ -1212,7 +1212,7 @@
           <div class="page-subtitle">Visão geral das prestações de contas</div>
         </div>
         <div class="gap-8">
-          <button class="btn btn-secondary" onclick="abrirFiltroImpressao('dashboard')">🖨 Imprimir</button>
+          <button class="btn btn-secondary" onclick="imprimirAba('dashboard',{tcId:document.getElementById('dash-filtro-tc')?.value||'',parcela:document.getElementById('dash-filtro-parcela')?.value||'',tipo:document.getElementById('dash-filtro-tipo')?.value||''})">🖨 Imprimir</button>
           <button class="btn btn-primary" onclick="showSection('despesas'); openModal('modal-despesa')">+ Lançar Despesa</button>
         </div>
       </div>
