@@ -7785,8 +7785,8 @@ function abrirFiltroImpressao(aba) {
   const titulos = { dashboard: 'Dashboard', tc: 'Termos de Compromisso', despesas: 'Despesas' };
   document.getElementById('fi-titulo').textContent = `Imprimir — ${titulos[aba] || aba}`;
 
-  // Mostra/oculta campo de tipo (só faz sentido para despesas)
-  document.getElementById('fi-row-tipo').style.display = aba === 'despesas' ? '' : 'none';
+  // Mostra/oculta campo de tipo (faz sentido para despesas e dashboard)
+  document.getElementById('fi-row-tipo').style.display = (aba === 'despesas' || aba === 'dashboard') ? '' : 'none';
 
   document.getElementById('modal-filtro-impressao').classList.add('open');
 }
