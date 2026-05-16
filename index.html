@@ -1102,7 +1102,7 @@
     body { background: #fff; color: #000; }
     .card, .table-wrap, .stat-card { border-color: #ccc; background: #fff; }
     .stats-grid { display: grid; }
-    body::after {
+    body:not(.printing-anexos)::after {
       content: 'Criado e desenvolvido por Prof. Everton Correa Alves';
       display: block;
       text-align: center;
@@ -1211,7 +1211,10 @@
           <div class="page-title">Dashboard</div>
           <div class="page-subtitle">Visão geral das prestações de contas</div>
         </div>
-        <button class="btn btn-primary" onclick="showSection('despesas'); openModal('modal-despesa')">+ Lançar Despesa</button>
+        <div class="gap-8">
+          <button class="btn btn-secondary" onclick="imprimirAba('dashboard')">🖨 Imprimir</button>
+          <button class="btn btn-primary" onclick="showSection('despesas'); openModal('modal-despesa')">+ Lançar Despesa</button>
+        </div>
       </div>
 
       <!-- dash-pendencias mantido oculto para compatibilidade JS -->
@@ -1313,7 +1316,10 @@
           <div class="page-title">Termos de Compromisso</div>
           <div class="page-subtitle">Gerenciamento dos TCs e parcelas</div>
         </div>
-        <button class="btn btn-primary" onclick="openModal('modal-tc')">+ Novo TC</button>
+        <div class="gap-8">
+          <button class="btn btn-secondary" onclick="imprimirAba('tc')">🖨 Imprimir</button>
+          <button class="btn btn-primary" onclick="openModal('modal-tc')">+ Novo TC</button>
+        </div>
       </div>
 
       <div id="tc-list">
@@ -1334,6 +1340,7 @@
           <div class="page-subtitle">Lançamentos por parcela e tipo</div>
         </div>
         <div class="gap-8">
+          <button class="btn btn-secondary" onclick="imprimirAba('despesas')">🖨 Imprimir</button>
           <button class="btn btn-secondary" onclick="exportarTabela()">⬇ Exportar CSV</button>
           <button class="btn btn-primary" onclick="openModal('modal-despesa')">+ Lançar Despesa</button>
         </div>
@@ -1389,7 +1396,10 @@
           <div class="page-title">Fornecedores / Tomadores</div>
           <div class="page-subtitle">Cadastro de empresas e responsáveis</div>
         </div>
-        <button class="btn btn-primary" onclick="openModal('modal-fornecedor')">+ Novo Fornecedor</button>
+        <div class="gap-8">
+          <button class="btn btn-secondary" onclick="imprimirAba('fornecedores')">🖨 Imprimir</button>
+          <button class="btn btn-primary" onclick="openModal('modal-fornecedor')">+ Novo Fornecedor</button>
+        </div>
       </div>
       <div class="card" style="padding:0;overflow:hidden">
         <div class="table-wrap" style="border:none;border-radius:0">
@@ -1419,6 +1429,7 @@
           <div class="page-subtitle">Documentos necessários para a prestação de contas</div>
         </div>
         <div class="gap-8">
+          <button class="btn btn-secondary" onclick="imprimirAba('checklist')">🖨 Imprimir Aba</button>
           <button class="btn btn-secondary" onclick="imprimirPendencias()">🖨 Imprimir Pendências</button>
           <button class="btn btn-success" onclick="refreshChecklist()">↺ Atualizar</button>
         </div>
@@ -1978,7 +1989,10 @@
           <div class="page-title">Alertas e Prazos</div>
           <div class="page-subtitle">Regras do Decreto 1134/2024 e Manual SEDUC/FUNEC relevantes ao seu processo</div>
         </div>
-        <button class="btn btn-secondary" onclick="renderAlertas()">↺ Atualizar</button>
+        <div class="gap-8">
+          <button class="btn btn-secondary" onclick="imprimirAba('alertas')">🖨 Imprimir</button>
+          <button class="btn btn-secondary" onclick="renderAlertas()">↺ Atualizar</button>
+        </div>
       </div>
 
       <!-- Alertas automáticos com base nos dados -->
@@ -2216,7 +2230,10 @@
           <div class="page-title">Links Rápidos</div>
           <div class="page-subtitle">Acesso rápido a prestações de contas e documentos importantes</div>
         </div>
-        <button class="btn btn-primary" onclick="openModal('modal-add-link')">+ Adicionar Link</button>
+        <div class="gap-8">
+          <button class="btn btn-secondary" onclick="imprimirAba('links')">🖨 Imprimir</button>
+          <button class="btn btn-primary" onclick="openModal('modal-add-link')">+ Adicionar Link</button>
+        </div>
       </div>
 
       <div class="alert alert-info mb-20"><span>ℹ</span><span>Adicione links de acesso às prestações de contas, portais da SEDUC/FUNEC e outros documentos importantes. Clique em um link para abri-lo em painel de leitura.</span></div>
@@ -3598,6 +3615,12 @@ function showSection(id) {
       n.classList.add('active');
     }
   });
+  // Marca o body quando a aba GERAR ANEXOS está ativa (para suprimir crédito na impressão do navegador)
+  if (id === 'anexos') {
+    document.body.classList.add('printing-anexos');
+  } else {
+    document.body.classList.remove('printing-anexos');
+  }
   if (id === 'checklist') { populateChecklistTCFilter(); refreshChecklist(); }
   if (id === 'relatorio') renderAnexo3();
   if (id === 'dashboard') renderDashboard();
@@ -4963,6 +4986,88 @@ function imprimirPendencias() {
   </body></html>`;
 
   const w = window.open('', '_blank', 'width=820,height=700');
+  if (!w) { alert('Permita pop-ups para imprimir.'); return; }
+  w.document.write(html);
+  w.document.close();
+}
+
+
+// ==================== IMPRIMIR ABA ====================
+function imprimirAba(nomeAba) {
+  const escola = document.querySelector('.sidebar-title')?.textContent?.trim() || 'Caixa Escolar';
+  const dataHoje = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+
+  const secaoId = 'section-' + nomeAba;
+  const secao = document.getElementById(secaoId);
+  if (!secao) { alert('Seção não encontrada.'); return; }
+
+  const clone = secao.cloneNode(true);
+
+  clone.querySelectorAll('button').forEach(b => {
+    const txt = b.textContent || '';
+    if (txt.includes('+') || txt.includes('Imprimir') || txt.includes('Exportar') ||
+        txt.includes('Atualizar') || txt.includes('↺') || txt.includes('✕') ||
+        txt.includes('Novo') || txt.includes('Adicionar') || txt.includes('Lançar') ||
+        txt.includes('Limpar') || txt.includes('Entendido') || txt.includes('CSV')) {
+      b.style.display = 'none';
+    }
+  });
+
+  const pageTitleEl = clone.querySelector('.page-title');
+  const pageTitle = pageTitleEl ? pageTitleEl.textContent.trim() : nomeAba;
+
+  const creditoHtml = `
+    <div style="margin-top:32px;padding-top:14px;border-top:1px solid #dee2e6;font-size:11px;color:#888;display:flex;justify-content:space-between;">
+      <span>Sistema de Prestação de Contas — gerado em ${dataHoje} · Decreto 1134/2024 · Manual SEDUC/FUNEC</span>
+      <span style="font-style:italic">Criado e desenvolvido por Prof. Everton Correa Alves</span>
+    </div>`;
+
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+  <title>${pageTitle} — ${escola}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    @media print {
+      @page { size: A4; margin: 16mm 14mm; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none !important; }
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: 'Outfit', 'Segoe UI', Arial, sans-serif; color: #1a1a2e; margin: 0; padding: 24px 28px; font-size: 13px; background: #fff; }
+    .print-header { border-bottom: 3px solid #1a1a2e; padding-bottom: 14px; margin-bottom: 20px; display:flex; justify-content:space-between; align-items:flex-start; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #f5f5f5; text-align: left; padding: 7px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #555; border-bottom: 2px solid #dee2e6; }
+    td { padding: 7px 10px; border-bottom: 1px solid #eee; font-size: 12.5px; vertical-align: middle; }
+    .card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; }
+    .page-header { margin-bottom: 16px; }
+    .page-title { font-size: 20px; font-weight: 800; }
+    .page-subtitle { font-size: 12px; color: #555; }
+    button { display: none !important; }
+    .modal-overlay { display: none !important; }
+    .no-print button { display: inline-block !important; }
+  </style></head><body>
+
+  <div class="print-header">
+    <div>
+      <div style="font-size:18px;font-weight:800;color:#1a1a2e;">📋 ${pageTitle}</div>
+      <div style="font-size:12px;color:#555;margin-top:3px;">${escola}</div>
+    </div>
+    <div style="text-align:right;font-size:11.5px;color:#555;">
+      <div style="font-weight:600">Data de emissão</div>
+      <div>${dataHoje}</div>
+    </div>
+  </div>
+
+  ${clone.innerHTML}
+
+  ${creditoHtml}
+
+  <div class="no-print" style="margin-top:20px;text-align:center">
+    <button onclick="window.print()" style="padding:10px 28px;background:#2c3e6b;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600">🖨 Imprimir / Salvar PDF</button>
+    <button onclick="window.close()" style="padding:10px 20px;background:#eee;color:#333;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-left:10px">Fechar</button>
+  </div>
+  </body></html>`;
+
+  const w = window.open('', '_blank', 'width=900,height=750');
   if (!w) { alert('Permita pop-ups para imprimir.'); return; }
   w.document.write(html);
   w.document.close();
@@ -8205,7 +8310,10 @@ PE html>
           <div class="page-title">Dashboard</div>
           <div class="page-subtitle">Visão geral das prestações de contas</div>
         </div>
-        <button class="btn btn-primary" onclick="showSection('despesas'); openModal('modal-despesa')">+ Lançar Despesa</button>
+        <div class="gap-8">
+          <button class="btn btn-secondary" onclick="imprimirAba('dashboard')">🖨 Imprimir</button>
+          <button class="btn btn-primary" onclick="showSection('despesas'); openModal('modal-despesa')">+ Lançar Despesa</button>
+        </div>
       </div>
 
       <!-- dash-pendencias mantido oculto para compatibilidade JS -->
@@ -8307,7 +8415,10 @@ PE html>
           <div class="page-title">Termos de Compromisso</div>
           <div class="page-subtitle">Gerenciamento dos TCs e parcelas</div>
         </div>
-        <button class="btn btn-primary" onclick="openModal('modal-tc')">+ Novo TC</button>
+        <div class="gap-8">
+          <button class="btn btn-secondary" onclick="imprimirAba('tc')">🖨 Imprimir</button>
+          <button class="btn btn-primary" onclick="openModal('modal-tc')">+ Novo TC</button>
+        </div>
       </div>
 
       <div id="tc-list">
@@ -8328,6 +8439,7 @@ PE html>
           <div class="page-subtitle">Lançamentos por parcela e tipo</div>
         </div>
         <div class="gap-8">
+          <button class="btn btn-secondary" onclick="imprimirAba('despesas')">🖨 Imprimir</button>
           <button class="btn btn-secondary" onclick="exportarTabela()">⬇ Exportar CSV</button>
           <button class="btn btn-primary" onclick="openModal('modal-despesa')">+ Lançar Despesa</button>
         </div>
@@ -8383,7 +8495,10 @@ PE html>
           <div class="page-title">Fornecedores / Tomadores</div>
           <div class="page-subtitle">Cadastro de empresas e responsáveis</div>
         </div>
-        <button class="btn btn-primary" onclick="openModal('modal-fornecedor')">+ Novo Fornecedor</button>
+        <div class="gap-8">
+          <button class="btn btn-secondary" onclick="imprimirAba('fornecedores')">🖨 Imprimir</button>
+          <button class="btn btn-primary" onclick="openModal('modal-fornecedor')">+ Novo Fornecedor</button>
+        </div>
       </div>
       <div class="card" style="padding:0;overflow:hidden">
         <div class="table-wrap" style="border:none;border-radius:0">
@@ -8413,6 +8528,7 @@ PE html>
           <div class="page-subtitle">Documentos necessários para a prestação de contas</div>
         </div>
         <div class="gap-8">
+          <button class="btn btn-secondary" onclick="imprimirAba('checklist')">🖨 Imprimir Aba</button>
           <button class="btn btn-secondary" onclick="imprimirPendencias()">🖨 Imprimir Pendências</button>
           <button class="btn btn-success" onclick="refreshChecklist()">↺ Atualizar</button>
         </div>
@@ -8972,7 +9088,10 @@ PE html>
           <div class="page-title">Alertas e Prazos</div>
           <div class="page-subtitle">Regras do Decreto 1134/2024 e Manual SEDUC/FUNEC relevantes ao seu processo</div>
         </div>
-        <button class="btn btn-secondary" onclick="renderAlertas()">↺ Atualizar</button>
+        <div class="gap-8">
+          <button class="btn btn-secondary" onclick="imprimirAba('alertas')">🖨 Imprimir</button>
+          <button class="btn btn-secondary" onclick="renderAlertas()">↺ Atualizar</button>
+        </div>
       </div>
 
       <!-- Alertas automáticos com base nos dados -->
@@ -9210,7 +9329,10 @@ PE html>
           <div class="page-title">Links Rápidos</div>
           <div class="page-subtitle">Acesso rápido a prestações de contas e documentos importantes</div>
         </div>
-        <button class="btn btn-primary" onclick="openModal('modal-add-link')">+ Adicionar Link</button>
+        <div class="gap-8">
+          <button class="btn btn-secondary" onclick="imprimirAba('links')">🖨 Imprimir</button>
+          <button class="btn btn-primary" onclick="openModal('modal-add-link')">+ Adicionar Link</button>
+        </div>
       </div>
 
       <div class="alert alert-info mb-20"><span>ℹ</span><span>Adicione links de acesso às prestações de contas, portais da SEDUC/FUNEC e outros documentos importantes. Clique em um link para abri-lo em painel de leitura.</span></div>
@@ -10592,6 +10714,12 @@ function showSection(id) {
       n.classList.add('active');
     }
   });
+  // Marca o body quando a aba GERAR ANEXOS está ativa (para suprimir crédito na impressão do navegador)
+  if (id === 'anexos') {
+    document.body.classList.add('printing-anexos');
+  } else {
+    document.body.classList.remove('printing-anexos');
+  }
   if (id === 'checklist') { populateChecklistTCFilter(); refreshChecklist(); }
   if (id === 'relatorio') renderAnexo3();
   if (id === 'dashboard') renderDashboard();
@@ -11957,6 +12085,88 @@ function imprimirPendencias() {
   </body></html>`;
 
   const w = window.open('', '_blank', 'width=820,height=700');
+  if (!w) { alert('Permita pop-ups para imprimir.'); return; }
+  w.document.write(html);
+  w.document.close();
+}
+
+
+// ==================== IMPRIMIR ABA ====================
+function imprimirAba(nomeAba) {
+  const escola = document.querySelector('.sidebar-title')?.textContent?.trim() || 'Caixa Escolar';
+  const dataHoje = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+
+  const secaoId = 'section-' + nomeAba;
+  const secao = document.getElementById(secaoId);
+  if (!secao) { alert('Seção não encontrada.'); return; }
+
+  const clone = secao.cloneNode(true);
+
+  clone.querySelectorAll('button').forEach(b => {
+    const txt = b.textContent || '';
+    if (txt.includes('+') || txt.includes('Imprimir') || txt.includes('Exportar') ||
+        txt.includes('Atualizar') || txt.includes('↺') || txt.includes('✕') ||
+        txt.includes('Novo') || txt.includes('Adicionar') || txt.includes('Lançar') ||
+        txt.includes('Limpar') || txt.includes('Entendido') || txt.includes('CSV')) {
+      b.style.display = 'none';
+    }
+  });
+
+  const pageTitleEl = clone.querySelector('.page-title');
+  const pageTitle = pageTitleEl ? pageTitleEl.textContent.trim() : nomeAba;
+
+  const creditoHtml = `
+    <div style="margin-top:32px;padding-top:14px;border-top:1px solid #dee2e6;font-size:11px;color:#888;display:flex;justify-content:space-between;">
+      <span>Sistema de Prestação de Contas — gerado em ${dataHoje} · Decreto 1134/2024 · Manual SEDUC/FUNEC</span>
+      <span style="font-style:italic">Criado e desenvolvido por Prof. Everton Correa Alves</span>
+    </div>`;
+
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+  <title>${pageTitle} — ${escola}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    @media print {
+      @page { size: A4; margin: 16mm 14mm; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none !important; }
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: 'Outfit', 'Segoe UI', Arial, sans-serif; color: #1a1a2e; margin: 0; padding: 24px 28px; font-size: 13px; background: #fff; }
+    .print-header { border-bottom: 3px solid #1a1a2e; padding-bottom: 14px; margin-bottom: 20px; display:flex; justify-content:space-between; align-items:flex-start; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #f5f5f5; text-align: left; padding: 7px 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #555; border-bottom: 2px solid #dee2e6; }
+    td { padding: 7px 10px; border-bottom: 1px solid #eee; font-size: 12.5px; vertical-align: middle; }
+    .card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; }
+    .page-header { margin-bottom: 16px; }
+    .page-title { font-size: 20px; font-weight: 800; }
+    .page-subtitle { font-size: 12px; color: #555; }
+    button { display: none !important; }
+    .modal-overlay { display: none !important; }
+    .no-print button { display: inline-block !important; }
+  </style></head><body>
+
+  <div class="print-header">
+    <div>
+      <div style="font-size:18px;font-weight:800;color:#1a1a2e;">📋 ${pageTitle}</div>
+      <div style="font-size:12px;color:#555;margin-top:3px;">${escola}</div>
+    </div>
+    <div style="text-align:right;font-size:11.5px;color:#555;">
+      <div style="font-weight:600">Data de emissão</div>
+      <div>${dataHoje}</div>
+    </div>
+  </div>
+
+  ${clone.innerHTML}
+
+  ${creditoHtml}
+
+  <div class="no-print" style="margin-top:20px;text-align:center">
+    <button onclick="window.print()" style="padding:10px 28px;background:#2c3e6b;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600">🖨 Imprimir / Salvar PDF</button>
+    <button onclick="window.close()" style="padding:10px 20px;background:#eee;color:#333;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-left:10px">Fechar</button>
+  </div>
+  </body></html>`;
+
+  const w = window.open('', '_blank', 'width=900,height=750');
   if (!w) { alert('Permita pop-ups para imprimir.'); return; }
   w.document.write(html);
   w.document.close();
