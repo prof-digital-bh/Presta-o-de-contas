@@ -5192,8 +5192,18 @@ function imprimirAba(nomeAba, filtros) {
       const adits = tcs.filter(a=>a.tcPaiId===tc.id);
       const totalAdit = adits.reduce((s,a)=>s+_pm(a.valor),0);
       const totalTC = _pm(tc.valor) + totalAdit;
-      const gastoTC = despesas.filter(d=>String(d.tcVinculo)===String(tc.id)).reduce((s,d)=>s+_pm(d.valor),0);
-      const saldo = totalTC - gastoTC;
+
+      // Despesas filtradas por parcela (se selecionada)
+      const despTc = despesas.filter(d => String(d.tcVinculo) === String(tc.id) && (!filtroParcela || d.parcela === filtroParcela));
+      // Gasto total sem filtro (para saldo geral do TC)
+      const gastoTcTotal = despesas.filter(d=>String(d.tcVinculo)===String(tc.id)).reduce((s,d)=>s+_pm(d.valor),0);
+      // Gasto respeitando o filtro de parcela
+      const gastoTC = despTc.reduce((s,d)=>s+_pm(d.valor),0);
+      // Saldo: quando parcela filtrada, usa previsto da parcela vs gasto da parcela
+      const saldo = filtroParcela
+        ? (() => { const pv=(state.parcelaValores||[]).find(r=>String(r.tcId)===String(tc.id)&&r.parcela===filtroParcela); return pv ? (_pm(pv.custeio)+_pm(pv.capital)+_pm(pv.alem)+_pm(pv.obras)+_pm(pv.capina)) - gastoTC : -gastoTC; })()
+        : totalTC - gastoTcTotal;
+
       const st = typeof calcStatusTC==='function' && tc.inicio && tc.fim && tc.status!=='suspenso'
         ? calcStatusTC(tc.inicio,tc.fim) : (tc.status||'ativo');
 
@@ -5205,9 +5215,6 @@ function imprimirAba(nomeAba, filtros) {
         sitRows = sitRows.filter(r => r.parcela === filtroParcela);
       }
       const parcelas = [...new Set([...pvRows.map(r=>r.parcela),...sitRows.map(r=>r.parcela)])].sort();
-
-      // Despesas filtradas por parcela para resumo da parcela
-      const despTc = despesas.filter(d => String(d.tcVinculo) === String(tc.id) && (!filtroParcela || d.parcela === filtroParcela));
       const TIPOS = ['CUSTEIO','CAPITAL','ALEM_MUROS','OBRAS','CAPINA'];
       const tipoLabel = { CUSTEIO:'Custeio', CAPITAL:'Capital', ALEM_MUROS:'Além dos Muros', OBRAS:'Obras', CAPINA:'Capina' };
 
@@ -5301,8 +5308,8 @@ function imprimirAba(nomeAba, filtros) {
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
             <div class="info-box"><div class="lbl">Vigência Início</div><div class="val" style="font-size:13px">${_dt(tc.inicio)||'—'}</div></div>
             <div class="info-box"><div class="lbl">Vigência Fim</div><div class="val" style="font-size:13px">${_dt(tc.fim)||'—'}</div></div>
-            <div class="info-box"><div class="lbl">Valor Contratado</div><div class="val mono" style="font-size:13px">${_fmt(_pm(tc.valor))}</div></div>
-            <div class="info-box"><div class="lbl">Saldo Disponível</div><div class="val mono" style="font-size:13px;color:${saldo>=0?'#155724':'#c0392b'}">${_fmt(saldo)}</div></div>
+            <div class="info-box"><div class="lbl">${filtroParcela ? 'Gasto na Parcela' : 'Total Gasto'}</div><div class="val mono" style="font-size:13px;color:#c0392b">${_fmt(gastoTC)}</div></div>
+            <div class="info-box"><div class="lbl">${filtroParcela ? 'Saldo da Parcela' : 'Saldo Disponível'}</div><div class="val mono" style="font-size:13px;color:${saldo>=0?'#155724':'#c0392b'}">${_fmt(saldo)}</div></div>
           </div>
           ${tc.obs?`<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:8px 12px;font-size:12px;color:#856404;margin-bottom:12px">📝 ${tc.obs}</div>`:''}
           ${aditsHtml}
