@@ -4203,7 +4203,7 @@ function renderAnexosObrigatorios(despesasFiltradas, filtroTC, filtroParcela) {
     r += `<button onclick="salvarDoiObs('${chave}')" style="margin-top:4px;font-size:11px;padding:4px 10px;border-radius:5px;background:var(--accent-red);color:#fff;border:none;cursor:pointer;font-family:Outfit,sans-serif;font-weight:600">💾 Salvar</button>`;
     r += `</div></div>`;
     r += `<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;margin-top:2px">`;
-    r += `<button id="doi-btn-ok-${chave}" class="doi-btn ${isOk?'doi-btn-check active':'doi-btn-check'}" onclick="setDoiEstado('${chave}','ok')" title="Checado">✔</button>`;
+    r += `<button id="doi-btn-ok-${chave}" class="doi-btn ${isOk?'doi-btn-check active':'doi-btn-check'}" onclick="setDoiEstado('${chave}','ok')" title="${isOk?'Clique para desmarcar':'Marcar como OK'}">✔</button>`;
     r += `<button id="doi-btn-pend-${chave}" class="doi-btn ${isPend?'doi-btn-pend active':'doi-btn-pend'}" onclick="setDoiEstado('${chave}','pendente')" title="Pendente">⚠</button>`;
     r += `</div>`;
     r += `</div>`;
@@ -4436,6 +4436,8 @@ function _calcProgressData() {
     if (st === 'ok') { anxOk++; }
     else {
       anxPend++;
+      // Anexo IX é emitido pela SEDUC/FUNEC — não aparece na lista de pendências do prestador
+      if (k === 'anx9') return;
       const lbl = _ANEXO_LABELS[k] || ('Anexo ' + k);
       const isPend = st === 'pendente';
       anxPendLines.push({ label: lbl, pend: isPend && obs ? obs : (isPend ? 'Marcado como pendente' : 'Não verificado'), tipo: isPend ? 'pendente' : 'nao_verificado' });
@@ -4604,18 +4606,142 @@ function refreshPendenciaBadge() {
 }
 
 function imprimirPendencias() {
-  const pendItems = [...document.querySelectorAll('#checklist-area .check-item:not(.done)')];
-  if (!pendItems.length) { alert('Não há pendências!'); return; }
-  const content = pendItems.map((p, i) => {
-    const labelEl = p.querySelector('.check-label');
-    const pendDiv = p.querySelector('[style*="accent3"]');
-    const label = labelEl ? labelEl.textContent.trim() : '';
-    const pend = pendDiv ? ` — ${pendDiv.textContent.trim()}` : '';
-    return `${i+1}. ${label}${pend}`;
-  }).join('\n');
-  const w = window.open('', '', 'width=600,height=500');
-  w.document.write(`<pre style="font-family:monospace;font-size:14px;padding:20px">LISTA DE PENDÊNCIAS\n${'='.repeat(40)}\n\n${content}\n\nGerado em: ${new Date().toLocaleDateString('pt-BR')}</pre>`);
-  w.print();
+  const d = _calcProgressData();
+  const { allPendLines, anxTotal, anxOk, fornTotal, fornOk, grandTotal, grandOk } = d;
+
+  // Dados da escola para o cabeçalho
+  const escola  = document.querySelector('.sidebar-title')?.textContent?.trim() || 'Caixa Escolar';
+  const subInfo = document.querySelector('.tc-info-value')?.textContent?.trim() || '';
+  const dataHoje = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' });
+  const pct = grandTotal ? Math.round(grandOk/grandTotal*100) : 0;
+
+  // Separa pendências por categoria
+  const anxPend  = allPendLines.filter(p => p.label.startsWith('Anexo'));
+  const fornPend = allPendLines.filter(p => !p.label.startsWith('Anexo'));
+
+  const secao = (titulo, cor, itens) => {
+    if (!itens.length) return '';
+    const rows = itens.map((p, i) =>
+      `<tr>
+        <td style="width:28px;color:#999;font-size:12px;padding:8px 6px 8px 0;vertical-align:top">${i+1}.</td>
+        <td style="padding:8px 0;border-bottom:1px solid #eee">
+          <div style="font-weight:600;font-size:13px;color:#1a1a2e">${p.label}</div>
+          ${p.pend && p.tipo==='pendente' ? `<div style="font-size:11.5px;color:#c0392b;margin-top:3px">⚠ ${p.pend}</div>` : ''}
+        </td>
+        <td style="width:80px;text-align:center;padding:8px 0;border-bottom:1px solid #eee;vertical-align:top">
+          <span style="font-size:10px;padding:2px 8px;border-radius:10px;background:${p.tipo==='pendente'?'#fdecea':'#fff3cd'};color:${p.tipo==='pendente'?'#c0392b':'#856404'};border:1px solid ${p.tipo==='pendente'?'#f5c6cb':'#ffc107'};font-weight:700">${p.tipo==='pendente'?'PENDENTE':'NÃO VERIF.'}</span>
+        </td>
+        <td style="width:100px;text-align:center;padding:8px 6px;border-bottom:1px solid #eee;vertical-align:top">
+          <div style="border:1.5px solid #ccc;border-radius:4px;height:22px;width:70px;margin:0 auto"></div>
+        </td>
+      </tr>`
+    ).join('');
+    return `
+      <div style="margin-bottom:22px">
+        <div style="background:${cor};color:#fff;padding:7px 14px;border-radius:6px;font-size:12px;font-weight:700;letter-spacing:0.5px;margin-bottom:8px">${titulo}</div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="background:#f5f5f5">
+              <th style="width:28px"></th>
+              <th style="text-align:left;font-size:10.5px;padding:6px 0;color:#555;font-weight:600;letter-spacing:0.5px;text-transform:uppercase">Documento</th>
+              <th style="width:80px;font-size:10.5px;padding:6px 0;color:#555;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;text-align:center">Situação</th>
+              <th style="width:100px;font-size:10.5px;padding:6px 6px;color:#555;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;text-align:center">✔ Recebido</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  };
+
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+  <title>Pendências — Prestação de Contas</title>
+  <style>
+    @media print {
+      @page { size: A4; margin: 18mm 16mm; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none !important; }
+    }
+    body { font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a2e; margin: 0; padding: 28px 32px; font-size: 13px; }
+    .header { border-bottom: 3px solid #1a1a2e; padding-bottom: 16px; margin-bottom: 22px; }
+    .header-title { font-size: 18px; font-weight: 800; color: #1a1a2e; letter-spacing: -0.3px; }
+    .header-sub { font-size: 12px; color: #555; margin-top: 3px; }
+    .meta-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 22px; }
+    .meta-box { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 10px 14px; }
+    .meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: #888; margin-bottom: 3px; }
+    .meta-value { font-size: 14px; font-weight: 700; color: #1a1a2e; }
+    .progress-bar { height: 8px; background: #e9ecef; border-radius: 10px; margin: 4px 0; overflow: hidden; }
+    .progress-fill { height: 100%; background: ${pct===100?'#27ae60':pct>50?'#f39c12':'#e74c3c'}; border-radius: 10px; width: ${pct}%; }
+    .footer { margin-top: 32px; padding-top: 14px; border-top: 1px solid #dee2e6; font-size: 11px; color: #888; display: flex; justify-content: space-between; }
+    .assinaturas { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 36px; }
+    .ass-box { border-top: 1.5px solid #333; padding-top: 6px; text-align: center; font-size: 11.5px; color: #333; }
+    .alerta { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 10px 14px; font-size: 12px; color: #856404; margin-bottom: 20px; }
+  </style></head><body>
+
+  <div class="header">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div class="header-title">📋 Lista de Pendências — Prestação de Contas</div>
+        <div class="header-sub">${escola}${subInfo ? ' · ' + subInfo : ''}</div>
+      </div>
+      <div style="text-align:right;font-size:11.5px;color:#555">
+        <div style="font-weight:600">Data de emissão</div>
+        <div>${dataHoje}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="meta-grid">
+    <div class="meta-box">
+      <div class="meta-label">Progresso Geral</div>
+      <div class="meta-value">${pct}%</div>
+      <div class="progress-bar"><div class="progress-fill"></div></div>
+      <div style="font-size:11px;color:#888;margin-top:3px">${grandOk} de ${grandTotal} itens OK</div>
+    </div>
+    <div class="meta-box">
+      <div class="meta-label">📑 Anexos Obrigatórios</div>
+      <div class="meta-value">${anxOk}/${anxTotal}</div>
+      <div style="font-size:11px;color:${anxOk===anxTotal?'#27ae60':'#e74c3c'};margin-top:3px;font-weight:600">${anxOk===anxTotal?'✓ Completo':((anxTotal-anxOk)+' pendente(s)')}</div>
+    </div>
+    <div class="meta-box">
+      <div class="meta-label">🏢 Documentos Fornecedores</div>
+      <div class="meta-value">${fornOk}/${fornTotal}</div>
+      <div style="font-size:11px;color:${fornOk===fornTotal?'#27ae60':'#e74c3c'};margin-top:3px;font-weight:600">${fornOk===fornTotal?'✓ Completo':((fornTotal-fornOk)+' pendente(s)')}</div>
+    </div>
+  </div>
+
+  ${allPendLines.length===0
+    ? '<div style="background:#d4edda;border:1px solid #c3e6cb;border-radius:8px;padding:20px;text-align:center;font-size:14px;color:#155724;font-weight:600">✅ Nenhuma pendência! A documentação está completa para envio à SEDUC/FUNEC.</div>'
+    : `<div class="alerta">⚠ Este documento lista os itens que precisam ser providenciados antes do envio à SEDUC/FUNEC. A coluna <strong>"✔ Recebido"</strong> deve ser preenchida pelo Presidente da Caixa Escolar à medida que os documentos forem entregues.</div>
+       ${secao('📑 ANEXOS OBRIGATÓRIOS — CAIXA ESCOLAR / SEDUC/FUNEC', '#2c3e6b', anxPend)}
+       ${secao('🏢 DOCUMENTOS POR FORNECEDOR', '#1a6b4a', fornPend)}`
+  }
+
+  <div class="assinaturas">
+    <div class="ass-box">
+      Prestador de Serviços / Responsável pelo levantamento<br>
+      <span style="font-size:10px;color:#888">Data: ___/___/______</span>
+    </div>
+    <div class="ass-box">
+      Presidente da Caixa Escolar<br>
+      <span style="font-size:10px;color:#888">Data: ___/___/______</span>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>Sistema de Prestação de Contas — gerado em ${dataHoje}</span>
+    <span>Decreto 1134/2024 · Manual SEDUC/FUNEC</span>
+  </div>
+
+  <div class="no-print" style="margin-top:20px;text-align:center">
+    <button onclick="window.print()" style="padding:10px 28px;background:#2c3e6b;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600">🖨 Imprimir / Salvar PDF</button>
+    <button onclick="window.close()" style="padding:10px 20px;background:#eee;color:#333;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-left:10px">Fechar</button>
+  </div>
+  </body></html>`;
+
+  const w = window.open('', '_blank', 'width=820,height=700');
+  if (!w) { alert('Permita pop-ups para imprimir.'); return; }
+  w.document.write(html);
+  w.document.close();
 }
 
 // ==================== ACCORDION ====================
