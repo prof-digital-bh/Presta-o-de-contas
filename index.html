@@ -659,6 +659,20 @@
     overflow-y: auto;
   }
 
+  /* Preview HTML (iframe) */
+  .preview-box.iframe-mode {
+    padding: 0;
+    background: #fff;
+    overflow: hidden;
+  }
+  .preview-box.iframe-mode iframe {
+    width: 100%;
+    height: 580px;
+    border: none;
+    background: #fff;
+    display: block;
+  }
+
   /* PROGRESS BAR */
   .progress-bar-wrap {
     background: var(--surface2);
@@ -1655,332 +1669,378 @@
       <div class="page-header">
         <div>
           <div class="page-title">Gerar Anexos</div>
-          <div class="page-subtitle">Documentos oficiais da prestação de contas — Prefeitura de Contagem</div>
+          <div class="page-subtitle">Documentos oficiais com pré-visualização e impressão — Prefeitura de Contagem</div>
+        </div>
+      </div>
+
+      <!-- Seletor de TC e Parcela para os Anexos -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
+        <div class="field">
+          <label style="color:var(--accent3)">TC / Aditivo</label>
+          <select id="anx-sel-tc" onchange="onAnxTCChange()">
+            <option value="">— Selecione o TC —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Parcela</label>
+          <select id="anx-sel-parcela" onchange="onAnxParcelaChange()">
+            <option value="01">1ª Parcela</option>
+            <option value="02">2ª Parcela</option>
+            <option value="03">3ª Parcela</option>
+            <option value="04">4ª Parcela</option>
+            <option value="05">5ª Parcela</option>
+            <option value="U">Parcela Única</option>
+          </select>
         </div>
       </div>
 
       <!-- Tabs dos Anexos -->
       <div class="parcela-tabs" id="anexo-tabs" style="margin-bottom:20px;flex-wrap:wrap">
-        <div class="parcela-tab active" onclick="mostrarAnexo('anx1',this)">Anexo I — Certidão</div>
-        <div class="parcela-tab" onclick="mostrarAnexo('anx2',this)">Anexo II — Deliberação</div>
-        <div class="parcela-tab" onclick="mostrarAnexo('anx3',this)">Anexo III — Rel. Financeiro</div>
-        <div class="parcela-tab" onclick="mostrarAnexo('anx4',this)">Anexo IV — Guias Pagas</div>
-        <div class="parcela-tab" onclick="mostrarAnexo('anx5',this)">Anexo V — Parecer CF</div>
-        <div class="parcela-tab" onclick="mostrarAnexo('anx6',this)">Anexo VI — Doação</div>
-        <div class="parcela-tab" onclick="mostrarAnexo('anx7',this)">Anexo VII — Trabalho Campo</div>
-        <div class="parcela-tab" onclick="mostrarAnexo('anx8',this)">Anexo VIII — Recebimento</div>
+        <div class="parcela-tab active" onclick="mostrarAnexo('anx-panel-1',this)">Anexo I — Certidão</div>
+        <div class="parcela-tab" onclick="mostrarAnexo('anx-panel-2',this)">Anexo II — Deliberação</div>
+        <div class="parcela-tab" onclick="mostrarAnexo('anx-panel-3',this)">Anexo III — Rel. Financeiro</div>
+        <div class="parcela-tab" onclick="mostrarAnexo('anx-panel-4',this)">Anexo IV — Guias Pagas</div>
+        <div class="parcela-tab" onclick="mostrarAnexo('anx-panel-5',this)">Anexo V — Parecer CF</div>
+        <div class="parcela-tab" onclick="mostrarAnexo('anx-panel-6',this)">Anexo VI — Doação</div>
+        <div class="parcela-tab" onclick="mostrarAnexo('anx-panel-7',this)">Anexo VII — Trab. Campo</div>
+        <div class="parcela-tab" onclick="mostrarAnexo('anx-panel-8',this)">Anexo VIII — Recebimento</div>
       </div>
 
       <!-- ANEXO I -->
-      <div id="anx1" class="anexo-panel">
+      <div id="anx-panel-1" class="anexo-panel">
         <div class="card mb-16">
-          <div class="card-header"><div class="card-title">📄 Anexo I — Certidão de Execução do Objeto</div>
-            <div class="gap-8">
-              <button class="btn btn-secondary" onclick="imprimirAnexo('prev-anx1')">🖨 Imprimir</button>
-              <button class="btn btn-primary" onclick="gerarAnexo1()">↺ Gerar</button>
+          <div class="card-header">
+            <div class="card-title"><div class="card-title-icon" style="background:rgba(79,142,247,0.15)">📄</div>Anexo I — Certidão de Execução do Objeto</div>
+            <div class="gap-8" style="display:flex">
+              <button class="btn btn-ghost" onclick="gerarAnxImprime('iframe-anx1')">🖨 Imprimir</button>
+              <button class="btn btn-primary" onclick="gerarNovoAnx1()">↺ Gerar</button>
             </div>
           </div>
-          <div class="form-grid">
-            <div class="field form-full"><label style="color:var(--accent3)">TC / Aditivo</label>
-              <select id="anx1-tc"><option value="">— Usar TC Ativo —</option></select></div>
-            <div class="field"><label>Nº da Parcela</label>
-              <select id="anx1-parcela"><option value="1ª">1ª Parcela</option><option value="2ª">2ª Parcela</option><option value="3ª" selected>3ª Parcela</option><option value="4ª">4ª Parcela</option><option value="Única">Parcela Única</option></select></div>
+          <div class="form-grid form-grid-3">
+            <div class="field"><label>Dia</label><input type="number" id="novo-anx1-dia" placeholder="30" value="30"></div>
+            <div class="field"><label>Mês (por extenso)</label><input type="text" id="novo-anx1-mes" placeholder="MARÇO" value="MARÇO"></div>
+            <div class="field"><label>Ano</label><input type="text" id="novo-anx1-ano" placeholder="2026" value="2026"></div>
             <div class="field"><label>Categoria</label>
-              <select id="anx1-cat"><option value="CUSTEIO">Custeio</option><option value="CAPITAL">Capital</option></select></div>
-            <div class="field"><label>Ações desenvolvidas</label>
-              <select id="anx1-acao">
-                <option value="MANUTENCAO">Despesas com a Manutenção do Funcionamento Escolar</option>
-                <option value="CAPITAL">Despesas com Aquisição de Bens Móveis de Capital ou Reforma, Manutenção, Reforma e Requalificação</option>
+              <select id="novo-anx1-cat"><option value="CUSTEIO">Custeio</option><option value="CAPITAL">Capital</option></select></div>
+            <div class="field"><label>Tipo de Ação</label>
+              <select id="novo-anx1-acao">
+                <option value="MANUTENCAO">Manutenção do Funcionamento Escolar</option>
+                <option value="CAPITAL">Aquisição de Bens Móveis / Reforma</option>
               </select></div>
-            <div class="field"><label>Dia</label><input type="number" id="anx1-dia" value="" min="1" max="31"></div>
-            <div class="field"><label>Mês</label>
-              <select id="anx1-mes"><option>janeiro</option><option>fevereiro</option><option>março</option><option>abril</option><option>maio</option><option>junho</option><option>julho</option><option>agosto</option><option>setembro</option><option>outubro</option><option>novembro</option><option selected>dezembro</option></select></div>
-            <div class="field"><label>Ano</label><input type="number" id="anx1-ano" placeholder="aaaa"></div>
           </div>
         </div>
-        <div class="card"><div class="preview-box" id="prev-anx1">Clique em "Gerar" para visualizar.</div></div>
+        <div class="card" style="overflow:hidden;padding:0">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border)">
+            <span style="font-size:12px;font-weight:600;color:var(--text-muted)">📄 Anexo I — Pré-visualização</span>
+          </div>
+          <div id="prev-novo-anx1" style="background:#fff;min-height:200px">
+            <div style="padding:48px 24px;text-align:center;color:#888;font-size:13px">Clique em "Gerar" para visualizar o documento</div>
+          </div>
+          <iframe id="iframe-anx1" style="display:none"></iframe>
+        </div>
       </div>
 
       <!-- ANEXO II -->
-      <div id="anx2" class="anexo-panel" style="display:none">
+      <div id="anx-panel-2" class="anexo-panel" style="display:none">
         <div class="card mb-16">
-          <div class="card-header"><div class="card-title">📋 Anexo II — Deliberação do Conselho Fiscal</div>
-            <div class="gap-8">
-              <button class="btn btn-secondary" onclick="imprimirAnexo('prev-anx2')">🖨 Imprimir</button>
-              <button class="btn btn-secondary" onclick="baixarTXT()">⬇ Baixar .txt</button>
-              <button class="btn btn-primary" onclick="gerarDocumento()">↺ Gerar</button>
+          <div class="card-header">
+            <div class="card-title"><div class="card-title-icon" style="background:rgba(79,142,247,0.15)">📋</div>Anexo II — Deliberação do Conselho Fiscal</div>
+            <div class="gap-8" style="display:flex">
+              <button class="btn btn-ghost" onclick="gerarAnxImprime('iframe-anx2')">🖨 Imprimir</button>
+              <button class="btn btn-secondary" onclick="baixarTXTAnx2()">⬇ .txt</button>
+              <button class="btn btn-primary" onclick="gerarNovoAnx2()">↺ Gerar</button>
             </div>
           </div>
-          <div class="alert alert-info"><span>ℹ</span><span>A Deliberação do Conselho Fiscal deve ser elaborada após o crédito do recurso na conta da Caixa Escolar e antes do início das despesas, registrando o planejamento e a aplicação dos valores recebidos.</span></div>
+          <div class="alert alert-info"><span>ℹ</span><span>A Deliberação deve ser elaborada após o crédito e antes do início das despesas, registrando o planejamento de aplicação dos valores recebidos.</span></div>
           <div class="form-grid form-grid-3">
-            <div class="field form-full" style="grid-column:1/-1"><label style="color:var(--accent3)">TC / Aditivo</label>
-              <select id="anx2-tc"><option value="">— Usar TC Ativo —</option></select></div>
-            <div class="field">
-              <label>Dia da Reunião</label>
-              <input type="number" id="doc-dia" value="" min="1" max="31">
-            </div>
-            <div class="field">
-              <label>Mês</label>
-              <select id="doc-mes">
-                <option value="janeiro">janeiro</option>
-                <option value="fevereiro">fevereiro</option>
-                <option value="março">março</option>
-                <option value="abril">abril</option>
-                <option value="maio">maio</option>
-                <option value="junho">junho</option>
-                <option value="julho">julho</option>
-                <option value="agosto">agosto</option>
-                <option value="setembro">setembro</option>
-                <option value="outubro">outubro</option>
-                <option value="novembro">novembro</option>
-                <option value="dezembro" selected>dezembro</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Ano</label>
-              <input type="number" id="doc-ano" placeholder="aaaa">
-            </div>
-            <div class="field">
-              <label>Nº Parcela</label>
-              <input type="text" id="doc-parcela" value="">
-            </div>
-            <div class="field">
-              <label>Período de Execução</label>
-              <input type="text" id="doc-periodo" value="">
-            </div>
-            <div class="field">
-              <label>Nº TC</label>
-              <input type="text" id="doc-tc" value="">
-            </div>
+            <div class="field"><label>Dia da Reunião</label><input type="number" id="novo-anx2-dia" placeholder="30"></div>
+            <div class="field"><label>Mês</label>
+              <select id="novo-anx2-mes">
+                <option>janeiro</option><option>fevereiro</option><option>março</option><option>abril</option>
+                <option>maio</option><option>junho</option><option>julho</option><option>agosto</option>
+                <option>setembro</option><option>outubro</option><option>novembro</option><option selected>dezembro</option>
+              </select></div>
+            <div class="field"><label>Ano</label><input type="number" id="novo-anx2-ano" placeholder="2026"></div>
+            <div class="field"><label>Data de Crédito</label><input type="text" id="novo-anx2-datacredito" placeholder="30/01/2026" style="font-family:'DM Mono',monospace"></div>
+            <div class="field"><label>Período de Execução</label><input type="text" id="novo-anx2-periodo" placeholder="JAN//2026 A MAR//2026"></div>
+            <div class="field"><label>Valor Creditado (R$)</label><input type="text" id="novo-anx2-valor" placeholder="29.710,08" style="font-family:'DM Mono',monospace;color:var(--accent2)"></div>
           </div>
-          <div style="margin-top:12px">
-            <button class="btn btn-success" onclick="gerarDocumento()">↺ Gerar Documento</button>
+          <div style="margin-top:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+              <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">📋 Ações MDE</span>
+              <div class="gap-8" style="display:flex">
+                <button class="btn btn-ghost" style="font-size:12px;padding:6px 12px" onclick="addAcaoAnx2Novo()">+ Adicionar</button>
+                <button class="btn btn-secondary" style="font-size:12px;padding:6px 12px" onclick="popularAcoesNovo()">↙ Das Despesas</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr>
+                  <th>Ação MDE</th>
+                  <th style="width:200px">Período</th>
+                  <th style="width:130px">Valor R$</th>
+                  <th style="width:40px"></th>
+                </tr></thead>
+                <tbody id="novo-acoes-tbody"></tbody>
+                <tfoot><tr style="background:var(--surface2)">
+                  <td colspan="2" style="padding:9px 14px;font-size:12px;font-weight:600;color:var(--text-muted)">TOTAL</td>
+                  <td style="padding:9px 14px;font-family:'DM Mono',monospace;font-weight:700;color:var(--accent2)" id="novo-acoes-total">R$ 0,00</td>
+                  <td></td>
+                </tr></tfoot>
+              </table>
+            </div>
           </div>
         </div>
-        <div class="card">
-          <div class="card-title mb-16">📄 Documento Gerado</div>
-          <div class="preview-box" id="prev-anx2">
-            Clique em "Gerar" para visualizar o texto da Deliberação do Conselho Fiscal.
+        <div class="card" style="overflow:hidden;padding:0">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border)">
+            <span style="font-size:12px;font-weight:600;color:var(--text-muted)">📋 Anexo II — Pré-visualização</span>
           </div>
+          <div id="prev-novo-anx2" style="background:#fff;min-height:200px">
+            <div style="padding:48px 24px;text-align:center;color:#888;font-size:13px">Clique em "Gerar" para visualizar o documento</div>
+          </div>
+          <iframe id="iframe-anx2" style="display:none"></iframe>
         </div>
       </div>
 
       <!-- ANEXO III -->
-      <div id="anx3" class="anexo-panel" style="display:none">
+      <div id="anx-panel-3" class="anexo-panel" style="display:none">
         <div class="card mb-16">
-          <div class="card-header"><div class="card-title">📋 Anexo III — Relatório de Execução Físico-Financeiro</div>
-            <div class="gap-8">
-              <button class="btn btn-primary" onclick="gerarAnexoIII()">⬇ Gerar Anexo III</button>
+          <div class="card-header">
+            <div class="card-title"><div class="card-title-icon" style="background:rgba(56,217,169,0.15)">📊</div>Anexo III — Relatório de Execução Físico-Financeira</div>
+            <div class="gap-8" style="display:flex">
+              <button class="btn btn-ghost" onclick="gerarAnxImprime('iframe-anx3')">🖨 Imprimir</button>
+              <button class="btn btn-primary" onclick="gerarNovoAnx3()">↺ Gerar</button>
             </div>
           </div>
-          <div class="alert alert-info"><span>ℹ</span><span>O Relatório de Execução Físico-Financeiro resume todos os recebimentos e despesas da Caixa Escolar no período. Deve ser apresentado em todas as prestações de contas.</span></div>
-          <div class="form-grid">
-            <div class="field form-full"><label style="color:var(--accent3)">TC / Aditivo</label>
-              <select id="anx3-tc" onchange="renderAnexo3()"><option value="">— Usar TC Ativo —</option></select></div>
-            <div class="field">
-              <label>Parcela</label>
-              <select id="rel-parcela">
-                <option value="01">Parcela 01</option>
-                <option value="02">Parcela 02</option>
-                <option value="03" selected>Parcela 03</option>
-                <option value="04">Parcela 04</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Tipo</label>
-              <select id="rel-tipo">
-                <option value="CUSTEIO">Custeio</option>
-                <option value="CAPITAL">Capital</option>
-                <option value="ALEM_MUROS">Além dos Muros</option>
-              </select>
-            </div>
-            <div class="field field-money">
-              <label>Saldo Anterior (R$)</label>
-              <input type="text" id="rel-saldo-ant" value="0,05" data-money placeholder="0,00">
-            </div>
-            <div class="field field-money">
-              <label>Valor Creditado (R$)</label>
-              <input type="text" id="rel-creditado" value="" placeholder="0,00" data-money>
-            </div>
-            <div class="field field-money">
-              <label>Rendimento Financeiro (R$)</label>
-              <input type="text" id="rel-rendimento" value="" placeholder="0,00" data-money>
-            </div>
-            <div class="field">
-              <label>Data do Crédito</label>
-              <input type="text" id="rel-data-credito" value="">
+          <div class="form-grid form-grid-3">
+            <div class="field"><label>Saldo Anterior (R$)</label><input type="text" id="novo-anx3-saldo" placeholder="0,05" value="0,05" style="font-family:'DM Mono',monospace;color:var(--accent2)"></div>
+            <div class="field"><label>Valor Creditado (R$)</label><input type="text" id="novo-anx3-creditado" placeholder="29.710,08" style="font-family:'DM Mono',monospace;color:var(--accent2)"></div>
+            <div class="field"><label>Rendimento (R$)</label><input type="text" id="novo-anx3-rendimento" placeholder="0,00" value="0,00" style="font-family:'DM Mono',monospace;color:var(--accent2)"></div>
+            <div class="field"><label>Data do Crédito</label><input type="text" id="novo-anx3-datacredito" placeholder="30/01/2026" style="font-family:'DM Mono',monospace"></div>
+            <div class="field"><label>Tipo de Verba</label>
+              <select id="novo-anx3-tipo">
+                <option value="CUSTEIO">Custeio</option><option value="CAPITAL">Capital</option>
+                <option value="ALEM_MUROS">Além dos Muros</option><option value="OBRAS">Obras</option>
+              </select></div>
+            <div class="field"><label>Nº da Parcela</label><input type="text" id="novo-anx3-numparcela" value="01" readonly style="font-family:'DM Mono',monospace;opacity:0.6"></div>
+          </div>
+          <div style="margin-top:14px">
+            <div style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">🧾 Despesas da parcela</div>
+            <div id="novo-anx3-desps-wrap" style="background:var(--surface2);border-radius:8px;border:1px solid var(--border);padding:12px;font-size:13px;color:var(--text-muted)">
+              Selecione TC e Parcela acima para carregar as despesas.
             </div>
           </div>
         </div>
-        <div class="card">
-          <div class="card-title mb-16">Prévia do Relatório</div>
-          <div id="anexo3-preview" class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Credor</th>
-                  <th>CNPJ</th>
-                  <th>Comprovante</th>
-                  <th class="text-right">Valor R$</th>
-                </tr>
-              </thead>
-              <tbody id="anexo3-tbody">
-                <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:24px">Lance despesas para visualizar</td></tr>
-              </tbody>
-              <tfoot>
-                <tr style="background:var(--surface2)">
-                  <td colspan="4" style="padding:11px 14px;font-weight:600;font-size:13px">Total</td>
-                  <td style="padding:11px 14px;font-family:'DM Mono',monospace;font-weight:600;color:var(--accent2);text-align:right" id="anexo3-total">R$ 0,00</td>
-                </tr>
-              </tfoot>
-            </table>
+        <div class="card" style="overflow:hidden;padding:0">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border)">
+            <span style="font-size:12px;font-weight:600;color:var(--text-muted)">📊 Anexo III — Pré-visualização</span>
           </div>
+          <div id="prev-novo-anx3" style="background:#fff;min-height:200px">
+            <div style="padding:48px 24px;text-align:center;color:#888;font-size:13px">Clique em "Gerar" para visualizar o documento</div>
+          </div>
+          <iframe id="iframe-anx3" style="display:none"></iframe>
         </div>
       </div>
 
       <!-- ANEXO IV -->
-      <div id="anx4" class="anexo-panel" style="display:none">
+      <div id="anx-panel-4" class="anexo-panel" style="display:none">
         <div class="card mb-16">
-          <div class="card-header"><div class="card-title">📋 Anexo IV — Relação de Guias Pagas</div>
-            <div class="gap-8">
-              <button class="btn btn-secondary" onclick="imprimirAnexo('prev-anx4')">🖨 Imprimir</button>
-              <button class="btn btn-primary" onclick="gerarAnexo4()">↺ Gerar</button>
+          <div class="card-header">
+            <div class="card-title"><div class="card-title-icon" style="background:rgba(246,166,35,0.15)">🧾</div>Anexo IV — Relação de Guias Pagas</div>
+            <div class="gap-8" style="display:flex">
+              <button class="btn btn-ghost" onclick="gerarAnxImprime('iframe-anx4')">🖨 Imprimir</button>
+              <button class="btn btn-primary" onclick="gerarNovoAnx4()">↺ Gerar</button>
             </div>
           </div>
-          <div class="alert alert-info"><span>ℹ</span><span>Informe as guias de INSS, ISSQN, DARF retidos nas notas fiscais de serviço. Para compras de material (sem retenção), deixe em branco.</span></div>
-          <div class="form-grid mb-16" style="grid-template-columns:1fr">
-            <div class="field"><label style="color:var(--accent3)">TC / Aditivo</label>
-              <select id="anx4-tc"><option value="">— Usar TC Ativo —</option></select></div>
-          </div>
-          <div id="anx4-linhas">
-            <div style="display:grid;grid-template-columns:2fr 1fr 2fr 1fr 1fr;gap:8px;margin-bottom:6px;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;padding:0 4px">
-              <span>Guia (INSS, ISSQN, DARF)</span><span>Data</span><span>Nota Fiscal Referente</span><span>Valor Guia</span><span>Valor NF</span>
+          <div style="margin-bottom:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">Guias (INSS, ISSQN...)</span>
+              <button class="btn btn-ghost" style="font-size:12px;padding:6px 12px" onclick="addGuiaNovo()">+ Adicionar Guia</button>
             </div>
-            <div id="anx4-rows"></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr>
+                  <th>Guia</th><th style="width:100px">Data</th><th>NF Referente</th>
+                  <th style="width:110px">Val. Guia</th><th style="width:110px">Val. NF</th><th style="width:40px"></th>
+                </tr></thead>
+                <tbody id="novo-guias-tbody"></tbody>
+              </table>
+            </div>
           </div>
-          <button class="btn btn-ghost mt-16" onclick="addAnx4Row()">+ Adicionar Linha</button>
-          <div class="form-grid mt-16" style="grid-template-columns:1fr 1fr 1fr">
-            <div class="field"><label>Dia</label><input type="number" id="anx4-dia" value=""></div>
-            <div class="field"><label>Mês</label><select id="anx4-mes"><option>janeiro</option><option>fevereiro</option><option>março</option><option>abril</option><option>maio</option><option>junho</option><option>julho</option><option>agosto</option><option>setembro</option><option>outubro</option><option>novembro</option><option selected>dezembro</option></select></div>
-            <div class="field"><label>Ano</label><input type="number" id="anx4-ano" placeholder="aaaa"></div>
+          <div class="field" style="max-width:240px">
+            <label>Data do Documento</label>
+            <input type="text" id="novo-anx4-data" placeholder="30 de MARÇO de 2026">
           </div>
         </div>
-        <div class="card"><div class="preview-box" id="prev-anx4">Clique em "Gerar" para visualizar.</div></div>
+        <div class="card" style="overflow:hidden;padding:0">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border)">
+            <span style="font-size:12px;font-weight:600;color:var(--text-muted)">🧾 Anexo IV — Pré-visualização</span>
+          </div>
+          <div id="prev-novo-anx4" style="background:#fff;min-height:200px">
+            <div style="padding:48px 24px;text-align:center;color:#888;font-size:13px">Clique em "Gerar" para visualizar o documento</div>
+          </div>
+          <iframe id="iframe-anx4" style="display:none"></iframe>
+        </div>
       </div>
 
       <!-- ANEXO V -->
-      <div id="anx5" class="anexo-panel" style="display:none">
+      <div id="anx-panel-5" class="anexo-panel" style="display:none">
         <div class="card mb-16">
-          <div class="card-header"><div class="card-title">📋 Anexo V — Parecer do Conselho Fiscal</div>
-            <div class="gap-8">
-              <button class="btn btn-secondary" onclick="imprimirAnexo('prev-anx5')">🖨 Imprimir</button>
-              <button class="btn btn-primary" onclick="gerarAnexo5()">↺ Gerar</button>
+          <div class="card-header">
+            <div class="card-title"><div class="card-title-icon" style="background:rgba(181,123,238,0.15)">📋</div>Anexo V — Parecer do Conselho Fiscal</div>
+            <div class="gap-8" style="display:flex">
+              <button class="btn btn-ghost" onclick="gerarAnxImprime('iframe-anx5')">🖨 Imprimir</button>
+              <button class="btn btn-primary" onclick="gerarNovoAnx5()">↺ Gerar</button>
             </div>
           </div>
           <div class="form-grid">
-            <div class="field form-full"><label style="color:var(--accent3)">TC / Aditivo</label>
-              <select id="anx5-tc"><option value="">— Usar TC Ativo —</option></select></div>
-            <div class="field"><label>Data do Crédito (dd/mm/aaaa)</label><input type="text" id="anx5-datacred" value=""></div>
-            <div class="field"><label>Categoria da verba</label>
-              <select id="anx5-cat"><option value="custeio">custeio</option><option value="capital">capital</option></select></div>
+            <div class="field"><label>Data do Crédito (dd/mm/aaaa)</label><input type="text" id="novo-anx5-datacred" placeholder="30/01/2026" style="font-family:'DM Mono',monospace"></div>
+            <div class="field"><label>Categoria</label>
+              <select id="novo-anx5-cat"><option value="custeio">Custeio</option><option value="capital">Capital</option></select></div>
             <div class="field"><label>Resultado</label>
-              <select id="anx5-resultado">
-                <option value="aprovada">Aprovada</option>
+              <select id="novo-anx5-resultado">
+                <option value="aprovada">Aprovada (por unanimidade)</option>
                 <option value="aprovada com ressalvas">Aprovada com Ressalvas</option>
-                <option value="reprovada">Reprovada</option>
+                <option value="não aprovada">Não Aprovada</option>
               </select></div>
-            <div class="field form-full"><label>Ressalvas / Observações (opcional)</label><input type="text" id="anx5-ressalva" placeholder="Ex.: NF sem carimbo de recebimento..."></div>
-            <div class="field"><label>Dia</label><input type="number" id="anx5-dia" value=""></div>
-            <div class="field"><label>Mês</label><select id="anx5-mes"><option>janeiro</option><option>fevereiro</option><option>março</option><option>abril</option><option>maio</option><option>junho</option><option>julho</option><option>agosto</option><option>setembro</option><option>outubro</option><option>novembro</option><option selected>dezembro</option></select></div>
-            <div class="field"><label>Ano</label><input type="number" id="anx5-ano" placeholder="aaaa"></div>
+            <div class="field"><label>Data do Parecer</label><input type="text" id="novo-anx5-data" placeholder="30 de MARÇO de 2026"></div>
+            <div class="field form-full"><label>Ressalvas / Observações (opcional)</label>
+              <textarea id="novo-anx5-ressalva" placeholder="Deixe em branco se não houver ressalvas" style="min-height:60px"></textarea></div>
           </div>
         </div>
-        <div class="card"><div class="preview-box" id="prev-anx5">Clique em "Gerar" para visualizar.</div></div>
+        <div class="card" style="overflow:hidden;padding:0">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border)">
+            <span style="font-size:12px;font-weight:600;color:var(--text-muted)">📋 Anexo V — Pré-visualização</span>
+          </div>
+          <div id="prev-novo-anx5" style="background:#fff;min-height:200px">
+            <div style="padding:48px 24px;text-align:center;color:#888;font-size:13px">Clique em "Gerar" para visualizar o documento</div>
+          </div>
+          <iframe id="iframe-anx5" style="display:none"></iframe>
+        </div>
       </div>
 
       <!-- ANEXO VI -->
-      <div id="anx6" class="anexo-panel" style="display:none">
+      <div id="anx-panel-6" class="anexo-panel" style="display:none">
         <div class="card mb-16">
-          <div class="card-header"><div class="card-title">📋 Anexo VI — Termo de Doação (Bens de Capital)</div>
-            <div class="gap-8">
-              <button class="btn btn-secondary" onclick="imprimirAnexo('prev-anx6')">🖨 Imprimir</button>
-              <button class="btn btn-primary" onclick="gerarAnexo6()">↺ Gerar</button>
+          <div class="card-header">
+            <div class="card-title"><div class="card-title-icon" style="background:rgba(56,217,169,0.15)">🎁</div>Anexo VI — Termo de Doação (Bens de Capital)</div>
+            <div class="gap-8" style="display:flex">
+              <button class="btn btn-ghost" onclick="gerarAnxImprime('iframe-anx6')">🖨 Imprimir</button>
+              <button class="btn btn-primary" onclick="gerarNovoAnx6()">↺ Gerar</button>
             </div>
           </div>
-          <div class="alert alert-warn"><span>⚠</span><span>Obrigatório para <strong>todos os bens de Capital</strong> adquiridos. Devem ser tombados em nome do Município imediatamente após a aquisição.</span></div>
-          <div class="form-grid mb-16" style="grid-template-columns:1fr">
-            <div class="field"><label style="color:var(--accent3)">TC / Aditivo</label>
-              <select id="anx6-tc"><option value="">— Usar TC Ativo —</option></select></div>
-          </div>
-          <div id="anx6-itens-wrap">
-            <div style="display:grid;grid-template-columns:1fr 60px 80px 1fr 100px 100px;gap:8px;margin-bottom:6px;font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px">
-              <span>Discriminação do Bem</span><span>Qtd</span><span>Unid.</span><span>Nº Doc (NF)</span><span>Valor Unit.</span><span>Valor Total</span>
+          <div class="alert alert-warn"><span>⚠</span><span>Obrigatório para todos os bens de Capital adquiridos. Devem ser tombados em nome do Município imediatamente após a aquisição.</span></div>
+          <div style="margin-bottom:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">📦 Bens Doados</span>
+              <div class="gap-8" style="display:flex">
+                <button class="btn btn-ghost" style="font-size:12px;padding:6px 12px" onclick="addBemNovo()">+ Adicionar</button>
+                <button class="btn btn-secondary" style="font-size:12px;padding:6px 12px" onclick="popularBemsNovo()">↙ Do Capital</button>
+              </div>
             </div>
-            <div id="anx6-rows"></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr>
+                  <th>Discriminação</th><th style="width:60px">Qtd</th><th style="width:65px">Unid.</th>
+                  <th style="width:120px">Nº Doc.</th><th style="width:110px">Val. Unit.</th><th style="width:110px">Val. Total</th><th style="width:40px"></th>
+                </tr></thead>
+                <tbody id="novo-bens-tbody"></tbody>
+              </table>
+            </div>
           </div>
-          <button class="btn btn-ghost mt-16" onclick="addAnx6Row()">+ Adicionar Item</button>
-          <div class="form-grid mt-16" style="grid-template-columns:1fr 1fr 1fr">
-            <div class="field"><label>Dia</label><input type="number" id="anx6-dia" value=""></div>
-            <div class="field"><label>Mês</label><select id="anx6-mes"><option>janeiro</option><option>fevereiro</option><option>março</option><option>abril</option><option>maio</option><option>junho</option><option>julho</option><option>agosto</option><option>setembro</option><option>outubro</option><option>novembro</option><option selected>dezembro</option></select></div>
-            <div class="field"><label>Ano</label><input type="number" id="anx6-ano" placeholder="aaaa"></div>
+          <div class="field" style="max-width:240px">
+            <label>Data do Termo</label>
+            <input type="text" id="novo-anx6-data" placeholder="30 de MARÇO de 2026">
           </div>
         </div>
-        <div class="card"><div class="preview-box" id="prev-anx6">Clique em "Gerar" para visualizar.</div></div>
+        <div class="card" style="overflow:hidden;padding:0">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border)">
+            <span style="font-size:12px;font-weight:600;color:var(--text-muted)">🎁 Anexo VI — Pré-visualização</span>
+          </div>
+          <div id="prev-novo-anx6" style="background:#fff;min-height:200px">
+            <div style="padding:48px 24px;text-align:center;color:#888;font-size:13px">Clique em "Gerar" para visualizar o documento</div>
+          </div>
+          <iframe id="iframe-anx6" style="display:none"></iframe>
+        </div>
       </div>
 
       <!-- ANEXO VII -->
-      <div id="anx7" class="anexo-panel" style="display:none">
+      <div id="anx-panel-7" class="anexo-panel" style="display:none">
         <div class="card mb-16">
-          <div class="card-header"><div class="card-title">📋 Anexo VII — Formulário Trabalho de Campo</div>
-            <div class="gap-8">
-              <button class="btn btn-secondary" onclick="imprimirAnexo('prev-anx7')">🖨 Imprimir</button>
-              <button class="btn btn-primary" onclick="gerarAnexo7()">↺ Gerar</button>
+          <div class="card-header">
+            <div class="card-title"><div class="card-title-icon" style="background:rgba(96,198,137,0.15)">🚌</div>Anexo VII — Formulário Trabalho de Campo</div>
+            <div class="gap-8" style="display:flex">
+              <button class="btn btn-ghost" onclick="gerarAnxImprime('iframe-anx7')">🖨 Imprimir</button>
+              <button class="btn btn-primary" onclick="gerarNovoAnx7()">↺ Gerar</button>
             </div>
           </div>
           <div class="alert alert-info"><span>ℹ</span><span>Necessário apenas em despesas de "Além dos Muros" (roteiros educativos/culturais).</span></div>
           <div class="form-grid">
-            <div class="field"><label>Nº de Estudantes</label><input type="number" id="anx7-alunos" placeholder="Ex.: 120"></div>
-            <div class="field"><label>Data da Atividade</label><input type="date" id="anx7-data"></div>
-            <div class="field form-full"><label>Destino</label><input type="text" id="anx7-destino" placeholder="Ex.: Museu de Ciências Naturais BH"></div>
-            <div class="field"><label>Horário de Saída</label><input type="time" id="anx7-saida"></div>
-            <div class="field"><label>Horário de Chegada</label><input type="time" id="anx7-chegada"></div>
-            <div class="field field-money"><label>Custo Total (R$)</label><input type="text" id="anx7-custo" placeholder="0,00" data-money></div>
-            <div class="field form-full"><label>Tema do Projeto</label><input type="text" id="anx7-tema" placeholder="Ex.: Biodiversidade e Sustentabilidade"></div>
-            <div class="field form-full"><label>Objetivos</label><textarea id="anx7-obj" placeholder="Descreva os objetivos pedagógicos..."></textarea></div>
-            <div class="field form-full"><label>Ações Desenvolvidas</label><textarea id="anx7-acoes" placeholder="Descreva as atividades realizadas..."></textarea></div>
-            <div class="field form-full"><label>Áreas de Conhecimento</label><input type="text" id="anx7-areas" placeholder="Ex.: Ciências, Geografia, Artes"></div>
+            <div class="field"><label>Nº de Estudantes</label><input type="number" id="novo-anx7-alunos" placeholder="120"></div>
+            <div class="field"><label>Data da Atividade</label><input type="date" id="novo-anx7-data"></div>
+            <div class="field form-full"><label>Destino</label><input type="text" id="novo-anx7-destino" placeholder="Ex.: Museu de Ciências Naturais BH"></div>
+            <div class="field"><label>Horário de Saída</label><input type="time" id="novo-anx7-saida"></div>
+            <div class="field"><label>Horário de Chegada</label><input type="time" id="novo-anx7-chegada"></div>
+            <div class="field"><label>Custo Total (R$)</label><input type="text" id="novo-anx7-custo" placeholder="0,00" style="font-family:'DM Mono',monospace;color:var(--accent2)"></div>
+            <div class="field form-full"><label>Tema do Projeto</label><input type="text" id="novo-anx7-tema" placeholder="Ex.: Biodiversidade e Sustentabilidade"></div>
+            <div class="field form-full"><label>Objetivos</label><textarea id="novo-anx7-obj" placeholder="Descreva os objetivos pedagógicos..."></textarea></div>
+            <div class="field form-full"><label>Ações Desenvolvidas</label><textarea id="novo-anx7-acoes" placeholder="Descreva as atividades realizadas..."></textarea></div>
+            <div class="field form-full"><label>Áreas de Conhecimento</label><input type="text" id="novo-anx7-areas" placeholder="Ex.: Ciências, Geografia, Artes"></div>
           </div>
         </div>
-        <div class="card"><div class="preview-box" id="prev-anx7">Clique em "Gerar" para visualizar.</div></div>
+        <div class="card" style="overflow:hidden;padding:0">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border)">
+            <span style="font-size:12px;font-weight:600;color:var(--text-muted)">🚌 Anexo VII — Pré-visualização</span>
+          </div>
+          <div id="prev-novo-anx7" style="background:#fff;min-height:200px">
+            <div style="padding:48px 24px;text-align:center;color:#888;font-size:13px">Clique em "Gerar" para visualizar o documento</div>
+          </div>
+          <iframe id="iframe-anx7" style="display:none"></iframe>
+        </div>
       </div>
 
       <!-- ANEXO VIII -->
-      <div id="anx8" class="anexo-panel" style="display:none">
+      <div id="anx-panel-8" class="anexo-panel" style="display:none">
         <div class="card mb-16">
-          <div class="card-header"><div class="card-title">📋 Anexo VIII — Termo de Recebimento Definitivo</div>
-            <div class="gap-8">
-              <button class="btn btn-secondary" onclick="imprimirAnexo('prev-anx8')">🖨 Imprimir</button>
-              <button class="btn btn-primary" onclick="gerarAnexo8()">↺ Gerar</button>
+          <div class="card-header">
+            <div class="card-title"><div class="card-title-icon" style="background:rgba(246,166,35,0.15)">📝</div>Anexo VIII — Termo de Recebimento Definitivo</div>
+            <div class="gap-8" style="display:flex">
+              <button class="btn btn-ghost" onclick="gerarAnxImprime('iframe-anx8')">🖨 Imprimir</button>
+              <button class="btn btn-primary" onclick="gerarNovoAnx8()">↺ Gerar</button>
             </div>
           </div>
-          <div class="alert alert-warn"><span>⚠</span><span>Obrigatório para serviços de <strong>reforma, manutenção, reparo e requalificação</strong> de imóveis. Deve ser assinado pelo Engenheiro da SEDUC/FUNEC.</span></div>
+          <div class="alert alert-warn"><span>⚠</span><span>Obrigatório para serviços de reforma, manutenção, reparo e requalificação de imóveis. Deve ser assinado pelo Engenheiro da SEDUC/FUNEC.</span></div>
           <div class="form-grid">
-            <div class="field"><label>Nº do Contrato</label><input type="text" id="anx8-contrato" placeholder="Ex.: 001/2025"></div>
-            <div class="field"><label>Objeto do Contrato</label><input type="text" id="anx8-objeto" placeholder="Ex.: Reforma da rede hidráulica"></div>
-            <div class="field form-full"><label>Nome da Empresa Contratada</label><input type="text" id="anx8-empresa" placeholder="Razão Social da empresa"></div>
-            <div class="field"><label>Data do Recebimento Provisório</label><input type="date" id="anx8-dataprov"></div>
-            <div class="field"><label>Engenheiro SEDUC/FUNEC</label><input type="text" id="anx8-eng" placeholder="Nome do engenheiro responsável"></div>
-            <div class="field"><label>Gestor do Contrato (Caixa Escolar)</label><input type="text" id="anx8-gestor" placeholder="Nome do responsável na escola"></div>
-            <div class="field"><label>Fiscal do Contrato</label><input type="text" id="anx8-fiscal" placeholder="Nome do fiscal"></div>
-            <div class="field"><label>Dia</label><input type="number" id="anx8-dia" value=""></div>
-            <div class="field"><label>Mês</label><select id="anx8-mes"><option>janeiro</option><option>fevereiro</option><option>março</option><option>abril</option><option>maio</option><option>junho</option><option>julho</option><option>agosto</option><option>setembro</option><option>outubro</option><option>novembro</option><option selected>dezembro</option></select></div>
-            <div class="field"><label>Ano</label><input type="number" id="anx8-ano" placeholder="aaaa"></div>
+            <div class="field"><label>Nº do Contrato</label><input type="text" id="novo-anx8-contrato" placeholder="001/2025"></div>
+            <div class="field"><label>Objeto do Contrato</label><input type="text" id="novo-anx8-objeto" placeholder="Ex.: Reforma da rede hidráulica"></div>
+            <div class="field form-full"><label>Nome da Empresa Contratada</label><input type="text" id="novo-anx8-empresa" placeholder="Razão Social da empresa"></div>
+            <div class="field"><label>Data do Recebimento Provisório</label><input type="date" id="novo-anx8-dataprov"></div>
+            <div class="field"><label>Engenheiro SEDUC/FUNEC</label><input type="text" id="novo-anx8-eng" placeholder="Nome do engenheiro responsável"></div>
+            <div class="field"><label>Gestor do Contrato (Caixa Escolar)</label><input type="text" id="novo-anx8-gestor" placeholder="Nome do responsável na escola"></div>
+            <div class="field"><label>Fiscal do Contrato</label><input type="text" id="novo-anx8-fiscal" placeholder="Nome do fiscal"></div>
+            <div class="field"><label>Dia</label><input type="number" id="novo-anx8-dia"></div>
+            <div class="field"><label>Mês</label>
+              <select id="novo-anx8-mes">
+                <option>janeiro</option><option>fevereiro</option><option>março</option><option>abril</option>
+                <option>maio</option><option>junho</option><option>julho</option><option>agosto</option>
+                <option>setembro</option><option>outubro</option><option>novembro</option><option selected>dezembro</option>
+              </select></div>
+            <div class="field"><label>Ano</label><input type="number" id="novo-anx8-ano" placeholder="2026"></div>
           </div>
         </div>
-        <div class="card"><div class="preview-box" id="prev-anx8">Clique em "Gerar" para visualizar.</div></div>
+        <div class="card" style="overflow:hidden;padding:0">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface2);border-bottom:1px solid var(--border)">
+            <span style="font-size:12px;font-weight:600;color:var(--text-muted)">📝 Anexo VIII — Pré-visualização</span>
+          </div>
+          <div id="prev-novo-anx8" style="background:#fff;min-height:200px">
+            <div style="padding:48px 24px;text-align:center;color:#888;font-size:13px">Clique em "Gerar" para visualizar o documento</div>
+          </div>
+          <iframe id="iframe-anx8" style="display:none"></iframe>
+        </div>
       </div>
+
     </section>
+
 
     <!-- ALERTAS E PRAZOS -->
     <section class="section" id="section-alertas">
@@ -3625,7 +3685,7 @@ function showSection(id) {
   if (id === 'relatorio') renderAnexo3();
   if (id === 'dashboard') renderDashboard();
   if (id === 'alertas') renderAlertas();
-  if (id === 'anexos') { popularAnx6ComCapital(); popularTodosAnexosTCSelects(); }
+  if (id === 'anexos') { popularAnxSeletorTC(); renderAnx3DespList(); }
   if (id === 'links') renderLinks();
 }
 
@@ -6567,580 +6627,827 @@ function renderAnexo3() {
   document.getElementById('anexo3-total').textContent = fmtMoney(total);
 }
 
-function gerarAnexo3() {
-  const tipo = document.getElementById('rel-tipo').value;
-  const parcela = document.getElementById('rel-parcela').value;
-  const tcSel = getTCDoAnexo('anx3-tc');
-  const tcId = tcSel ? String(tcSel.id) : null;
-  const list = state.despesas.filter(d => d.tipo === tipo && d.parcela === parcela && (!tcId || String(d.tcVinculo) === tcId));
-  const saldoAnt = document.getElementById('rel-saldo-ant').value;
-  const creditado = document.getElementById('rel-creditado').value;
-  const rendimento = document.getElementById('rel-rendimento').value;
-  const dataCredito = document.getElementById('rel-data-credito').value;
+// ==================== CONSTANTES FIXAS DA ESCOLA ====================
+const ESCOLA          = 'E.M. ALBERTINA ALVES DO NASCIMENTO';
+const CAIXA_ESCOLAR   = 'ALBERTINA ALVES NASCIMENTO';
+const CNPJ_CE         = '15.547.261/0001-01';
+const PRESIDENTE      = 'JEFERSON CESAR DOS SANTOS';
+const TESOUREIRO      = 'ANA PAULA AGUIAR SILVA';
+const SECRETARIO      = 'MARIA AZEVEDO MARTINS TORRES DE CARVALHO';
+const CF1             = 'ANGEL CASSIO LOPES DE OLIVEIRA';
+const CF2             = 'DOMINGOS AILTON SANTOS';
+const CF3             = 'VANESSA MARIA AUGUSTO DO NASCIMENTO';
+const ENDERECO_SEDUC  = 'Rua Coimbra, nº 100 — Bairro Santa Cruz Industrial — Contagem/MG — CEP 32.340-010';
+const PREFEITURA      = 'PREFEITURA MUNICIPAL DE CONTAGEM\nSecretaria Municipal de Educação';
+const LIVRO_A         = '____';
+const BANCO           = 'CAIXA ECONÔMICA FEDERAL';
+const AGENCIA         = '3797';
+const CONTA           = '000577240784-4';
 
-  const totalGasto = list.reduce((s, d) => s + parseMoney(d.valor), 0);
-  const totalReceita = parseMoney(saldoAnt) + parseMoney(creditado.replace('.','').replace(',','.')) + parseMoney(rendimento.replace('.','').replace(',','.'));
-  const saldo = totalReceita - totalGasto;
+// ==================== GERADOR DE ANEXOS (INTEGRADO) ====================
 
-  let txt = `PREFEITURA MUNICIPAL DE CONTAGEM\nSecretária Municipal de Educação\n\nANEXO III\nRELATÓRIO DE EXECUÇÃO FÍSICO-FINANCEIRO\n\nCaixa Escolar: ___________________________\nData do Crédito: ${dataCredito}   Nº da parcela: ${parcela}   Discriminação da verba: ${tipoLabel(tipo)}\n\n`;
-  txt += `RECEITA:\nSaldo anterior: R$ ${saldoAnt}\nValor Creditado: R$ ${creditado}\nRendimento de Aplicação Financeira: R$ ${rendimento}\nTotal de Receita: R$ ${fmtMoneyStr(totalReceita)}\n\n`;
-  txt += `DESPESAS:\nTotal de Despesas: R$ ${fmtMoneyStr(totalGasto)}\nSaldo: R$ ${fmtMoneyStr(saldo)}\n\n`;
-  txt += `Relação de Pagamentos:\n${'─'.repeat(80)}\n`;
-  list.forEach((d, i) => {
-    txt += `${String(i+1).padStart(2,' ')}. ${d.credor.padEnd(40,' ')}  ${(d.cnpj||'').padEnd(20,' ')}  ${d.nfNum||'—'}  R$ ${d.valor}\n`;
-  });
-  txt += `${'─'.repeat(80)}\nTotal: R$ ${fmtMoneyStr(totalGasto)}\n`;
+// --- State for the new gerador ---
+let _novoAnxTC = null;
+let _novoAnxParcela = '01';
+let _novoAcaoRows = [];
+let _novoGuiaRows = [];
+let _novoBemRows = [];
 
-  const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = `AnexoIII_Parcela${parcela}_${tipo}.txt`; a.click();
-}
-const gerarAnexoIII = gerarAnexo3;
-
-// ==================== GERAR DOCUMENTO ====================
-function gerarDocumento() {
-  const dia = document.getElementById('doc-dia').value;
-  const mes = document.getElementById('doc-mes').value;
-  const ano = document.getElementById('doc-ano').value;
-  const parcela = document.getElementById('doc-parcela').value;
-  const periodo = document.getElementById('doc-periodo').value;
-  const tcNum = document.getElementById('doc-tc').value;
-
-  // Usar TC selecionado no Anexo II ou o TC ativo como fallback
-  const tcSel = getTCDoAnexo('anx2-tc');
-  const escola = tcSel ? tcSel.escola : '___________________________';
-  const presidente = tcSel ? tcSel.presidente : '___________________________';
-  const cnpjCE = tcSel ? tcSel.cnpj : '___________________________';
-
-  // Filtrar despesas pelo TC selecionado
-  const tcId = tcSel ? tcSel.id : null;
-  const despFiltradas = tcId
-    ? state.despesas.filter(d => String(d.tcVinculo) === String(tcId))
-    : state.despesas;
-
-  const custeio = despFiltradas.filter(d => d.tipo === 'CUSTEIO' || d.tipo === 'CAPINA');
-  const capital = despFiltradas.filter(d => d.tipo === 'CAPITAL');
-  const totalCusteio = custeio.reduce((s,d) => s + parseMoney(d.valor), 0);
-  const totalCapital = capital.reduce((s,d) => s + parseMoney(d.valor), 0);
-  const totalGeral = totalCusteio + totalCapital;
-
-  const creditado = document.getElementById('rel-creditado').value;
-  const rendimento = document.getElementById('rel-rendimento').value;
-  const saldoAnt = document.getElementById('rel-saldo-ant').value;
-
-  let acoes = {};
-  despFiltradas.forEach(d => {
-    const key = d.tipo === 'CAPITAL' ? 'EQUIPAMENTOS/MOBILIÁRIO' :
-                d.tipo === 'ALEM_MUROS' ? 'ROTEIROS EDUCATIVOS/CULTURAIS' :
-                'MATERIAIS DE EXPEDIENTE/PAPELARIA';
-    if (!acoes[key]) acoes[key] = { periodo, valor: 0 };
-    acoes[key].valor += parseMoney(d.valor);
-  });
-
-  let linhasAcoes = Object.entries(acoes).map(([k, v]) =>
-    `${k.padEnd(55,' ')}  ${v.periodo.padEnd(20,' ')}  R$ ${fmtMoneyStr(v.valor)}`
-  ).join('\n');
-
-  let txt = ``;
-  txt += `                                    N° DO TC\n`;
-  txt += `             ANEXO II               ${tcNum}\n`;
-  txt += `     Deliberação do Conselho Fiscal  PARCELA ${parcela.padStart(2,'0')}\n\n`;
-  txt += `Aos ${dia} dias do mês de ${mes} do ano de ${ano}, reuniram-se os membros do\n`;
-  txt += `Conselho Fiscal da Caixa Escolar da ${escola}.\n\n`;
-  txt += `Pauta: Deliberação sobre a utilização de recurso referente ao repasse DA ${parcela.toUpperCase()} PARCELA\n`;
-  txt += `para CUSTEIO, no ano de ${ano}, para ações de Manutenção e Desenvolvimento do ensino - MDE,\n`;
-  txt += `em consonância com a proposta pedagógica da Escola, conforme estabelece o TERMO DE\n`;
-  txt += `COMPROMISSO ${tcNum}, assinado entre a Caixa Escolar ${(tcSel?.escola||escola).toUpperCase()}\n`;
-  txt += `e a Prefeitura de Contagem, por intermédio da Secretaria Municipal de Educação.\n\n`;
-
-  const totalRecebido = parseMoney(saldoAnt) + parseMoney(creditado.replace('.','').replace(',','.')) + parseMoney(rendimento.replace('.','').replace(',','.'));
-  txt += `No primeiro momento da reunião, o(a) Presidente da Caixa Escolar apresentou o valor de\n`;
-  txt += `R$ ${fmtMoneyStr(totalRecebido).padEnd(15)} referente ao repasse da ${parcela.toUpperCase()} parcela, creditado,\n`;
-  txt += `no Banco CAIXA ECONÔMICA FEDERAL, acrescido do valor de R$ ${rendimento}\n`;
-  txt += `referente a rendimentos de aplicação financeira. A esse montante juntou-se o valor de\n`;
-  txt += `R$ ${saldoAnt} como saldo da parcela anterior.\n\n`;
-  txt += `No segundo momento, definiu-se a aplicação dos recursos nas seguintes ações de\n`;
-  txt += `Manutenção e Desenvolvimento de Ensino - MDE:\n\n`;
-  txt += `AÇÕES - MDE                                              PERÍODO DE EXECUÇÃO     VALOR\n`;
-  txt += `─────────────────────────────────────────────────────────────────────────────────────\n`;
-  txt += linhasAcoes + '\n';
-  txt += `─────────────────────────────────────────────────────────────────────────────────────\n`;
-  txt += `                                                                  TOTAL   R$ ${fmtMoneyStr(totalGeral)}\n\n`;
-  txt += `Nada mais a tratar a reunião foi encerrada, ata lavrada e assinada pelos presentes.\n\n\n`;
-  txt += `MESA DIRETORA DA CAIXA ESCOLAR\n`;
-  txt += `──────────────────────────────────────────────────────────────────────\n`;
-  txt += `Segmento          Nome                                   Assinatura\n`;
-  txt += `Presidente        ${presidente}\n`;
-  txt += `Tesoureiro        ___________________________\n`;
-  txt += `Secretário        ___________________________\n\n`;
-  txt += `CONSELHO FISCAL\n`;
-  txt += `Representante (1) ___________________________\n`;
-  txt += `Representante (2) ___________________________\n`;
-  txt += `Representante (3) ___________________________\n\n`;
-  txt += `Este documento consta de ______ páginas numeradas e rubricadas pelo(a) Presidente da Caixa Escolar.\n`;
-
-  const dpEl = document.getElementById('doc-preview');
-  const p2El = document.getElementById('prev-anx2');
-  if (dpEl) dpEl.textContent = txt;
-  if (p2El) p2El.textContent = txt;
+// --- Helper: get TC do seletor dos anexos ---
+function getAnxTC() {
+  const sel = document.getElementById('anx-sel-tc');
+  if (!sel) return state.tcAtivo || null;
+  return state.tcs.find(t => String(t.id) === String(sel.value)) || null;
 }
 
-function baixarTXT() {
-  const dpEl = document.getElementById('doc-preview');
-  const p2El = document.getElementById('prev-anx2');
-  const txt = (p2El && p2El.textContent && !p2El.textContent.startsWith('Clique')) ? p2El.textContent : (dpEl ? dpEl.textContent : '');
-  if (!txt || txt.startsWith('Clique')) { alert('Gere o documento primeiro.'); return; }
-  const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'Deliberacao_Conselho_Fiscal.txt'; a.click();
+function getAnxParcela() {
+  const sel = document.getElementById('anx-sel-parcela');
+  return sel ? sel.value : '01';
 }
 
-// ==================== EXPORT CSV ====================
-function exportarTabela() {
-  if (!state.despesas.length) { alert('Nenhuma despesa lançada.'); return; }
-  const headers = ['Tipo','Parcela','Credor','CNPJ/CPF','Nº NF','Data NF','Descrição','Valor (R$)'];
-  const rows = state.despesas.map(d => [
-    tipoLabel(d.tipo), d.parcela, d.credor, d.cnpj, d.nfNum, d.nfData, d.descricao, d.valor
-  ]);
-  const csv = [headers, ...rows].map(r => r.map(c => `"${(c||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob(['\ufeff'+csv], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = 'despesas_prestacao_contas.csv'; a.click();
+function getAnxDespesas(tipo) {
+  const tc = getAnxTC();
+  const parc = getAnxParcela();
+  if (!tc) return [];
+  return state.despesas.filter(d =>
+    String(d.tcVinculo) === String(tc.id) &&
+    d.parcela === parc &&
+    (!tipo || d.tipo === tipo)
+  );
 }
 
-// ==================== UTILS ====================
-function tipoLabel(tipo) {
-  return { CUSTEIO: 'Custeio', CAPITAL: 'Capital', ALEM_MUROS: 'Além dos Muros', OBRAS: 'Obras', CAPINA: 'Capina' }[tipo] || tipo;
+function getAnxTCNumero() {
+  const tc = getAnxTC();
+  if (!tc) return '___/____';
+  if (tc.tcPaiId) {
+    const pai = state.tcs.find(t => String(t.id) === String(tc.tcPaiId));
+    return `${pai ? pai.numero : '___'} (ADITIVO ${tc.numero || '01'})`;
+  }
+  return tc.numero || '___/____';
 }
 
-function parseMoney(str) {
-  if (!str) return 0;
-  return parseFloat(str.toString().replace(/\./g,'').replace(',','.')) || 0;
-}
-
-function fmtMoney(v) {
-  return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-function fmtMoneyStr(v) {
-  return v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-function fmtDate(d) {
-  if (!d) return '';
-  const parts = d.split('-');
-  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
-  return d;
-}
-
-// ==================== CONSTANTES FIXAS ====================
-const ESCOLA = 'E.M. ALBERTINA ALVES DO NASCIMENTO';
-const CAIXA_ESCOLAR = 'ALBERTINA ALVES NASCIMENTO';
-const CNPJ_CE = '15.547.261/0001-01';
-const PRESIDENTE = 'JEFERSON CESAR DOS SANTOS';
-const TESOUREIRO = 'ANA PAULA AGUIAR SILVA';
-const SECRETARIO = 'MARIA AZEVEDO MARTINS TORRES DE CARVALHO';
-const CF1 = 'ANGEL CASSIO LOPES DE OLIVEIRA';
-const CF2 = 'DOMINGOS AILTON SANTOS';
-const CF3 = 'VANESSA MARIA AUGUSTO DO NASCIMENTO';
-const PREFEITURA = 'PREFEITURA MUNICIPAL DE CONTAGEM\nSecretaria Municipal de Educação';
-const ENDERECO_SEDUC = 'Rua Coimbra, nº 100 — Bairro Santa Cruz Industrial — Contagem/MG — CEP 32.340-010';
-
-function getTCAtivo() {
-  return (state.tcs||[]).find(t => t.id === state.tcAtivo);
-}
-function getTCNumero() {
-  const tc = getTCAtivo(); return tc ? tc.numero : '___/____';
-}
-
-// ==================== NAVEGAÇÃO ANEXOS ====================
-function popularTCSelectAnexo(selId) {
-  const sel = document.getElementById(selId);
+// --- Populate TC selector when entering "Gerar Anexos" ---
+function popularAnxSeletorTC() {
+  const sel = document.getElementById('anx-sel-tc');
   if (!sel) return;
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">— Usar TC Ativo —</option>';
-  (state.tcs||[]).filter(t => !t.tcPaiId).forEach(tc => {
-    const opt = document.createElement('option');
-    opt.value = tc.id;
-    opt.textContent = `TC ${tc.numero}`;
-    if (state.tcAtivo === tc.id) opt.textContent += ' (Ativo)';
-    sel.appendChild(opt);
-    (state.tcs||[]).filter(a => a.tcPaiId === tc.id).forEach(a => {
-      const o2 = document.createElement('option');
-      o2.value = a.id;
-      o2.textContent = `  └ Aditivo ${a.numero} (TC ${tc.numero})`;
-      sel.appendChild(o2);
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">— Selecione o TC —</option>';
+  (state.tcs || []).filter(t => !t.tcPaiId).forEach(tc => {
+    const o = document.createElement('option');
+    o.value = tc.id;
+    o.textContent = `TC ${tc.numero}${tc.escola ? ' — ' + tc.escola : ''}`;
+    sel.appendChild(o);
+    (state.tcs || []).filter(a => a.tcPaiId === tc.id).forEach(a => {
+      const oa = document.createElement('option');
+      oa.value = a.id;
+      oa.textContent = `  └ Aditivo ${a.numero}`;
+      sel.appendChild(oa);
     });
   });
-  if (cur) sel.value = cur;
+  // Auto-select the active TC if available
+  if (state.tcAtivo) sel.value = state.tcAtivo.id;
+  else if (prev) sel.value = prev;
+  onAnxTCChange();
 }
 
-function popularTodosAnexosTCSelects() {
-  ['anx1-tc','anx2-tc','anx3-tc','anx4-tc','anx5-tc','anx6-tc'].forEach(popularTCSelectAnexo);
+function onAnxTCChange() {
+  _novoAnxTC = getAnxTC();
+  onAnxParcelaChange();
 }
 
-function getTCDoAnexo(selId) {
-  const sel = document.getElementById(selId);
-  const val = sel ? sel.value : '';
-  if (val) {
-    const tc = (state.tcs||[]).find(t => String(t.id) === String(val));
-    return tc || getTCAtivo();
+function onAnxParcelaChange() {
+  _novoAnxParcela = getAnxParcela();
+  // update parcela number field in anx3
+  const pEl = document.getElementById('novo-anx3-numparcela');
+  if (pEl) pEl.value = _novoAnxParcela;
+  // auto-fill data fields from parcelaValores
+  const pv = (state.parcelaValores || []).find(r =>
+    String(r.tcId) === String(_novoAnxTC ? _novoAnxTC.id : '') &&
+    r.parcela === _novoAnxParcela
+  );
+  if (pv && pv.mesAnoInicio) {
+    const [ano, mes] = pv.mesAnoInicio.split('-');
+    const dataCredit = `30/${mes}/${ano}`;
+    const mesAbr = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'][parseInt(mes)-1];
+    const periodo = `${mesAbr}//${ano} A ${mesAbr}//${ano}`;
+    const total = parseMoney(pv.custeio) + parseMoney(pv.capital) + parseMoney(pv.alem) + parseMoney(pv.obras) + parseMoney(pv.capina || '0');
+    const valStr = fmtMoneyStr(total);
+    _setIfEmpty('novo-anx2-datacredito', dataCredit);
+    _setIfEmpty('novo-anx2-periodo', periodo);
+    _setIfEmpty('novo-anx2-valor', valStr);
+    _setIfEmpty('novo-anx3-datacredito', dataCredit);
+    _setIfEmpty('novo-anx3-creditado', valStr);
+    _setIfEmpty('novo-anx5-datacred', dataCredit);
   }
-  return getTCAtivo();
+  renderAnx3Despesas();
 }
 
-function getTCNumeroDoAnexo(selId) {
-  const tc = getTCDoAnexo(selId);
-  return tc ? tc.numero : '___/____';
+function _setIfEmpty(id, val) {
+  const el = document.getElementById(id);
+  if (el && !el.value && val) el.value = val;
 }
 
-function mostrarAnexo(id, el) {
+// Render despesas list in Anx3 panel
+function renderAnx3DespList() {
+  const wrap = document.getElementById('novo-anx3-desps-wrap');
+  if (!wrap) return;
+  const desps = getAnxDespesas();
+  if (!desps.length) {
+    wrap.innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:8px 0">Nenhuma despesa encontrada para este TC/Parcela.</div>';
+    return;
+  }
+  const total = desps.reduce((s, d) => s + parseMoney(d.valor), 0);
+  wrap.innerHTML = desps.map((d, i) => `
+    <div style="display:grid;grid-template-columns:28px 1fr 120px 140px 110px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim)">${i+1}</span>
+      <div><strong style="color:var(--text)">${d.credor}</strong><div style="color:var(--text-muted);font-size:11px">${d.descricao || ''}</div></div>
+      <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text-muted)">${d.cnpj || '—'}</span>
+      <span style="font-size:11px;color:var(--text-muted)">${d.nfNum || '—'}${d.nfData ? ' / ' + fmtDate(d.nfData) : ''}</span>
+      <span style="font-family:'DM Mono',monospace;color:var(--accent2);font-weight:600">${fmtMoney(parseMoney(d.valor))}</span>
+    </div>
+  `).join('') + `<div style="display:flex;justify-content:flex-end;padding:8px 0;font-size:13px;font-weight:700;color:var(--text)">TOTAL: <span style="font-family:'DM Mono',monospace;color:var(--accent2);margin-left:8px">${fmtMoney(total)}</span></div>`;
+}
+
+// alias used by onAnxParcelaChange
+const renderAnx3DespList_alias = renderAnx3DespList;
+function renderAnx3Despesas() { renderAnx3DespList(); }
+
+// --- Show/hide anexo panels ---
+function mostrarAnexo(panelId, tabEl) {
   document.querySelectorAll('.anexo-panel').forEach(p => p.style.display = 'none');
-  document.getElementById(id).style.display = '';
+  document.getElementById(panelId).style.display = '';
   document.querySelectorAll('#anexo-tabs .parcela-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  popularTodosAnexosTCSelects();
+  if (tabEl) tabEl.classList.add('active');
+  if (panelId === 'anx-panel-3') renderAnx3DespList();
 }
 
-// ==================== IMPRIMIR ANEXO ====================
-function imprimirAnexo(previewId) {
-  const txt = document.getElementById(previewId).textContent;
-  if (!txt || txt.startsWith('Clique')) { alert('Gere o documento primeiro.'); return; }
-  const w = window.open('', '', 'width=800,height=700');
-  w.document.write(`<html><head><title>Documento</title><style>
-    body{font-family:'Courier New',monospace;font-size:12px;padding:30px;line-height:1.7;color:#000;background:#fff}
-    pre{white-space:pre-wrap;word-wrap:break-word}
-    .credit{font-family:'Segoe UI',Arial,sans-serif;font-size:10px;color:#888;text-align:center;margin-top:24px;padding-top:10px;border-top:1px solid #ddd;font-style:italic}
-    @media print{body{padding:15px}}
-  </style></head><body><pre>${txt}</pre><div class="credit">Criado e desenvolvido por Prof. Everton Correa Alves</div></body></html>`);
-  w.document.close();
-  setTimeout(() => w.print(), 300);
+// --- Print helper ---
+function gerarAnxImprime(iframeId) {
+  const iframe = document.getElementById(iframeId);
+  if (!iframe || !iframe.srcdoc) {
+    alert('Gere o documento primeiro clicando em "Gerar".');
+    return;
+  }
+  iframe.contentWindow.focus();
+  iframe.contentWindow.print();
 }
 
-// ==================== ANEXO I — CERTIDÃO DE EXECUÇÃO ====================
-function gerarAnexo1() {
-  const parcela = document.getElementById('anx1-parcela').value;
-  const cat = document.getElementById('anx1-cat').value;
-  const acao = document.getElementById('anx1-acao').value;
-  const dia = document.getElementById('anx1-dia').value;
-  const mes = document.getElementById('anx1-mes').value;
-  const ano = document.getElementById('anx1-ano').value;
-  const tcNum = getTCNumeroDoAnexo('anx1-tc');
+// --- docHtml helper for gerador ---
+function novoDocHtml(titulo, corpo) {
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>${titulo}</title>
+  <style>
+    body { font-family: 'Times New Roman', Times, serif; font-size: 11pt; line-height: 1.45; color: #000; background: #fff; padding: 20mm 20mm 20mm 25mm; max-width: 210mm; margin: 0 auto; }
+    h2 { font-size: 13pt; margin: 6px 0; }
+    h3 { font-size: 12pt; margin: 4px 0; }
+    p { margin: 4px 0; }
+    table { font-family: 'Times New Roman', Times, serif; }
+    @media print { body { padding: 15mm 18mm 15mm 20mm; } @page { size: A4; margin: 0; } }
+  </style></head><body>
+  ${corpo}
+  </body></html>`;
+}
+
+// --- Render into iframe + div ---
+function novoRenderDoc(panelNum, html) {
+  const prev = document.getElementById(`prev-novo-anx${panelNum}`);
+  const ifr = document.getElementById(`iframe-anx${panelNum}`);
+  if (prev) {
+    prev.innerHTML = `<iframe srcdoc="${escAttrPc(html)}" style="width:100%;height:620px;border:none;background:#fff"></iframe>`;
+  }
+  if (ifr) {
+    ifr.srcdoc = html;
+    ifr.style.display = 'none';
+  }
+}
+
+function escAttrPc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+}
+
+function numParcelaOrdNovo(p) {
+  const m = { '01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única' };
+  return m[p] || p;
+}
+
+function parcelaNomeNovo(p) {
+  const m = { '01':'PRIMEIRA','02':'SEGUNDA','03':'TERCEIRA','04':'QUARTA','05':'QUINTA','U':'ÚNICA' };
+  return m[p] || p;
+}
+
+// ==================== GERADORES ====================
+
+function gerarNovoAnx1() {
+  const dia = document.getElementById('novo-anx1-dia').value || '___';
+  const mes = document.getElementById('novo-anx1-mes').value || '___';
+  const ano = document.getElementById('novo-anx1-ano').value || '____';
+  const cat = document.getElementById('novo-anx1-cat').value;
+  const acao = document.getElementById('novo-anx1-acao').value;
+  const tcNum = getAnxTCNumero();
+  const parcela = getAnxParcela();
+
   const acaoText = acao === 'MANUTENCAO'
-    ? '(X) DESPESAS COM A MANUTENÇÃO DO FUNCIONAMENTO ESCOLAR\n( ) DESPESAS COM AQUISIÇÃO DE BENS MÓVEIS DE CAPITAL OU REFORMA, MANUTENÇÃO, REFORMA E REQUALIFICAÇÃO.'
-    : '( ) DESPESAS COM A MANUTENÇÃO DO FUNCIONAMENTO ESCOLAR\n(X) DESPESAS COM AQUISIÇÃO DE BENS MÓVEIS DE CAPITAL OU REFORMA, MANUTENÇÃO, REFORMA E REQUALIFICAÇÃO.';
-  let txt = `                              ANEXO I
-                    CERTIDÃO DE EXECUÇÃO DO OBJETO
+    ? '(X) DESPESAS COM A MANUTENÇÃO DO FUNCIONAMENTO ESCOLAR<br>( ) DESPESAS COM AQUISIÇÃO DE BENS MÓVEIS DE CAPITAL OU REFORMA, MANUTENÇÃO, REPARO E REQUALIFICAÇÃO.'
+    : '( ) DESPESAS COM A MANUTENÇÃO DO FUNCIONAMENTO ESCOLAR<br>(X) DESPESAS COM AQUISIÇÃO DE BENS MÓVEIS DE CAPITAL OU REFORMA, MANUTENÇÃO, REPARO E REQUALIFICAÇÃO.';
 
-Caixa Escolar: ${CAIXA_ESCOLAR}
-Endereço: ${ESCOLA} — Contagem/MG
-N.º do Termo de Compromisso: ${tcNum}
-N.º da Parcela: ( ) ____ª Parcela   (X) ${parcela}   ( ) Parcela Única
-Categoria: ${cat === 'CUSTEIO' ? '(X) CUSTEIO   ( ) CAPITAL' : '( ) CUSTEIO   (X) CAPITAL'}
-
-AÇÕES DESENVOLVIDAS NA MANUTENÇÃO DO DESENVOLVIMENTO DO ENSINO:
-${acaoText}
-
-CERTIFICO PARA FINS DE PRESTAÇÃO DE CONTAS JUNTO À PREFEITURA MUNICIPAL
-DE CONTAGEM QUE OS OBJETIVOS DO TERMO DE COMPROMISSO SUPRACITADO
-FORAM ALCANÇADOS.
-
-Contagem, ${dia} de ${mes} de ${ano}.
-
-
-_____________________________________________
-Presidente da Caixa Escolar
-
-Nome: ${PRESIDENTE}
-CPF: ___________________________`;
-  document.getElementById('prev-anx1').textContent = txt;
+  const html = novoDocHtml('ANEXO I — CERTIDÃO DE EXECUÇÃO DO OBJETO',
+    `<p><strong>SECRETARIA MUNICIPAL DE EDUCAÇÃO E CULTURA DE CONTAGEM</strong></p>
+     <p>GERÊNCIA DAS CAIXAS ESCOLARES — DIRETORIA DE GESTÃO DE PARCERIAS, TERMOS DE COMPROMISSO E CONVÊNIOS — SUPERINTENDÊNCIA DE PLANEJAMENTO, ORÇAMENTO E FINANÇAS</p>
+     <p><strong>${ENDERECO_SEDUC}</strong></p>
+     <br>
+     <h2 style="text-align:center">ANEXO I</h2>
+     <h3 style="text-align:center">CERTIDÃO DE EXECUÇÃO DO OBJETO</h3>
+     <br>
+     <table style="width:100%;border-collapse:collapse;font-size:11pt">
+       <tr><td style="width:160px;font-weight:bold;padding:4px 0">Caixa Escolar:</td><td>${CAIXA_ESCOLAR}</td></tr>
+       <tr><td style="font-weight:bold;padding:4px 0">Endereço:</td><td>${ESCOLA} — Contagem/MG</td></tr>
+       <tr><td style="font-weight:bold;padding:4px 0">N.º do TC:</td><td>${tcNum}</td></tr>
+       <tr><td style="font-weight:bold;padding:4px 0">N.º da Parcela:</td><td>${numParcelaOrdNovo(parcela)} Parcela</td></tr>
+       <tr><td style="font-weight:bold;padding:4px 0">Categoria:</td><td>${cat === 'CUSTEIO' ? '(X) CUSTEIO &nbsp;&nbsp; ( ) CAPITAL' : '( ) CUSTEIO &nbsp;&nbsp; (X) CAPITAL'}</td></tr>
+     </table>
+     <br>
+     <p><strong>AÇÕES DESENVOLVIDAS NA MANUTENÇÃO DO DESENVOLVIMENTO DO ENSINO:</strong></p>
+     <p style="margin-top:8px">${acaoText}</p>
+     <br>
+     <p style="text-align:justify">CERTIFICO PARA FINS DE PRESTAÇÃO DE CONTAS JUNTO À PREFEITURA MUNICIPAL DE CONTAGEM QUE OS OBJETIVOS DO TERMO DE COMPROMISSO SUPRACITADO FORAM ALCANÇADOS.</p>
+     <br>
+     <p>Contagem, ${dia} de ${mes} de ${ano}.</p>
+     <br><br>
+     <div style="width:300px;border-top:1px solid #000;padding-top:5px;text-align:center">
+       <p>Presidente da Caixa Escolar</p>
+       <p><strong>${PRESIDENTE}</strong></p>
+       <p>CPF: ___________________________</p>
+     </div>`
+  );
+  novoRenderDoc(1, html);
 }
 
-// ==================== ANEXO IV — GUIAS PAGAS ====================
-let anx4RowCount = 0;
-function addAnx4Row() {
-  anx4RowCount++;
-  const id = 'anx4r' + anx4RowCount;
-  const div = document.createElement('div');
-  div.id = id;
-  div.style.cssText = 'display:grid;grid-template-columns:2fr 1fr 2fr 1fr 1fr;gap:8px;margin-bottom:6px';
-  div.innerHTML = `
-    <input type="text" placeholder="Ex.: INSS retido / ISSQN" style="font-size:12px">
-    <input type="date" style="font-size:12px">
-    <input type="text" placeholder="NF 001 — Fornecedor X" style="font-size:12px">
-    <input type="text" placeholder="0,00" data-money style="font-family:'DM Mono',monospace;font-size:12px;color:var(--accent2)">
-    <div style="display:flex;gap:4px"><input type="text" placeholder="0,00" data-money style="font-family:'DM Mono',monospace;font-size:12px;color:var(--accent2)"><button onclick="document.getElementById('${id}').remove()" style="background:none;border:none;color:var(--accent-red);cursor:pointer;padding:0 4px">✕</button></div>`;
-  document.getElementById('anx4-rows').appendChild(div);
-  div.querySelectorAll('[data-money]').forEach(maskMoney);
+// --- ANX2 Ações ---
+function addAcaoAnx2Novo(acao = '', periodo = '', valor = '') {
+  const per = document.getElementById('novo-anx2-periodo').value || '';
+  _novoAcaoRows.push({ acao: acao || '', periodo: periodo || per, valor: valor || '0,00' });
+  renderAcoesNovo();
 }
 
-function gerarAnexo4() {
-  const rows = [...document.querySelectorAll('#anx4-rows > div')];
-  const dia = document.getElementById('anx4-dia').value;
-  const mes = document.getElementById('anx4-mes').value;
-  const ano = document.getElementById('anx4-ano').value;
-  const tcNum = getTCNumeroDoAnexo('anx4-tc');
-  let linhas = '';
-  let total = 0;
-  rows.forEach((row, i) => {
-    const inputs = row.querySelectorAll('input');
-    const guia = inputs[0].value || '—';
-    const data = inputs[1].value ? fmtDate(inputs[1].value) : '—';
-    const nf = inputs[2].value || '—';
-    const vGuia = inputs[3].value || '0,00';
-    const vNF = inputs[4].value || '0,00';
-    total += parseMoney(vGuia);
-    linhas += `${String(i+1).padStart(2,' ')}. ${guia.padEnd(30,' ')}  ${data.padEnd(12,' ')}  ${nf.padEnd(20,' ')}  R$ ${vGuia.padStart(10,' ')}  R$ ${vNF.padStart(10,' ')}\n`;
+function popularAcoesNovo() {
+  const desps = getAnxDespesas();
+  if (!desps.length) return;
+  const periodo = document.getElementById('novo-anx2-periodo').value || '';
+  const tipoAcaoLbl = { 'CUSTEIO':'MATERIAIS DE EXPEDIENTE/PAPELARIA','CAPITAL':'EQUIPAMENTOS/MOBILIÁRIO','ALEM_MUROS':'ROTEIROS EDUCATIVOS/CULTURAIS','OBRAS':'SERVIÇOS DE ALVENARIA, REDE HIDRÁULICA, REDE ELÉTRICA E REDE LÓGICA','CAPINA':'CAPINA E LIMPEZA DE TERRENO' };
+  const grupos = {};
+  desps.forEach(d => {
+    const key = tipoAcaoLbl[d.tipo] || d.tipo;
+    if (!grupos[key]) grupos[key] = 0;
+    grupos[key] += parseMoney(d.valor);
   });
-  let txt = `                              ANEXO IV
-                        RELAÇÃO DE GUIAS PAGAS
-
-Caixa Escolar: ${CAIXA_ESCOLAR}          CNPJ: ${CNPJ_CE}
-Termo de Compromisso: ${tcNum}
-
-${'─'.repeat(90)}
-Nº  Guia (INSS, ISSQN)                Data          Nota Fiscal            Valor Guia    Valor NF
-${'─'.repeat(90)}
-${linhas || '    (Nenhuma guia informada)\n'}${'─'.repeat(90)}
-Total de despesas: R$ ${fmtMoneyStr(total)}
-
-Contagem, ${dia} de ${mes} de ${ano}.
-
-
-_________________________________          _________________________________
-Presidente da Caixa Escolar                  Responsável pelo preenchimento
-${PRESIDENTE}                    (Nome, matrícula e assinatura)`;
-  document.getElementById('prev-anx4').textContent = txt;
+  _novoAcaoRows = Object.entries(grupos).map(([acao, val]) => ({ acao, periodo, valor: fmtMoneyStr(val) }));
+  renderAcoesNovo();
 }
 
-// ==================== ANEXO V — PARECER DO CONSELHO FISCAL ====================
-function gerarAnexo5() {
-  const datacred = document.getElementById('anx5-datacred').value;
-  const cat = document.getElementById('anx5-cat').value;
-  const resultado = document.getElementById('anx5-resultado').value;
-  const ressalva = document.getElementById('anx5-ressalva').value;
-  const dia = document.getElementById('anx5-dia').value;
-  const mes = document.getElementById('anx5-mes').value;
-  const ano = document.getElementById('anx5-ano').value;
-  const tcNum = getTCNumeroDoAnexo('anx5-tc');
-  let txt = `                              ANEXO V
-                        PARECER DO CONSELHO FISCAL
-
-Os membros do Conselho Fiscal da Caixa Escolar ${CAIXA_ESCOLAR}, após análise
-detalhada da prestação de contas dos recursos financeiros recebidos pela referida entidade
-em ${datacred}, com origem na Prefeitura de Contagem e destinados a (${cat}),
-constatam que a aplicação dos recursos foi realizada em conformidade com a proposta
-pedagógica da Unidade Escolar ${ESCOLA}.
-
-Diante dessa constatação, o Conselho Fiscal ${resultado === 'aprovada' ? 'APROVA, por unanimidade' : resultado === 'aprovada com ressalvas' ? 'APROVA COM RESSALVAS' : 'NÃO APROVA'}, a prestação de contas,
-considerando que os recursos foram utilizados de forma adequada e em alinhamento com os
-objetivos estabelecidos.${ressalva ? '\n\nRessalvas/Observações: ' + ressalva : ''}
-
-Segue abaixo a relação de assinaturas dos membros do Conselho Fiscal, conforme disposto
-no Estatuto registrado em cartório na cidade de Contagem:
-
-Contagem, ${dia} de ${mes} de ${ano}.
-
-_________________________________          _________________________________
-${PRESIDENTE}                                   ${TESOUREIRO}
-Presidente                                         Tesoureiro
-
-
-MEMBROS DO CONSELHO FISCAL:
-
-_________________________________          ________________________________
-${CF1}
-Assinatura                                         Segmento: ________________
-
-_________________________________          ________________________________
-${CF2}
-Assinatura                                         Segmento: ________________
-
-_________________________________          ________________________________
-${CF3}
-Assinatura                                         Segmento: ________________`;
-  document.getElementById('prev-anx5').textContent = txt;
+function renderAcoesNovo() {
+  const tbody = document.getElementById('novo-acoes-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = _novoAcaoRows.map((r, i) => `
+    <tr>
+      <td><input type="text" value="${escHtmlPc(r.acao)}" oninput="_novoAcaoRows[${i}].acao=this.value" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text);outline:none"></td>
+      <td><input type="text" value="${escHtmlPc(r.periodo)}" oninput="_novoAcaoRows[${i}].periodo=this.value" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text);outline:none"></td>
+      <td><input type="text" value="${escHtmlPc(r.valor)}" oninput="_novoAcaoRows[${i}].valor=this.value;calcAcoesTotalNovo()" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--accent2);font-family:'DM Mono',monospace;outline:none"></td>
+      <td><button onclick="_novoAcaoRows.splice(${i},1);renderAcoesNovo()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:14px;padding:4px 8px;border-radius:5px" title="Remover">✕</button></td>
+    </tr>
+  `).join('');
+  calcAcoesTotalNovo();
 }
 
-// ==================== ANEXO VI — TERMO DE DOAÇÃO ====================
-let anx6RowCount = 0;
-function addAnx6Row(data, qtd, unid, disc, ndoc, vUnit, vTot) {
-  anx6RowCount++;
-  const id = 'anx6r' + anx6RowCount;
-  const div = document.createElement('div');
-  div.id = id;
-  div.style.cssText = 'display:grid;grid-template-columns:1fr 60px 80px 1fr 100px 100px;gap:8px;margin-bottom:6px;align-items:center';
-  div.innerHTML = `
-    <input type="text" value="${disc||''}" placeholder="Ex.: Cadeira ergonômica" style="font-size:12px">
-    <input type="number" value="${qtd||1}" min="1" style="font-size:12px">
-    <input type="text" value="${unid||'un'}" style="font-size:12px">
-    <input type="text" value="${ndoc||''}" placeholder="NF 001" style="font-size:12px">
-    <input type="text" value="${vUnit||''}" placeholder="0,00" data-money style="font-family:'DM Mono',monospace;font-size:12px;color:var(--accent2)">
-    <div style="display:flex;gap:4px"><input type="text" value="${vTot||''}" placeholder="0,00" data-money style="font-family:'DM Mono',monospace;font-size:12px;color:var(--accent2)"><button onclick="document.getElementById('${id}').remove()" style="background:none;border:none;color:var(--accent-red);cursor:pointer;padding:0 4px">✕</button></div>`;
-  document.getElementById('anx6-rows').appendChild(div);
-  div.querySelectorAll('[data-money]').forEach(maskMoney);
+function calcAcoesTotalNovo() {
+  const total = _novoAcaoRows.reduce((s, r) => s + parseMoney(r.valor), 0);
+  const el = document.getElementById('novo-acoes-total');
+  if (el) el.textContent = fmtMoney(total);
 }
 
-function gerarAnexo6() {
-  const rows = [...document.querySelectorAll('#anx6-rows > div')];
-  const dia = document.getElementById('anx6-dia').value;
-  const mes = document.getElementById('anx6-mes').value;
-  const ano = document.getElementById('anx6-ano').value;
-  const hoje = `${dia}/${mes}/${ano}`;
-  const tcNum = getTCNumeroDoAnexo('anx6-tc');
-  let itens = '';
+function escHtmlPc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function gerarNovoAnx2() {
+  const tc = getAnxTC();
+  if (!tc) { alert('Selecione um TC acima.'); return; }
+  const dia = document.getElementById('novo-anx2-dia').value || '___';
+  const mes = document.getElementById('novo-anx2-mes').value || '___';
+  const ano = document.getElementById('novo-anx2-ano').value || '____';
+  const dataCredito = document.getElementById('novo-anx2-datacredito').value || '';
+  const valorCred = document.getElementById('novo-anx2-valor').value || '0,00';
+  const parcela = getAnxParcela();
+  const nomeParc = parcelaNomeNovo(parcela);
+  const tcNum = getAnxTCNumero();
+  const totalAcoes = _novoAcaoRows.reduce((s, r) => s + parseMoney(r.valor), 0);
+  const valorNum = parseMoney(valorCred);
+  const valorExtenso = valorPorExtenso(valorNum);
+
+  const acoesTrs = _novoAcaoRows.map(r => `
+    <tr>
+      <td style="border:1px solid #000;padding:5px 8px">${r.acao}</td>
+      <td style="border:1px solid #000;padding:5px 8px;text-align:center">${r.periodo}</td>
+      <td style="border:1px solid #000;padding:5px 8px;text-align:right;font-family:monospace">R$ ${r.valor}</td>
+    </tr>`).join('') || `<tr><td colspan="3" style="border:1px solid #000;padding:8px;text-align:center;color:#666">(Nenhuma ação informada)</td></tr>`;
+
+  const html = novoDocHtml('ANEXO II — DELIBERAÇÃO DO CONSELHO FISCAL',
+    `<div style="text-align:center;margin-bottom:8px">
+       <p><strong>SECRETARIA MUNICIPAL DE EDUCAÇÃO E CULTURA DE CONTAGEM</strong></p>
+       <p style="font-size:9pt"><strong>GERÊNCIA DAS CAIXAS ESCOLARES — DIRETORIA DE GESTÃO DE PARCERIAS, TERMOS DE COMPROMISSO E CONVÊNIOS — SUPERINTENDÊNCIA DE PLANEJAMENTO, ORÇAMENTO E FINANÇAS</strong></p>
+       <p style="font-size:9pt"><strong>${ENDERECO_SEDUC}</strong></p>
+     </div>
+     <h2 style="text-align:center">ANEXO II</h2>
+     <h3 style="text-align:center">DELIBERAÇÃO DO CONSELHO FISCAL</h3>
+     <br>
+     <p style="text-align:justify">Aos ${dia} dias do mês de ${mes} do ano de ${ano}, reuniram-se os membros do Conselho Fiscal da Caixa Escolar <strong>${CAIXA_ESCOLAR}</strong>, da Unidade Escolar <strong>${ESCOLA}</strong> (CNPJ: ${CNPJ_CE}), registrada em Cartório, Livro A nº ${LIVRO_A}.</p>
+     <br>
+     <p style="text-align:justify"><strong>Pauta:</strong> Deliberação sobre a utilização de recurso referente ao repasse da <strong>${nomeParc} PARCELA</strong> para o Termo de Compromisso <strong>${tcNum}</strong>, assinado entre a Caixa Escolar e a Prefeitura de Contagem.</p>
+     <br>
+     <p style="text-align:justify">O(A) Presidente da Caixa Escolar apresentou o valor de <strong>R$ ${valorCred} (${valorExtenso})</strong>, creditado em <strong>${dataCredito}</strong> no Banco ${BANCO}, Agência ${AGENCIA}, Conta ${CONTA}.</p>
+     <br>
+     <p>Definiu-se a aplicação dos recursos nas seguintes ações de Manutenção e Desenvolvimento do Ensino — MDE:</p>
+     <br>
+     <table style="width:100%;border-collapse:collapse;font-size:10.5pt">
+       <thead>
+         <tr style="background:#e8e8e8">
+           <th style="border:1px solid #000;padding:6px 8px;text-align:left">Ação MDE</th>
+           <th style="border:1px solid #000;padding:6px 8px;width:180px">Período de Execução</th>
+           <th style="border:1px solid #000;padding:6px 8px;width:110px;text-align:right">Valor R$</th>
+         </tr>
+       </thead>
+       <tbody>${acoesTrs}</tbody>
+       <tfoot>
+         <tr style="background:#f5f5f5">
+           <td colspan="2" style="border:1px solid #000;padding:6px 8px;font-weight:bold;text-align:right">TOTAL</td>
+           <td style="border:1px solid #000;padding:6px 8px;font-family:monospace;font-weight:bold;text-align:right">R$ ${fmtMoneyStr(totalAcoes)}</td>
+         </tr>
+       </tfoot>
+     </table>
+     <br>
+     <p style="text-align:justify">Nada mais a tratar, a reunião foi encerrada e a presente ata lavrada e assinada pelos presentes.</p>
+     <br>
+     <p>Contagem, ${dia} de ${mes} de ${ano}.</p>
+     <br>
+     <div style="display:flex;justify-content:space-between;margin-top:24px">
+       <div style="width:45%;border-top:1px solid #000;padding-top:5px;text-align:center">
+         <p><strong>${PRESIDENTE}</strong></p><p>Presidente</p>
+       </div>
+       <div style="width:45%;border-top:1px solid #000;padding-top:5px;text-align:center">
+         <p><strong>${TESOUREIRO}</strong></p><p>Tesoureiro</p>
+       </div>
+     </div>
+     <br>
+     <p style="font-weight:bold">Membros do Conselho Fiscal:</p>
+     <div style="display:flex;justify-content:space-between;margin-top:16px">
+       <div style="width:45%;border-top:1px solid #000;padding-top:5px"><p>${CF1}</p></div>
+       <div style="width:45%;border-top:1px solid #000;padding-top:5px">Segmento: _______________</div>
+     </div>
+     <div style="display:flex;justify-content:space-between;margin-top:16px">
+       <div style="width:45%;border-top:1px solid #000;padding-top:5px"><p>${CF2}</p></div>
+       <div style="width:45%;border-top:1px solid #000;padding-top:5px">Segmento: _______________</div>
+     </div>
+     <div style="display:flex;justify-content:space-between;margin-top:16px">
+       <div style="width:45%;border-top:1px solid #000;padding-top:5px"><p>${CF3}</p></div>
+       <div style="width:45%;border-top:1px solid #000;padding-top:5px">Segmento: _______________</div>
+     </div>`
+  );
+  novoRenderDoc(2, html);
+}
+
+function baixarTXTAnx2() {
+  const prev = document.getElementById('prev-novo-anx2');
+  const iframe = prev ? prev.querySelector('iframe') : null;
+  if (!iframe) { alert('Gere o documento primeiro.'); return; }
+  const txt = iframe.srcdoc || '';
+  if (!txt) { alert('Gere o documento primeiro.'); return; }
+  const blob = new Blob([txt], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'Deliberacao_Conselho_Fiscal.html'; a.click();
+}
+
+function gerarNovoAnx3() {
+  const saldoAnt = document.getElementById('novo-anx3-saldo').value || '0,05';
+  const creditado = document.getElementById('novo-anx3-creditado').value || '0,00';
+  const rendimento = document.getElementById('novo-anx3-rendimento').value || '0,00';
+  const dataCredito = document.getElementById('novo-anx3-datacredito').value || '';
+  const tipo = document.getElementById('novo-anx3-tipo').value;
+  const parcela = getAnxParcela();
+  const tcNum = getAnxTCNumero();
+  const desps = getAnxDespesas(tipo === 'TODOS' ? null : tipo);
+  const totalGasto = desps.reduce((s, d) => s + parseMoney(d.valor), 0);
+  const totalReceita = parseMoney(saldoAnt) + parseMoney(creditado) + parseMoney(rendimento);
+  const saldo = totalReceita - totalGasto;
+
+  const despTrs = desps.map((d, i) => `
+    <tr>
+      <td style="border:1px solid #000;padding:5px 7px;text-align:center">${i+1}</td>
+      <td style="border:1px solid #000;padding:5px 7px">${d.credor}</td>
+      <td style="border:1px solid #000;padding:5px 7px;font-family:monospace;font-size:9pt">${d.cnpj || '—'}</td>
+      <td style="border:1px solid #000;padding:5px 7px">${d.nfNum ? d.nfNum + (d.nfData ? ' — ' + fmtDate(d.nfData) : '') : '—'}</td>
+      <td style="border:1px solid #000;padding:5px 7px;text-align:right;font-family:monospace">R$ ${d.valor}</td>
+    </tr>`).join('') || `<tr><td colspan="5" style="border:1px solid #000;padding:8px;text-align:center;color:#666">(Nenhuma despesa)</td></tr>`;
+
+  const tipoLabels = { 'CUSTEIO':'Custeio','CAPITAL':'Capital','ALEM_MUROS':'Além dos Muros','OBRAS':'Obras','CAPINA':'Capina' };
+
+  const html = novoDocHtml('ANEXO III — RELATÓRIO DE EXECUÇÃO FÍSICO-FINANCEIRA',
+    `<div style="text-align:center;margin-bottom:8px">
+       <p><strong>PREFEITURA MUNICIPAL DE CONTAGEM</strong></p>
+       <p><strong>Secretaria Municipal de Educação e Cultura</strong></p>
+     </div>
+     <h2 style="text-align:center">ANEXO III</h2>
+     <h3 style="text-align:center">RELATÓRIO DE EXECUÇÃO FÍSICO-FINANCEIRA</h3>
+     <br>
+     <table style="width:100%;border-collapse:collapse;font-size:10pt">
+       <tr>
+         <td style="border:1px solid #000;padding:5px 8px" colspan="2"><strong>Caixa Escolar:</strong> ${CAIXA_ESCOLAR} &nbsp;&nbsp; <strong>CNPJ:</strong> ${CNPJ_CE}</td>
+       </tr>
+       <tr>
+         <td style="border:1px solid #000;padding:5px 8px"><strong>Data do Crédito:</strong> ${dataCredito}</td>
+         <td style="border:1px solid #000;padding:5px 8px"><strong>Nº da Parcela:</strong> ${numParcelaOrdNovo(parcela)} &nbsp;&nbsp; <strong>Tipo:</strong> ${tipoLabels[tipo] || tipo}</td>
+       </tr>
+     </table>
+     <h3 style="text-align:center;margin-top:10px;padding:4px;border:1px solid #000;background:#f5f5f5">RECEITA</h3>
+     <table style="width:100%;border-collapse:collapse;font-size:9.5pt">
+       <thead><tr style="background:#e8e8e8">
+         <th style="border:1px solid #000;padding:5px 6px;text-align:center">Saldo Anterior</th>
+         <th style="border:1px solid #000;padding:5px 6px;text-align:center">Valor Creditado</th>
+         <th style="border:1px solid #000;padding:5px 6px;text-align:center">Rec. Próprios</th>
+         <th style="border:1px solid #000;padding:5px 6px;text-align:center">Rendimento Aplic.</th>
+         <th style="border:1px solid #000;padding:5px 6px;text-align:center">Total Receita</th>
+         <th style="border:1px solid #000;padding:5px 6px;text-align:center">Total Despesas</th>
+         <th style="border:1px solid #000;padding:5px 6px;text-align:center">Saldo</th>
+       </tr></thead>
+       <tbody><tr style="text-align:right;font-family:monospace">
+         <td style="border:1px solid #000;padding:6px 8px"><strong>R$ ${saldoAnt}</strong></td>
+         <td style="border:1px solid #000;padding:6px 8px"><strong>R$ ${creditado}</strong></td>
+         <td style="border:1px solid #000;padding:6px 8px"><strong>R$ 0,00</strong></td>
+         <td style="border:1px solid #000;padding:6px 8px"><strong>R$ ${rendimento}</strong></td>
+         <td style="border:1px solid #000;padding:6px 8px"><strong>R$ ${fmtMoneyStr(totalReceita)}</strong></td>
+         <td style="border:1px solid #000;padding:6px 8px"><strong>R$ ${fmtMoneyStr(totalGasto)}</strong></td>
+         <td style="border:1px solid #000;padding:6px 8px;color:${saldo < 0 ? 'red' : 'black'}"><strong>${saldo < 0 ? '-' : ''}R$ ${fmtMoneyStr(Math.abs(saldo))}</strong></td>
+       </tr></tbody>
+     </table>
+     <h3 style="text-align:center;padding:6px;border:1px solid #000;border-top:none;background:#f5f5f5">Relação de Pagamentos</h3>
+     <table style="width:100%;border-collapse:collapse;font-size:9.5pt">
+       <thead><tr style="background:#e8e8e8">
+         <th style="border:1px solid #000;padding:5px 7px;width:30px">Ord</th>
+         <th style="border:1px solid #000;padding:5px 7px">Credor</th>
+         <th style="border:1px solid #000;padding:5px 7px;width:140px">CNPJ</th>
+         <th style="border:1px solid #000;padding:5px 7px;width:140px">Comprovante</th>
+         <th style="border:1px solid #000;padding:5px 7px;width:100px;text-align:right">Valor R$</th>
+       </tr></thead>
+       <tbody>${despTrs}
+         <tr style="background:#e8e8e8">
+           <td colspan="4" style="border:1px solid #000;padding:6px 8px;text-align:center;font-weight:bold">Total</td>
+           <td style="border:1px solid #000;padding:6px 8px;text-align:right;font-family:monospace;font-weight:bold">R$ ${fmtMoneyStr(totalGasto)}</td>
+         </tr>
+       </tbody>
+     </table>
+     <br>
+     <div style="display:flex;justify-content:space-between;margin-top:20px">
+       <div style="width:45%;border-top:1px solid #000;padding-top:5px;text-align:center">
+         <p>(assinatura e carimbo do Presidente)</p><p><strong>${PRESIDENTE}</strong></p>
+       </div>
+       <div style="width:45%;border-top:1px solid #000;padding-top:5px;text-align:center">
+         <p>Assinatura do Tesoureiro</p><p><strong>${TESOUREIRO}</strong></p>
+       </div>
+     </div>`
+  );
+  novoRenderDoc(3, html);
+}
+
+// --- ANX4 ---
+function addGuiaNovo(guia='', data='', nf='', vGuia='', vNF='') {
+  _novoGuiaRows.push({ guia, data, nf, vGuia: vGuia||'0,00', vNF: vNF||'0,00' });
+  renderGuiasNovo();
+}
+
+function renderGuiasNovo() {
+  const tbody = document.getElementById('novo-guias-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = _novoGuiaRows.map((r, i) => `
+    <tr>
+      <td><input type="text" value="${escHtmlPc(r.guia)}" oninput="_novoGuiaRows[${i}].guia=this.value" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text);outline:none" placeholder="Ex.: ISSQN retido"></td>
+      <td><input type="text" value="${escHtmlPc(r.data)}" oninput="_novoGuiaRows[${i}].data=this.value" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text);outline:none" placeholder="23/03/2026"></td>
+      <td><input type="text" value="${escHtmlPc(r.nf)}" oninput="_novoGuiaRows[${i}].nf=this.value" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text);outline:none" placeholder="NF 408"></td>
+      <td><input type="text" value="${escHtmlPc(r.vGuia)}" oninput="_novoGuiaRows[${i}].vGuia=this.value" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--accent2);font-family:'DM Mono',monospace;outline:none" placeholder="0,00"></td>
+      <td><input type="text" value="${escHtmlPc(r.vNF)}" oninput="_novoGuiaRows[${i}].vNF=this.value" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--accent2);font-family:'DM Mono',monospace;outline:none" placeholder="0,00"></td>
+      <td><button onclick="_novoGuiaRows.splice(${i},1);renderGuiasNovo()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:14px;padding:4px 8px;border-radius:5px">✕</button></td>
+    </tr>
+  `).join('');
+}
+
+function gerarNovoAnx4() {
+  const tcNum = getAnxTCNumero();
+  const parcela = getAnxParcela();
+  const dataDoc = document.getElementById('novo-anx4-data').value || '';
   let total = 0;
-  rows.forEach(row => {
-    const inputs = row.querySelectorAll('input');
-    const disc = inputs[0].value || '—';
-    const qtd = inputs[1].value || '1';
-    const unid = inputs[2].value || 'un';
-    const ndoc = inputs[3].value || '—';
-    const vUnit = inputs[4].value || '0,00';
-    const vTot = inputs[5].value || '0,00';
-    total += parseMoney(vTot);
-    itens += `${hoje.padEnd(12,' ')}  ${qtd.padEnd(5,' ')}  ${unid.padEnd(6,' ')}  ${disc.padEnd(30,' ')}  ${ndoc.padEnd(12,' ')}  R$ ${vUnit.padStart(9,' ')}  R$ ${vTot.padStart(9,' ')}\n`;
-  });
-  let txt = `SECRETARIA MUNICIPAL DE EDUCAÇÃO E CULTURA DE CONTAGEM
-Gerência das Caixas Escolares — Diretoria de Gestão de Parcerias, Termos de
-Compromisso e Convênios — Superintendência de Planejamento, Orçamento e Finanças
-${ENDERECO_SEDUC}
+  const guiaTrs = _novoGuiaRows.map((r, i) => {
+    total += parseMoney(r.vGuia);
+    return `<tr>
+      <td style="border:1px solid #000;padding:5px 7px;text-align:center">${i+1}</td>
+      <td style="border:1px solid #000;padding:5px 7px">${r.guia}</td>
+      <td style="border:1px solid #000;padding:5px 7px;text-align:center">${r.data}</td>
+      <td style="border:1px solid #000;padding:5px 7px">${r.nf}</td>
+      <td style="border:1px solid #000;padding:5px 7px;text-align:right;font-family:monospace">R$ ${r.vGuia}</td>
+      <td style="border:1px solid #000;padding:5px 7px;text-align:right;font-family:monospace">R$ ${r.vNF}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" style="border:1px solid #000;padding:8px;text-align:center;color:#666">(Nenhuma guia informada)</td></tr>';
 
-                              ANEXO VI
-                           TERMO DE DOAÇÃO
-
-Pelo presente instrumento a Caixa Escolar ${CAIXA_ESCOLAR} da Unidade
-Escolar ${ESCOLA}, faz, em conformidade com a legislação aplicável ao Termo
-de Compromisso de nº ${tcNum} e demais normas pertinentes à matéria,
-a doação do(s) bem(ns) conforme discriminado(s) abaixo, adquirido(s) com recursos
-do referido Programa de Manutenção e Desenvolvimento da Educação Básica para que
-seja(m) tombado(s) e incorporado(s) ao patrimônio público e destinado(s) à escola
-acima identificada, à qual cabe a responsabilidade pela guarda e conservação.
-
-${'─'.repeat(95)}
-Data          Qtd   Unid.   Discriminação                    Nº Doc.          Val. Unit.    Val. Total
-${'─'.repeat(95)}
-${itens || '(Nenhum item adicionado)\n'}${'─'.repeat(95)}
-                                                              TOTAL:         R$ ${fmtMoneyStr(total)}
-
-Contagem, ${dia} de ${mes} de ${ano}.
-
-
-_____________________________________________    _____________________________________________
-${PRESIDENTE}                              (Nome, matrícula e assinatura do responsável)
-Presidente da Caixa Escolar                             pelo preenchimento
-(Nome, carimbo e assinatura)`;
-  document.getElementById('prev-anx6').textContent = txt;
+  const html = novoDocHtml('ANEXO IV — RELAÇÃO DE GUIAS PAGAS',
+    `<div style="text-align:center;margin-bottom:8px">
+       <p><strong>SECRETARIA MUNICIPAL DE EDUCAÇÃO E CULTURA DE CONTAGEM</strong></p>
+       <p style="font-size:9pt">GERÊNCIA DAS CAIXAS ESCOLARES — ${ENDERECO_SEDUC}</p>
+     </div>
+     <h2 style="text-align:center;border:1px solid #000;padding:6px;background:#e8e8e8">ANEXO IV<br>RELAÇÃO DE GUIAS PAGAS</h2>
+     <table style="width:100%;border-collapse:collapse;font-size:10pt;margin-top:2px">
+       <tr><td style="border:1px solid #000;padding:5px 8px" colspan="2"><strong>Caixa Escolar:</strong> ${CAIXA_ESCOLAR} &nbsp;&nbsp; <strong>CNPJ:</strong> ${CNPJ_CE}</td></tr>
+       <tr>
+         <td style="border:1px solid #000;padding:5px 8px"><strong>Termo de Compromisso:</strong> Nº ${tcNum}</td>
+         <td style="border:1px solid #000;padding:5px 8px"><strong>Repasse:</strong> PARCELA ${numParcelaOrdNovo(parcela)} — CUSTEIO</td>
+       </tr>
+     </table>
+     <table style="width:100%;border-collapse:collapse;font-size:9.5pt;margin-top:2px">
+       <thead><tr style="background:#e8e8e8">
+         <th style="border:1px solid #000;padding:5px;text-align:center;width:30px">Ord.</th>
+         <th style="border:1px solid #000;padding:5px">Guia (INSS, ISSQN)</th>
+         <th style="border:1px solid #000;padding:5px;width:90px">Data</th>
+         <th style="border:1px solid #000;padding:5px">Nota Fiscal Referente</th>
+         <th style="border:1px solid #000;padding:5px;width:90px">Valor da Guia</th>
+         <th style="border:1px solid #000;padding:5px;width:90px">Valor na NF</th>
+       </tr></thead>
+       <tbody>${guiaTrs}
+         <tr style="background:#f5f5f5">
+           <td colspan="4" style="border:1px solid #000;padding:6px 8px;font-weight:bold">Total</td>
+           <td style="border:1px solid #000;padding:6px 8px;text-align:right;font-family:monospace;font-weight:bold">R$ ${fmtMoneyStr(total)}</td>
+           <td style="border:1px solid #000;padding:6px 8px"></td>
+         </tr>
+       </tbody>
+     </table>
+     <p style="margin-top:16px;font-weight:bold">ASSINATURAS</p>
+     <p style="margin-top:8px">CONTAGEM, ${dataDoc}</p>
+     <br>
+     <div style="display:flex;justify-content:space-between;margin-top:20px">
+       <div style="width:45%;border-top:1px solid #000;padding-top:5px">
+         <p>Presidente da Caixa Escolar</p><p><strong>${PRESIDENTE}</strong></p>
+       </div>
+       <div style="width:45%;border-top:1px solid #000;padding-top:5px">
+         <p>Responsável pelo preenchimento</p>
+       </div>
+     </div>`
+  );
+  novoRenderDoc(4, html);
 }
 
-// Pré-popular Anexo VI com despesas de Capital cadastradas
-function popularAnx6ComCapital() {
-  const caps = state.despesas.filter(d => d.tipo === 'CAPITAL');
-  if (!caps.length) return;
-  document.getElementById('anx6-rows').innerHTML = '';
-  anx6RowCount = 0;
-  caps.forEach(d => addAnx6Row('', 1, 'un', d.descricao || d.credor, d.nfNum || '', '', d.valor));
+// --- ANX5 ---
+function gerarNovoAnx5() {
+  const datacred = document.getElementById('novo-anx5-datacred').value || '';
+  const cat = document.getElementById('novo-anx5-cat').value;
+  const resultado = document.getElementById('novo-anx5-resultado').value;
+  const ressalva = document.getElementById('novo-anx5-ressalva').value;
+  const dataDoc = document.getElementById('novo-anx5-data').value || '';
+  const tcNum = getAnxTCNumero();
+  const resultText = resultado === 'aprovada' ? 'APROVA, por unanimidade' : resultado === 'aprovada com ressalvas' ? 'APROVA COM RESSALVAS' : 'NÃO APROVA';
+
+  const html = novoDocHtml('ANEXO V — PARECER DO CONSELHO FISCAL',
+    `<div style="text-align:center;margin-bottom:8px">
+       <p><strong>SECRETARIA MUNICIPAL DE EDUCAÇÃO E CULTURA DE CONTAGEM</strong></p>
+       <p style="font-size:9pt"><strong>GERÊNCIA DAS CAIXAS ESCOLARES — DIRETORIA DE GESTÃO DE PARCERIAS, TERMOS DE COMPROMISSO E CONVÊNIOS — SUPERINTENDÊNCIA DE PLANEJAMENTO, ORÇAMENTO E FINANÇAS</strong></p>
+       <p style="font-size:9pt"><strong>${ENDERECO_SEDUC}</strong></p>
+     </div>
+     <h2 style="text-align:center">ANEXO V</h2>
+     <h3 style="text-align:center">PARECER DO CONSELHO FISCAL</h3>
+     <br>
+     <table style="width:100%;border-collapse:collapse">
+       <tr><td style="border:1px solid #000;padding:10px 14px;text-align:justify">
+         <p>Os membros do Conselho Fiscal da Caixa Escolar: <strong>${CAIXA_ESCOLAR}</strong></p>
+         <p style="margin-top:8px">Após análise detalhada da prestação de contas dos recursos financeiros recebidos na Caixa Escolar <strong>${CAIXA_ESCOLAR}</strong>, em <strong>${datacred}</strong> (Data do Crédito em Conta) — <strong>Origem:</strong> Prefeitura de Contagem / (<strong>${cat}</strong>), ${resultText} a Prestação de Contas, em virtude da aplicação dos recursos financeiros estar em consonância com a proposta pedagógica da Unidade Escolar <strong>${ESCOLA}</strong>.${ressalva ? '<br><br><strong>Ressalvas/Observações:</strong> ' + ressalva : ''}</p>
+         <p style="margin-top:8px">Segue abaixo as assinaturas pertinentes, conforme Estatuto registrado em Cartório da cidade de Contagem:</p>
+         <p style="margin-top:12px"><strong>Contagem, ${dataDoc}</strong></p>
+         <br>
+         <div style="display:flex;justify-content:space-between;margin-top:12px">
+           <div style="width:45%;border-top:1px solid #000;padding-top:5px;text-align:center">
+             <p><strong>${PRESIDENTE}</strong></p><p>Presidente</p>
+           </div>
+           <div style="width:45%;border-top:1px solid #000;padding-top:5px;text-align:center">
+             <p><strong>${TESOUREIRO}</strong></p><p>Tesoureiro</p>
+           </div>
+         </div>
+         <p style="margin-top:16px;font-weight:bold">Membros do Conselho Fiscal — ASSINATURAS / Segmento de Representação</p>
+         <br>
+         <div style="display:flex;justify-content:space-between;margin-top:12px">
+           <div style="width:45%;border-top:1px solid #000;padding-top:5px"><p>${CF1}</p></div>
+           <div style="width:45%;border-top:1px solid #000;padding-top:5px">Segmento: _______________</div>
+         </div>
+         <div style="display:flex;justify-content:space-between;margin-top:16px">
+           <div style="width:45%;border-top:1px solid #000;padding-top:5px"><p>${CF2}</p></div>
+           <div style="width:45%;border-top:1px solid #000;padding-top:5px">Segmento: _______________</div>
+         </div>
+         <div style="display:flex;justify-content:space-between;margin-top:16px">
+           <div style="width:45%;border-top:1px solid #000;padding-top:5px"><p>${CF3}</p></div>
+           <div style="width:45%;border-top:1px solid #000;padding-top:5px">Segmento: _______________</div>
+         </div>
+       </td></tr>
+     </table>`
+  );
+  novoRenderDoc(5, html);
 }
 
-// ==================== ANEXO VII — TRABALHO DE CAMPO ====================
-function gerarAnexo7() {
-  const alunos = document.getElementById('anx7-alunos').value;
-  const data = document.getElementById('anx7-data').value ? fmtDate(document.getElementById('anx7-data').value) : '___/___/______';
-  const dest = document.getElementById('anx7-destino').value || '___________________________';
-  const saida = document.getElementById('anx7-saida').value || '___:___';
-  const chegada = document.getElementById('anx7-chegada').value || '___:___';
-  const custo = document.getElementById('anx7-custo').value || '0,00';
-  const tema = document.getElementById('anx7-tema').value || '___________________________';
-  const obj = document.getElementById('anx7-obj').value || '___________________________';
-  const acoes = document.getElementById('anx7-acoes').value || '___________________________';
-  const areas = document.getElementById('anx7-areas').value || '___________________________';
-  let txt = `SECRETARIA MUNICIPAL DE EDUCAÇÃO E CULTURA DE CONTAGEM
-Gerência das Caixas Escolares — Diretoria de Gestão de Parcerias, Termos de
-Compromisso e Convênios — Superintendência de Planejamento, Orçamento e Finanças
-${ENDERECO_SEDUC}
-
-                              ANEXO VII
-                    FORMULÁRIO TRABALHO DE CAMPO
-
-1 — IDENTIFICAÇÃO
-${'─'.repeat(80)}
-ESCOLA: ${ESCOLA}
-
-A. NÍVEL E MODALIDADE DE ENSINO:
-( ) Educação Infantil   (X) Ensino Fundamental   ( ) Educação de Jovens e Adultos (EJA)
-
-B. Nº DE ESTUDANTES/CRIANÇAS: ${alunos || '____'}                 DATA: ${data}
-C. DESTINO: ${dest}
-D. HORÁRIO DE SAÍDA: ${saida}
-E. HORÁRIO DE CHEGADA: ${chegada}
-F. CUSTO (VALOR EM REAL): R$ ${custo}
-
-2 — DETALHAMENTOS DO PROJETO
-${'─'.repeat(80)}
-A. TEMA: ${tema}
-
-B. OBJETIVOS:
-${obj}
-
-C. AÇÕES DESENVOLVIDAS:
-${acoes}
-
-D. ÁREAS DE CONHECIMENTO ENVOLVIDAS: ${areas}
-
-
-${'─'.repeat(50)}
-CARIMBO E ASSINATURA DO PEDAGOGO DA ESCOLA`;
-  document.getElementById('prev-anx7').textContent = txt;
+// --- ANX6 Bens ---
+function addBemNovo(disc='', qtd=1, unid='un', ndoc='', vUnit='', vTot='') {
+  _novoBemRows.push({ disc, qtd, unid, ndoc, vUnit: vUnit||'0,00', vTot: vTot||'0,00' });
+  renderBensNovo();
 }
 
-// ==================== ANEXO VIII — TERMO DE RECEBIMENTO ====================
-function gerarAnexo8() {
-  const contrato = document.getElementById('anx8-contrato').value || '___/____';
-  const objeto = document.getElementById('anx8-objeto').value || '___________________________';
-  const empresa = document.getElementById('anx8-empresa').value || '___________________________';
-  const dataprov = document.getElementById('anx8-dataprov').value ? fmtDate(document.getElementById('anx8-dataprov').value) : '__/__/____';
-  const eng = document.getElementById('anx8-eng').value || '___________________________';
-  const gestor = document.getElementById('anx8-gestor').value || '___________________________';
-  const fiscal = document.getElementById('anx8-fiscal').value || '___________________________';
-  const dia = document.getElementById('anx8-dia').value;
-  const mes = document.getElementById('anx8-mes').value;
-  const ano = document.getElementById('anx8-ano').value;
-  let txt = `                              ANEXO VIII
-                      TERMO DE RECEBIMENTO DEFINITIVO
-
-Termo de Recebimento Definitivo do Contrato nº ${contrato}, referente à execução
-dos serviços de reforma, manutenção, reparo e requalificação de imóveis da
-${ESCOLA}, tendo como objeto a prestação de serviços de: "${objeto}".
-
-Contratante: Caixa Escolar ${CAIXA_ESCOLAR}
-Contratada: ${empresa}
-
-Em conformidade com o Termo de Recebimento Provisório emitido em ${dataprov}, e após
-o prazo estipulado, constatou-se que o objeto contratado está em conformidade.
-
-Contagem, ${dia} de ${mes} de ${ano}.
-
-
-_____________________________________________
-${eng}
-Engenheiro SEDUC/FUNEC
-Diretoria de Manutenção e Infraestrutura da Rede Física
-
-
-_____________________________________________
-${gestor}
-Gestor do Contrato — Caixa Escolar ${CAIXA_ESCOLAR}
-
-
-_____________________________________________
-${fiscal}
-Fiscal do Contrato — Caixa Escolar ${CAIXA_ESCOLAR}
-
-
-_____________________________________________
-(Assinatura da Empresa Contratada)`;
-  document.getElementById('prev-anx8').textContent = txt;
+function renderBensNovo() {
+  const tbody = document.getElementById('novo-bens-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = _novoBemRows.map((r, i) => `
+    <tr>
+      <td><input type="text" value="${escHtmlPc(r.disc)}" oninput="_novoBemRows[${i}].disc=this.value" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text);outline:none" placeholder="Mesa escolar"></td>
+      <td><input type="number" value="${r.qtd}" oninput="_novoBemRows[${i}].qtd=this.value" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text);outline:none"></td>
+      <td><input type="text" value="${escHtmlPc(r.unid)}" oninput="_novoBemRows[${i}].unid=this.value" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text);outline:none"></td>
+      <td><input type="text" value="${escHtmlPc(r.ndoc)}" oninput="_novoBemRows[${i}].ndoc=this.value" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text);outline:none" placeholder="NF 001"></td>
+      <td><input type="text" value="${escHtmlPc(r.vUnit)}" oninput="_novoBemRows[${i}].vUnit=this.value" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--accent2);font-family:'DM Mono',monospace;outline:none" placeholder="0,00"></td>
+      <td><input type="text" value="${escHtmlPc(r.vTot)}" oninput="_novoBemRows[${i}].vTot=this.value" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--accent2);font-family:'DM Mono',monospace;outline:none" placeholder="0,00"></td>
+      <td><button onclick="_novoBemRows.splice(${i},1);renderBensNovo()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:14px;padding:4px 8px;border-radius:5px">✕</button></td>
+    </tr>
+  `).join('');
 }
+
+function popularBemsNovo() {
+  const caps = getAnxDespesas('CAPITAL');
+  if (!caps.length) { alert('Nenhuma despesa de Capital para este TC/Parcela.'); return; }
+  _novoBemRows = caps.map(d => ({ disc: d.descricao || d.credor, qtd: 1, unid: 'un', ndoc: d.nfNum || '', vUnit: d.valor, vTot: d.valor }));
+  renderBensNovo();
+}
+
+function gerarNovoAnx6() {
+  const tcNum = getAnxTCNumero();
+  const dataDoc = document.getElementById('novo-anx6-data').value || '';
+  let total = 0;
+  const bemTrs = _novoBemRows.map(r => {
+    total += parseMoney(r.vTot);
+    return `<tr>
+      <td style="border:1px solid #000;padding:5px 7px">${dataDoc}</td>
+      <td style="border:1px solid #000;padding:5px 7px;text-align:center">${r.qtd}</td>
+      <td style="border:1px solid #000;padding:5px 7px;text-align:center">${r.unid}</td>
+      <td style="border:1px solid #000;padding:5px 7px">${r.disc}</td>
+      <td style="border:1px solid #000;padding:5px 7px">${r.ndoc}</td>
+      <td style="border:1px solid #000;padding:5px 7px;text-align:right;font-family:monospace">R$ ${r.vUnit}</td>
+      <td style="border:1px solid #000;padding:5px 7px;text-align:right;font-family:monospace">R$ ${r.vTot}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="7" style="border:1px solid #000;padding:8px;text-align:center;color:#666">(Nenhum item)</td></tr>';
+
+  const html = novoDocHtml('ANEXO VI — TERMO DE DOAÇÃO',
+    `<div style="text-align:center;margin-bottom:8px">
+       <p><strong>SECRETARIA MUNICIPAL DE EDUCAÇÃO E CULTURA DE CONTAGEM</strong></p>
+       <p style="font-size:9pt"><strong>GERÊNCIA DAS CAIXAS ESCOLARES — ${ENDERECO_SEDUC}</strong></p>
+     </div>
+     <h2 style="text-align:center">ANEXO VI</h2>
+     <h3 style="text-align:center">T E R M O &nbsp; D E &nbsp; D O A Ç Ã O</h3>
+     <br>
+     <p style="text-align:justify"><em>Pelo presente instrumento a Caixa Escolar <strong>${CAIXA_ESCOLAR}</strong> da Unidade Escolar <strong>${ESCOLA}</strong>, faz, em conformidade com a legislação aplicável ao <strong>Termo de Compromisso de nº ${tcNum}</strong> e demais normas pertinentes, a doação do(s) bem(ns) abaixo discriminado(s), adquirido(s) com recursos do referido Programa de Manutenção e Desenvolvimento da Educação Básica para que seja(m) tombado(s) e incorporado(s) ao patrimônio público da escola acima identificada.</em></p>
+     <br>
+     <table style="width:100%;border-collapse:collapse;font-size:9.5pt">
+       <thead><tr style="background:#e8e8e8">
+         <th style="border:1px solid #000;padding:5px">Data</th>
+         <th style="border:1px solid #000;padding:5px">Qtd.</th>
+         <th style="border:1px solid #000;padding:5px">Unid.</th>
+         <th style="border:1px solid #000;padding:5px">Discriminação</th>
+         <th style="border:1px solid #000;padding:5px">Nº Doc.</th>
+         <th style="border:1px solid #000;padding:5px" colspan="2">Valor em R$<br><span style="font-weight:normal">Unitário / Total</span></th>
+       </tr></thead>
+       <tbody>${bemTrs}
+         <tr style="background:#e8e8e8">
+           <td colspan="5" style="border:1px solid #000;padding:6px 8px;font-weight:bold;text-align:right">TOTAL</td>
+           <td colspan="2" style="border:1px solid #000;padding:6px 8px;font-family:monospace;font-weight:bold;text-align:right">R$ ${fmtMoneyStr(total)}</td>
+         </tr>
+       </tbody>
+     </table>
+     <br>
+     <div style="display:flex;justify-content:space-between;margin-top:20px">
+       <div style="width:45%;border-top:1px solid #000;padding-top:5px">
+         <p>(carimbo e assinatura do Presidente)</p><p><strong>${PRESIDENTE}</strong></p>
+       </div>
+       <div style="width:45%;border-top:1px solid #000;padding-top:5px">
+         <p>(nome, matrícula e assinatura do responsável pelo preenchimento)</p>
+       </div>
+     </div>`
+  );
+  novoRenderDoc(6, html);
+}
+
+// --- ANX7 ---
+function gerarNovoAnx7() {
+  const alunos = document.getElementById('novo-anx7-alunos').value || '____';
+  const dataEl = document.getElementById('novo-anx7-data').value;
+  const data = dataEl ? fmtDate(dataEl) : '___/___/______';
+  const dest = document.getElementById('novo-anx7-destino').value || '___________________________';
+  const saida = document.getElementById('novo-anx7-saida').value || '___:___';
+  const chegada = document.getElementById('novo-anx7-chegada').value || '___:___';
+  const custo = document.getElementById('novo-anx7-custo').value || '0,00';
+  const tema = document.getElementById('novo-anx7-tema').value || '___________________________';
+  const obj = document.getElementById('novo-anx7-obj').value || '___________________________';
+  const acoes = document.getElementById('novo-anx7-acoes').value || '___________________________';
+  const areas = document.getElementById('novo-anx7-areas').value || '___________________________';
+
+  const html = novoDocHtml('ANEXO VII — FORMULÁRIO TRABALHO DE CAMPO',
+    `<div style="text-align:center;margin-bottom:8px">
+       <p><strong>SECRETARIA MUNICIPAL DE EDUCAÇÃO E CULTURA DE CONTAGEM</strong></p>
+       <p style="font-size:9pt">GERÊNCIA DAS CAIXAS ESCOLARES — ${ENDERECO_SEDUC}</p>
+     </div>
+     <h2 style="text-align:center">ANEXO VII</h2>
+     <h3 style="text-align:center">FORMULÁRIO TRABALHO DE CAMPO</h3>
+     <br>
+     <p><strong>1 — IDENTIFICAÇÃO</strong></p>
+     <hr>
+     <p><strong>ESCOLA:</strong> ${ESCOLA}</p>
+     <br>
+     <p><strong>A. NÍVEL E MODALIDADE DE ENSINO:</strong><br>( ) Educação Infantil &nbsp;&nbsp; (X) Ensino Fundamental &nbsp;&nbsp; ( ) EJA</p>
+     <br>
+     <p><strong>B. Nº DE ESTUDANTES/CRIANÇAS:</strong> ${alunos} &nbsp;&nbsp;&nbsp;&nbsp; <strong>DATA:</strong> ${data}</p>
+     <p style="margin-top:6px"><strong>C. DESTINO:</strong> ${dest}</p>
+     <p style="margin-top:6px"><strong>D. HORÁRIO DE SAÍDA:</strong> ${saida} &nbsp;&nbsp;&nbsp;&nbsp; <strong>E. HORÁRIO DE CHEGADA:</strong> ${chegada}</p>
+     <p style="margin-top:6px"><strong>F. CUSTO (VALOR EM REAL):</strong> R$ ${custo}</p>
+     <br>
+     <p><strong>2 — DETALHAMENTOS DO PROJETO</strong></p>
+     <hr>
+     <p><strong>A. TEMA:</strong> ${tema}</p>
+     <br>
+     <p><strong>B. OBJETIVOS:</strong></p>
+     <p style="margin-top:6px">${obj.replace(/\n/g,'<br>')}</p>
+     <br>
+     <p><strong>C. AÇÕES DESENVOLVIDAS:</strong></p>
+     <p style="margin-top:6px">${acoes.replace(/\n/g,'<br>')}</p>
+     <br>
+     <p><strong>D. ÁREAS DE CONHECIMENTO ENVOLVIDAS:</strong> ${areas}</p>
+     <br><br>
+     <div style="border-top:1px solid #000;padding-top:5px;width:280px">
+       <p>CARIMBO E ASSINATURA DO PEDAGOGO DA ESCOLA</p>
+     </div>`
+  );
+  novoRenderDoc(7, html);
+}
+
+// --- ANX8 ---
+function gerarNovoAnx8() {
+  const contrato = document.getElementById('novo-anx8-contrato').value || '___/____';
+  const objeto = document.getElementById('novo-anx8-objeto').value || '___________________________';
+  const empresa = document.getElementById('novo-anx8-empresa').value || '___________________________';
+  const dataprovEl = document.getElementById('novo-anx8-dataprov').value;
+  const dataprov = dataprovEl ? fmtDate(dataprovEl) : '__/__/____';
+  const eng = document.getElementById('novo-anx8-eng').value || '___________________________';
+  const gestor = document.getElementById('novo-anx8-gestor').value || '___________________________';
+  const fiscal = document.getElementById('novo-anx8-fiscal').value || '___________________________';
+  const dia = document.getElementById('novo-anx8-dia').value || '___';
+  const mes = document.getElementById('novo-anx8-mes').value || '___';
+  const ano = document.getElementById('novo-anx8-ano').value || '____';
+
+  const html = novoDocHtml('ANEXO VIII — TERMO DE RECEBIMENTO DEFINITIVO',
+    `<h2 style="text-align:center">ANEXO VIII</h2>
+     <h3 style="text-align:center">TERMO DE RECEBIMENTO DEFINITIVO</h3>
+     <br>
+     <p style="text-align:justify">Termo de Recebimento Definitivo do Contrato nº <strong>${contrato}</strong>, referente à execução dos serviços de reforma, manutenção, reparo e requalificação de imóveis da <strong>${ESCOLA}</strong>, tendo como objeto a prestação de serviços de: "<em>${objeto}</em>".</p>
+     <br>
+     <p><strong>Contratante:</strong> Caixa Escolar ${CAIXA_ESCOLAR}</p>
+     <p style="margin-top:4px"><strong>Contratada:</strong> ${empresa}</p>
+     <br>
+     <p style="text-align:justify">Em conformidade com o Termo de Recebimento Provisório emitido em <strong>${dataprov}</strong>, e após o prazo estipulado, constatou-se que o objeto contratado está em conformidade com o projeto e especificações técnicas exigidas.</p>
+     <br>
+     <p>Contagem, ${dia} de ${mes} de ${ano}.</p>
+     <br>
+     <div style="margin-top:24px;display:flex;flex-direction:column;gap:24px">
+       <div style="border-top:1px solid #000;padding-top:5px;width:320px">
+         <p>${eng}</p>
+         <p>Engenheiro SEDUC/FUNEC — Diretoria de Manutenção e Infraestrutura</p>
+       </div>
+       <div style="border-top:1px solid #000;padding-top:5px;width:320px">
+         <p>${gestor}</p>
+         <p>Gestor do Contrato — Caixa Escolar ${CAIXA_ESCOLAR}</p>
+       </div>
+       <div style="border-top:1px solid #000;padding-top:5px;width:320px">
+         <p>${fiscal}</p>
+         <p>Fiscal do Contrato — Caixa Escolar ${CAIXA_ESCOLAR}</p>
+       </div>
+       <div style="border-top:1px solid #000;padding-top:5px;width:320px">
+         <p>(Assinatura da Empresa Contratada)</p>
+       </div>
+     </div>`
+  );
+  novoRenderDoc(8, html);
+}
+
+// Hook popularAnxSeletorTC into showSection
+const _origShowSection = showSection;
+function showSection(id) {
+  _origShowSection(id);
+  if (id === 'anexos') {
+    popularAnxSeletorTC();
+    renderAnx3DespList();
+  }
+}
+
 
 // ==================== ALERTAS AUTOMÁTICOS ====================
 function renderAlertas() {
@@ -7443,8 +7750,6 @@ function openLinkExternal() {
 
 // ==================== INIT ====================
 // (renderizações chamadas após carregarDados no auth)
-addAnx4Row();
-addAnx6Row();
 initMoneyMasks();
 
 // ==================== SYNC INDICATOR ====================
