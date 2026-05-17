@@ -8448,8 +8448,12 @@ function renderDashboard() {
     }
   }
 
-  // ultimos lançamentos
-  const ul = state.despesas.slice(-4).reverse();
+  // ultimos lançamentos — ordenados do mais antigo para o mais novo por data da NF
+  const ul = [...state.despesas].sort((a, b) => {
+    const da = a.nfData ? new Date(a.nfData) : new Date(0);
+    const db = b.nfData ? new Date(b.nfData) : new Date(0);
+    return da - db;
+  }).slice(-4);
   if (ul.length) {
     document.getElementById('dash-ultimos').innerHTML = ul.map(d => {
       const tcVinc = d.tcVinculo ? (state.tcs||[]).find(t => String(t.id) === String(d.tcVinculo)) : null;
