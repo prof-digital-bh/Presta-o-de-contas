@@ -7452,15 +7452,7 @@ function gerarNovoAnx8() {
   novoRenderDoc(8, html);
 }
 
-// Hook popularAnxSeletorTC into showSection
-const _origShowSection = showSection;
-function showSection(id) {
-  _origShowSection(id);
-  if (id === 'anexos') {
-    popularAnxSeletorTC();
-    renderAnx3DespList();
-  }
-}
+
 
 
 // ==================== ALERTAS AUTOMÁTICOS ====================
