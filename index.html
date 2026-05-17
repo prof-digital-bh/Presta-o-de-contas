@@ -1171,6 +1171,9 @@
       <div class="nav-item" onclick="showSection('anexos')">
         <span class="nav-icon">📋</span> Gerar Anexos
       </div>
+      <div class="nav-item" onclick="showSection('gerador')">
+        <span class="nav-icon">🗂</span> Gerador de Documentos
+      </div>
       <div class="nav-item" onclick="showSection('links')">
         <span class="nav-icon">🔗</span> Links Rápidos
       </div>
@@ -2261,6 +2264,1863 @@
           <div class="empty-title">Nenhum link cadastrado</div>
           <div class="empty-sub">Clique em "+ Adicionar Link" para cadastrar prestações de contas, portais ou documentos</div>
         </div>
+      </div>
+    </section>
+
+
+    <!-- GERADOR DE DOCUMENTOS (embedded) -->
+    <section class="section" id="section-gerador">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Gerador de Documentos</div>
+          <div class="page-subtitle">Geração de Anexos I–VI para prestação de contas — Prefeitura de Contagem</div>
+        </div>
+      </div>
+      <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface)">
+        <iframe
+          id="gerador-frame"
+          srcdoc="&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;pt-BR&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;UTF-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+&lt;title&gt;Gerador de Documentos — Caixa Escolar Albertina Alves Nascimento&lt;/title&gt;
+&lt;script src=&quot;https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2&quot;&gt;&lt;/script&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@300;400;500;600;700&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+:root {
+  --bg: #f5f3ef;
+  --surface: #ffffff;
+  --surface2: #f0ede8;
+  --border: #d8d3cb;
+  --ink: #1a1714;
+  --ink2: #4a4540;
+  --ink3: #8a857d;
+  --accent: #2b5a8c;
+  --accent2: #c8520a;
+  --green: #2d6a4f;
+  --red: #9b2335;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --radius: 6px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: &#x27;IBM Plex Sans&#x27;, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: 100vh;
+}
+
+/* SIDEBAR */
+.sidebar {
+  background: var(--ink);
+  color: #e8e4dc;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar-head {
+  padding: 28px 24px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.logo-box {
+  width: 32px; height: 32px;
+  background: var(--accent2);
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: &#x27;IBM Plex Mono&#x27;, monospace;
+  font-size: 13px; font-weight: 600; color: #fff;
+  letter-spacing: -0.5px;
+}
+
+.sidebar-title { font-size: 13px; font-weight: 600; line-height: 1.3; color: #e8e4dc; }
+.sidebar-sub { font-size: 10px; color: rgba(232,228,220,0.5); margin-top: 3px; letter-spacing: 0.8px; text-transform: uppercase; }
+
+.tc-selector-box {
+  margin: 16px 16px 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+
+.tc-selector-box label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: rgba(232,228,220,0.5); display: block; margin-bottom: 6px; }
+.tc-selector-box select {
+  width: 100%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 4px;
+  color: #e8e4dc;
+  font-size: 12px;
+  padding: 7px 10px;
+  font-family: &#x27;IBM Plex Mono&#x27;, monospace;
+  outline: none;
+}
+.tc-selector-box select option { background: #1a1714; }
+
+.nav { padding: 12px 0; flex: 1; }
+
+.nav-label {
+  font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: rgba(232,228,220,0.35);
+  padding: 8px 24px 5px;
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 20px;
+  cursor: pointer;
+  font-size: 12.5px;
+  color: rgba(232,228,220,0.65);
+  border-left: 2px solid transparent;
+  transition: all 0.12s;
+}
+.nav-item:hover { background: rgba(255,255,255,0.05); color: #e8e4dc; }
+.nav-item.active { background: rgba(44,90,140,0.25); color: #7db4e8; border-left-color: var(--accent); font-weight: 500; }
+.nav-icon { font-size: 14px; width: 18px; text-align: center; }
+
+.nav-item .badge {
+  margin-left: auto;
+  font-size: 10px;
+  background: rgba(200,82,10,0.3);
+  color: #f0a070;
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-family: &#x27;IBM Plex Mono&#x27;, monospace;
+}
+
+.sidebar-foot {
+  padding: 14px 16px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  font-size: 10px;
+  color: rgba(232,228,220,0.3);
+  line-height: 1.6;
+}
+
+/* MAIN */
+.main { padding: 32px 36px; overflow-y: auto; }
+
+.page-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 28px; padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.page-title { font-size: 22px; font-weight: 700; color: var(--ink); line-height: 1.2; }
+.page-sub { font-size: 12px; color: var(--ink3); margin-top: 4px; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: var(--radius);
+  font-size: 12.5px; font-weight: 500; cursor: pointer;
+  border: none; font-family: &#x27;IBM Plex Sans&#x27;, sans-serif;
+  transition: all 0.12s; text-decoration: none;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #1e4a7a; }
+.btn-accent { background: var(--accent2); color: #fff; }
+.btn-accent:hover { background: #a84508; }
+.btn-secondary { background: var(--surface2); color: var(--ink2); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--border); }
+.btn-green { background: var(--green); color: #fff; }
+.btn-green:hover { background: #1e5238; }
+.btn-sm { padding: 5px 11px; font-size: 11.5px; }
+
+.section { display: none; }
+.section.active { display: block; }
+
+/* INFO CARDS */
+.info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 24px; }
+.info-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  border-top: 3px solid var(--accent);
+}
+.info-card.orange { border-top-color: var(--accent2); }
+.info-card.green { border-top-color: var(--green); }
+.info-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--ink3); margin-bottom: 5px; }
+.info-value { font-family: &#x27;IBM Plex Mono&#x27;, monospace; font-size: 15px; font-weight: 600; color: var(--ink); }
+.info-meta { font-size: 11px; color: var(--ink3); margin-top: 3px; }
+
+/* FORM */
+.form-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  margin-bottom: 20px;
+}
+
+.form-section-title {
+  font-size: 12px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.8px; color: var(--ink3);
+  margin-bottom: 16px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+}
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.form-full { grid-column: 1 / -1; }
+
+.field { display: flex; flex-direction: column; gap: 5px; }
+label { font-size: 11.5px; font-weight: 500; color: var(--ink2); }
+.field-hint { font-size: 10px; color: var(--ink3); }
+
+input, select, textarea {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 11px;
+  font-size: 12.5px;
+  color: var(--ink);
+  font-family: &#x27;IBM Plex Sans&#x27;, sans-serif;
+  outline: none;
+  transition: border-color 0.12s;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+input.mono, .mono { font-family: &#x27;IBM Plex Mono&#x27;, monospace; }
+input[readonly] { opacity: 0.6; cursor: not-allowed; }
+textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
+
+.field-money input { color: var(--accent); font-family: &#x27;IBM Plex Mono&#x27;, monospace; font-weight: 500; }
+
+/* ACOES TABLE */
+.acoes-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+.acoes-table th {
+  background: var(--surface2);
+  padding: 8px 12px; font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--ink3); text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.acoes-table td { padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.acoes-table td input { padding: 6px 8px; font-size: 12px; }
+.acoes-table td:last-child { text-align: center; width: 40px; }
+
+.del-btn { background: none; border: none; cursor: pointer; color: var(--ink3); font-size: 14px; padding: 3px 6px; border-radius: 3px; }
+.del-btn:hover { background: #fde8e8; color: var(--red); }
+
+/* DOCUMENT PREVIEW */
+.doc-preview-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.doc-preview-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+
+.doc-preview-bar .doc-name { font-size: 12px; font-weight: 600; color: var(--ink2); }
+
+.doc-preview-iframe {
+  width: 100%; height: 640px; border: none;
+  background: #fff;
+}
+
+.doc-empty {
+  padding: 60px 24px; text-align: center;
+  color: var(--ink3); font-size: 13px;
+}
+.doc-empty-icon { font-size: 32px; margin-bottom: 12px; }
+.doc-empty-sub { font-size: 11px; margin-top: 5px; }
+
+/* STATUS */
+.status-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+.status-ok { background: var(--green); }
+.status-err { background: var(--red); }
+.status-loading { background: var(--accent2); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+
+.loading-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px;
+  background: rgba(44,90,140,0.07);
+  border: 1px solid rgba(44,90,140,0.15);
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  font-size: 12px; color: var(--accent);
+}
+
+.alert-box {
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  margin-bottom: 14px;
+  display: none;
+}
+.alert-box.show { display: flex; align-items: flex-start; gap: 8px; }
+.alert-info { background: rgba(44,90,140,0.08); border: 1px solid rgba(44,90,140,0.2); color: var(--accent); }
+.alert-warn { background: rgba(200,82,10,0.08); border: 1px solid rgba(200,82,10,0.2); color: var(--accent2); }
+.alert-ok { background: rgba(45,106,79,0.08); border: 1px solid rgba(45,106,79,0.2); color: var(--green); }
+
+/* DESPESAS LIST for Anexo III */
+.desp-row {
+  display: grid;
+  grid-template-columns: 30px 1fr 140px 120px 90px auto;
+  gap: 8px; align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.desp-row:last-child { border-bottom: none; }
+.desp-num { font-family: &#x27;IBM Plex Mono&#x27;, monospace; font-size: 11px; color: var(--ink3); text-align: center; }
+.desp-val { font-family: &#x27;IBM Plex Mono&#x27;, monospace; color: var(--accent); font-weight: 600; }
+
+/* PRINT DOCUMENT STYLES - for the popup */
+.print-doc { display: none; }
+
+/* TABS for doc types */
+.doc-tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+.doc-tab {
+  padding: 8px 16px; border-radius: 4px 4px 0 0;
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  background: var(--surface2); color: var(--ink3);
+  border: 1px solid var(--border); border-bottom: none;
+  transition: all 0.12s;
+}
+.doc-tab.active { background: var(--surface); color: var(--ink); border-color: var(--border); }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* SUMMARY before generate */
+.summary-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  margin-bottom: 20px;
+}
+.summary-item {
+  background: var(--surface2); border-radius: var(--radius);
+  padding: 10px 14px; font-size: 12px;
+}
+.summary-item label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--ink3); margin-bottom: 3px; }
+.summary-item span { font-family: &#x27;IBM Plex Mono&#x27;, monospace; font-weight: 500; }
+
+/* RESPONSIVE HELPERS */
+.row { display: flex; align-items: center; gap: 10px; }
+.ml-auto { margin-left: auto; }
+.gap-8 { gap: 8px; }
+
+/* SKELETON LOADING */
+.skel { background: linear-gradient(90deg, var(--border) 25%, var(--surface2) 50%, var(--border) 75%); background-size: 200% 100%; animation: skel 1.2s infinite; border-radius: 3px; height: 14px; }
+@keyframes skel { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+&lt;div class=&quot;app&quot;&gt;
+
+&lt;!-- SIDEBAR --&gt;
+&lt;aside class=&quot;sidebar&quot;&gt;
+  &lt;div class=&quot;sidebar-head&quot;&gt;
+    &lt;div class=&quot;sidebar-logo&quot;&gt;
+      &lt;div class=&quot;logo-box&quot;&gt;CE&lt;/div&gt;
+      &lt;div&gt;
+        &lt;div class=&quot;sidebar-title&quot;&gt;Caixa Escolar&lt;br&gt;Albertina Alves Nascimento&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;sidebar-sub&quot;&gt;Gerador de Documentos&lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class=&quot;tc-selector-box&quot;&gt;
+    &lt;label&gt;Termo de Compromisso&lt;/label&gt;
+    &lt;select id=&quot;sel-tc&quot; onchange=&quot;onTcChange()&quot;&gt;
+      &lt;option value=&quot;&quot;&gt;Carregando...&lt;/option&gt;
+    &lt;/select&gt;
+    &lt;div style=&quot;margin-top:8px&quot;&gt;
+      &lt;label style=&quot;color:rgba(232,228,220,0.5);margin-bottom:4px&quot;&gt;Parcela&lt;/label&gt;
+      &lt;select id=&quot;sel-parcela&quot; onchange=&quot;onParcelaChange()&quot; style=&quot;width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:4px;color:#e8e4dc;font-size:12px;padding:7px 10px;font-family:&#x27;IBM Plex Mono&#x27;,monospace;outline:none&quot;&gt;
+        &lt;option value=&quot;01&quot;&gt;1ª Parcela&lt;/option&gt;
+        &lt;option value=&quot;02&quot;&gt;2ª Parcela&lt;/option&gt;
+        &lt;option value=&quot;03&quot;&gt;3ª Parcela&lt;/option&gt;
+        &lt;option value=&quot;04&quot;&gt;4ª Parcela&lt;/option&gt;
+        &lt;option value=&quot;05&quot;&gt;5ª Parcela&lt;/option&gt;
+        &lt;option value=&quot;U&quot;&gt;Parcela Única&lt;/option&gt;
+      &lt;/select&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;nav class=&quot;nav&quot;&gt;
+    &lt;div class=&quot;nav-label&quot;&gt;Documentos&lt;/div&gt;
+    &lt;div class=&quot;nav-item active&quot; onclick=&quot;showPage(&#x27;dash&#x27;)&quot;&gt;
+      &lt;span class=&quot;nav-icon&quot;&gt;📋&lt;/span&gt; Painel Geral
+    &lt;/div&gt;
+    &lt;div class=&quot;nav-item&quot; onclick=&quot;showPage(&#x27;anx2&#x27;)&quot;&gt;
+      &lt;span class=&quot;nav-icon&quot;&gt;📄&lt;/span&gt; Anexo II — Deliberação
+    &lt;/div&gt;
+    &lt;div class=&quot;nav-item&quot; onclick=&quot;showPage(&#x27;anx3&#x27;)&quot;&gt;
+      &lt;span class=&quot;nav-icon&quot;&gt;📊&lt;/span&gt; Anexo III — Relatório
+    &lt;/div&gt;
+    &lt;div class=&quot;nav-item&quot; onclick=&quot;showPage(&#x27;anx1&#x27;)&quot;&gt;
+      &lt;span class=&quot;nav-icon&quot;&gt;✅&lt;/span&gt; Anexo I — Certidão
+    &lt;/div&gt;
+    &lt;div class=&quot;nav-item&quot; onclick=&quot;showPage(&#x27;anx4&#x27;)&quot;&gt;
+      &lt;span class=&quot;nav-icon&quot;&gt;🧾&lt;/span&gt; Anexo IV — Guias Pagas
+    &lt;/div&gt;
+    &lt;div class=&quot;nav-item&quot; onclick=&quot;showPage(&#x27;anx5&#x27;)&quot;&gt;
+      &lt;span class=&quot;nav-icon&quot;&gt;🔎&lt;/span&gt; Anexo V — Parecer CF
+    &lt;/div&gt;
+    &lt;div class=&quot;nav-item&quot; onclick=&quot;showPage(&#x27;anx6&#x27;)&quot;&gt;
+      &lt;span class=&quot;nav-icon&quot;&gt;🎁&lt;/span&gt; Anexo VI — Doação
+    &lt;/div&gt;
+  &lt;/nav&gt;
+
+  &lt;div class=&quot;sidebar-foot&quot;&gt;
+    &lt;span class=&quot;status-dot status-loading&quot; id=&quot;sync-dot&quot;&gt;&lt;/span&gt;
+    &lt;span id=&quot;sync-txt&quot;&gt;Conectando...&lt;/span&gt;
+  &lt;/div&gt;
+&lt;/aside&gt;
+
+&lt;!-- MAIN CONTENT --&gt;
+&lt;main class=&quot;main&quot;&gt;
+
+  &lt;!-- LOADING BAR --&gt;
+  &lt;div class=&quot;loading-bar&quot; id=&quot;loading-bar&quot;&gt;
+    &lt;span class=&quot;status-dot status-loading&quot;&gt;&lt;/span&gt;
+    Buscando dados do banco de dados...
+  &lt;/div&gt;
+
+  &lt;!-- ===================== PAINEL GERAL ===================== --&gt;
+  &lt;section class=&quot;section active&quot; id=&quot;page-dash&quot;&gt;
+    &lt;div class=&quot;page-header&quot;&gt;
+      &lt;div&gt;
+        &lt;div class=&quot;page-title&quot;&gt;Painel de Documentos&lt;/div&gt;
+        &lt;div class=&quot;page-sub&quot; id=&quot;dash-subtitle&quot;&gt;Selecione o TC e a parcela na barra lateral&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;info-grid&quot; id=&quot;dash-cards&quot;&gt;
+      &lt;div class=&quot;info-card&quot;&gt;&lt;div class=&quot;info-label&quot;&gt;TC / Aditivo&lt;/div&gt;&lt;div class=&quot;info-value skel&quot; style=&quot;width:80%&quot;&gt;&amp;nbsp;&lt;/div&gt;&lt;/div&gt;
+      &lt;div class=&quot;info-card orange&quot;&gt;&lt;div class=&quot;info-label&quot;&gt;Valor Creditado&lt;/div&gt;&lt;div class=&quot;info-value skel&quot; style=&quot;width:60%&quot;&gt;&amp;nbsp;&lt;/div&gt;&lt;/div&gt;
+      &lt;div class=&quot;info-card green&quot;&gt;&lt;div class=&quot;info-label&quot;&gt;Total de Despesas&lt;/div&gt;&lt;div class=&quot;info-value skel&quot; style=&quot;width:70%&quot;&gt;&amp;nbsp;&lt;/div&gt;&lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;form-section&quot;&gt;
+      &lt;div class=&quot;form-section-title&quot;&gt;📌 Dados da Parcela Selecionada&lt;/div&gt;
+      &lt;div class=&quot;summary-grid&quot; id=&quot;dash-summary&quot;&gt;
+        &lt;div class=&quot;summary-item&quot;&gt;&lt;label&gt;Escola&lt;/label&gt;&lt;span&gt;E.M. ALBERTINA ALVES DO NASCIMENTO&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;summary-item&quot;&gt;&lt;label&gt;CNPJ&lt;/label&gt;&lt;span&gt;15.547.261/0001-01&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;summary-item&quot;&gt;&lt;label&gt;Presidente&lt;/label&gt;&lt;span&gt;JEFERSON CESAR DOS SANTOS&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;summary-item&quot;&gt;&lt;label&gt;Banco&lt;/label&gt;&lt;span&gt;CAIXA ECONÔMICA FEDERAL — Ag. 3797 — C/C 000577240784-4&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;summary-item&quot;&gt;&lt;label&gt;Data de Crédito&lt;/label&gt;&lt;span id=&quot;dash-datacredito&quot;&gt;—&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;summary-item&quot;&gt;&lt;label&gt;Período de Execução&lt;/label&gt;&lt;span id=&quot;dash-periodo&quot;&gt;—&lt;/span&gt;&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;row&quot; style=&quot;margin-top:16px;flex-wrap:wrap;gap:8px&quot;&gt;
+        &lt;button class=&quot;btn btn-primary&quot; onclick=&quot;showPage(&#x27;anx2&#x27;)&quot;&gt;📄 Gerar Deliberação (Anx II)&lt;/button&gt;
+        &lt;button class=&quot;btn btn-secondary&quot; onclick=&quot;showPage(&#x27;anx3&#x27;)&quot;&gt;📊 Gerar Relatório (Anx III)&lt;/button&gt;
+        &lt;button class=&quot;btn btn-secondary&quot; onclick=&quot;showPage(&#x27;anx5&#x27;)&quot;&gt;🔎 Gerar Parecer CF (Anx V)&lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;form-section&quot;&gt;
+      &lt;div class=&quot;form-section-title&quot;&gt;💰 Despesas da Parcela&lt;/div&gt;
+      &lt;div id=&quot;dash-despesas-list&quot;&gt;
+        &lt;div class=&quot;doc-empty&quot;&gt;&lt;div class=&quot;doc-empty-icon&quot;&gt;⏳&lt;/div&gt;Carregando despesas...&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/section&gt;
+
+  &lt;!-- ===================== ANEXO II — DELIBERAÇÃO ===================== --&gt;
+  &lt;section class=&quot;section&quot; id=&quot;page-anx2&quot;&gt;
+    &lt;div class=&quot;page-header&quot;&gt;
+      &lt;div&gt;
+        &lt;div class=&quot;page-title&quot;&gt;Anexo II — Deliberação do Conselho Fiscal&lt;/div&gt;
+        &lt;div class=&quot;page-sub&quot;&gt;Ata de deliberação sobre a utilização dos recursos da parcela&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;row gap-8&quot;&gt;
+        &lt;button class=&quot;btn btn-secondary btn-sm&quot; onclick=&quot;gerarAnx2()&quot;&gt;↺ Atualizar&lt;/button&gt;
+        &lt;button class=&quot;btn btn-accent btn-sm&quot; onclick=&quot;imprimirDoc(&#x27;anx2&#x27;)&quot;&gt;🖨 Imprimir / PDF&lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;form-section&quot;&gt;
+      &lt;div class=&quot;form-section-title&quot;&gt;🗓 Dados da Reunião&lt;/div&gt;
+      &lt;div class=&quot;form-grid form-grid-3&quot;&gt;
+        &lt;div class=&quot;field&quot;&gt;
+          &lt;label&gt;Dia da Reunião&lt;/label&gt;
+          &lt;input type=&quot;number&quot; id=&quot;anx2-dia&quot; min=&quot;1&quot; max=&quot;31&quot; placeholder=&quot;04&quot; value=&quot;04&quot;&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field&quot;&gt;
+          &lt;label&gt;Mês (por extenso)&lt;/label&gt;
+          &lt;input type=&quot;text&quot; id=&quot;anx2-mes&quot; placeholder=&quot;FEVEREIRO&quot; value=&quot;FEVEREIRO&quot;&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field&quot;&gt;
+          &lt;label&gt;Ano&lt;/label&gt;
+          &lt;input type=&quot;text&quot; id=&quot;anx2-ano&quot; placeholder=&quot;2026&quot; value=&quot;2026&quot;&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field&quot;&gt;
+          &lt;label&gt;Data de Crédito&lt;/label&gt;
+          &lt;input type=&quot;text&quot; id=&quot;anx2-datacredito&quot; placeholder=&quot;30/01/2026&quot; class=&quot;mono&quot;&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field&quot;&gt;
+          &lt;label&gt;Período de Execução&lt;/label&gt;
+          &lt;input type=&quot;text&quot; id=&quot;anx2-periodo&quot; placeholder=&quot;JAN//2026 A MAR//2026&quot;&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field&quot;&gt;
+          &lt;label&gt;Valor Creditado (R$)&lt;/label&gt;
+          &lt;div class=&quot;field-money&quot;&gt;&lt;input type=&quot;text&quot; id=&quot;anx2-valor&quot; placeholder=&quot;29.710,08&quot; class=&quot;mono&quot;&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;form-section&quot;&gt;
+      &lt;div class=&quot;form-section-title&quot;&gt;📋 Ações MDE (Planejamento de Gastos)
+        &lt;button class=&quot;btn btn-secondary btn-sm ml-auto&quot; onclick=&quot;addAcaoAnx2()&quot;&gt;+ Adicionar Ação&lt;/button&gt;
+        &lt;button class=&quot;btn btn-primary btn-sm&quot; onclick=&quot;popularAcoesDeSpesas()&quot;&gt;↙ Pré-preencher das Despesas&lt;/button&gt;
+      &lt;/div&gt;
+      &lt;table class=&quot;acoes-table&quot; id=&quot;acoes-table&quot;&gt;
+        &lt;thead&gt;
+          &lt;tr&gt;
+            &lt;th&gt;Ação MDE&lt;/th&gt;
+            &lt;th style=&quot;width:180px&quot;&gt;Período de Execução&lt;/th&gt;
+            &lt;th style=&quot;width:120px&quot;&gt;Valor R$&lt;/th&gt;
+            &lt;th style=&quot;width:40px&quot;&gt;&lt;/th&gt;
+          &lt;/tr&gt;
+        &lt;/thead&gt;
+        &lt;tbody id=&quot;acoes-tbody&quot;&gt;
+        &lt;/tbody&gt;
+        &lt;tfoot&gt;
+          &lt;tr style=&quot;background:var(--surface2)&quot;&gt;
+            &lt;td colspan=&quot;2&quot; style=&quot;padding:8px 12px;font-size:12px;font-weight:600;color:var(--ink2)&quot;&gt;TOTAL&lt;/td&gt;
+            &lt;td style=&quot;padding:8px 12px;font-family:&#x27;IBM Plex Mono&#x27;,monospace;font-weight:700;color:var(--accent)&quot; id=&quot;acoes-total&quot;&gt;R$ 0,00&lt;/td&gt;
+            &lt;td&gt;&lt;/td&gt;
+          &lt;/tr&gt;
+        &lt;/tfoot&gt;
+      &lt;/table&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;doc-preview-wrap&quot;&gt;
+      &lt;div class=&quot;doc-preview-bar&quot;&gt;
+        &lt;span class=&quot;doc-name&quot;&gt;📄 Anexo II — Pré-visualização&lt;/span&gt;
+        &lt;div class=&quot;row gap-8&quot;&gt;
+          &lt;button class=&quot;btn btn-green btn-sm&quot; onclick=&quot;gerarAnx2()&quot;&gt;↺ Gerar Documento&lt;/button&gt;
+          &lt;button class=&quot;btn btn-accent btn-sm&quot; onclick=&quot;imprimirDoc(&#x27;anx2&#x27;)&quot;&gt;🖨 Imprimir / PDF&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div id=&quot;prev-anx2&quot;&gt;
+        &lt;div class=&quot;doc-empty&quot;&gt;
+          &lt;div class=&quot;doc-empty-icon&quot;&gt;📄&lt;/div&gt;
+          Clique em &quot;Gerar Documento&quot; para visualizar
+          &lt;div class=&quot;doc-empty-sub&quot;&gt;O documento será gerado com os dados acima e as informações fixas da escola&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/section&gt;
+
+  &lt;!-- ===================== ANEXO III — RELATÓRIO ===================== --&gt;
+  &lt;section class=&quot;section&quot; id=&quot;page-anx3&quot;&gt;
+    &lt;div class=&quot;page-header&quot;&gt;
+      &lt;div&gt;
+        &lt;div class=&quot;page-title&quot;&gt;Anexo III — Relatório de Execução Físico-Financeira&lt;/div&gt;
+        &lt;div class=&quot;page-sub&quot;&gt;Relatório com todos os recebimentos e despesas da parcela&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;row gap-8&quot;&gt;
+        &lt;button class=&quot;btn btn-accent btn-sm&quot; onclick=&quot;imprimirDoc(&#x27;anx3&#x27;)&quot;&gt;🖨 Imprimir / PDF&lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;form-section&quot;&gt;
+      &lt;div class=&quot;form-section-title&quot;&gt;💵 Dados Financeiros da Parcela&lt;/div&gt;
+      &lt;div class=&quot;form-grid form-grid-3&quot;&gt;
+        &lt;div class=&quot;field&quot;&gt;
+          &lt;label&gt;Saldo Anterior (R$)&lt;/label&gt;
+          &lt;div class=&quot;field-money&quot;&gt;&lt;input type=&quot;text&quot; id=&quot;anx3-saldo-ant&quot; placeholder=&quot;0,05&quot; class=&quot;mono&quot; value=&quot;0,05&quot;&gt;&lt;/div&gt;
+          &lt;span class=&quot;field-hint&quot;&gt;Saldo da parcela anterior (se houver)&lt;/span&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field&quot;&gt;
+          &lt;label&gt;Valor Creditado (R$)&lt;/label&gt;
+          &lt;div class=&quot;field-money&quot;&gt;&lt;input type=&quot;text&quot; id=&quot;anx3-creditado&quot; placeholder=&quot;29.710,08&quot; class=&quot;mono&quot;&gt;&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field&quot;&gt;
+          &lt;label&gt;Rendimento de Aplicação (R$)&lt;/label&gt;
+          &lt;div class=&quot;field-money&quot;&gt;&lt;input type=&quot;text&quot; id=&quot;anx3-rendimento&quot; placeholder=&quot;0,00&quot; class=&quot;mono&quot; value=&quot;0,00&quot;&gt;&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field&quot;&gt;
+          &lt;label&gt;Data do Crédito&lt;/label&gt;
+          &lt;input type=&quot;text&quot; id=&quot;anx3-datacredito&quot; placeholder=&quot;30/01/2026&quot; class=&quot;mono&quot;&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field&quot;&gt;
+          &lt;label&gt;Tipo de Verba&lt;/label&gt;
+          &lt;select id=&quot;anx3-tipo&quot;&gt;
+            &lt;option value=&quot;CUSTEIO&quot;&gt;Custeio&lt;/option&gt;
+            &lt;option value=&quot;CAPITAL&quot;&gt;Capital&lt;/option&gt;
+            &lt;option value=&quot;ALEM_MUROS&quot;&gt;Além dos Muros&lt;/option&gt;
+            &lt;option value=&quot;OBRAS&quot;&gt;Obras&lt;/option&gt;
+          &lt;/select&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field&quot;&gt;
+          &lt;label&gt;Nº da Parcela&lt;/label&gt;
+          &lt;input type=&quot;text&quot; id=&quot;anx3-numparcela&quot; placeholder=&quot;01&quot; class=&quot;mono&quot; value=&quot;01&quot; readonly&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;form-section&quot;&gt;
+      &lt;div class=&quot;form-section-title&quot;&gt;🧾 Relação de Pagamentos (carregadas do banco)&lt;/div&gt;
+      &lt;div id=&quot;anx3-despesas-wrap&quot;&gt;
+        &lt;div class=&quot;doc-empty&quot; style=&quot;padding:24px&quot;&gt;&lt;div class=&quot;doc-empty-icon&quot; style=&quot;font-size:20px&quot;&gt;⏳&lt;/div&gt;Carregando despesas...&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;doc-preview-wrap&quot;&gt;
+      &lt;div class=&quot;doc-preview-bar&quot;&gt;
+        &lt;span class=&quot;doc-name&quot;&gt;📊 Anexo III — Pré-visualização&lt;/span&gt;
+        &lt;div class=&quot;row gap-8&quot;&gt;
+          &lt;button class=&quot;btn btn-green btn-sm&quot; onclick=&quot;gerarAnx3()&quot;&gt;↺ Gerar Documento&lt;/button&gt;
+          &lt;button class=&quot;btn btn-accent btn-sm&quot; onclick=&quot;imprimirDoc(&#x27;anx3&#x27;)&quot;&gt;🖨 Imprimir / PDF&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div id=&quot;prev-anx3&quot;&gt;
+        &lt;div class=&quot;doc-empty&quot;&gt;
+          &lt;div class=&quot;doc-empty-icon&quot;&gt;📊&lt;/div&gt;
+          Clique em &quot;Gerar Documento&quot; para visualizar
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/section&gt;
+
+  &lt;!-- ===================== ANEXO I — CERTIDÃO ===================== --&gt;
+  &lt;section class=&quot;section&quot; id=&quot;page-anx1&quot;&gt;
+    &lt;div class=&quot;page-header&quot;&gt;
+      &lt;div&gt;
+        &lt;div class=&quot;page-title&quot;&gt;Anexo I — Certidão de Execução do Objeto&lt;/div&gt;
+        &lt;div class=&quot;page-sub&quot;&gt;Certidão declarando o alcance dos objetivos do TC&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;button class=&quot;btn btn-accent btn-sm&quot; onclick=&quot;imprimirDoc(&#x27;anx1&#x27;)&quot;&gt;🖨 Imprimir / PDF&lt;/button&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;form-section&quot;&gt;
+      &lt;div class=&quot;form-section-title&quot;&gt;📝 Dados da Certidão&lt;/div&gt;
+      &lt;div class=&quot;form-grid form-grid-3&quot;&gt;
+        &lt;div class=&quot;field&quot;&gt;
+          &lt;label&gt;Dia&lt;/label&gt;&lt;input type=&quot;number&quot; id=&quot;anx1-dia&quot; placeholder=&quot;30&quot; value=&quot;30&quot;&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field&quot;&gt;
+          &lt;label&gt;Mês (por extenso)&lt;/label&gt;&lt;input type=&quot;text&quot; id=&quot;anx1-mes&quot; placeholder=&quot;MARÇO&quot; value=&quot;MARÇO&quot;&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field&quot;&gt;
+          &lt;label&gt;Ano&lt;/label&gt;&lt;input type=&quot;text&quot; id=&quot;anx1-ano&quot; placeholder=&quot;2026&quot; value=&quot;2026&quot;&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field&quot;&gt;
+          &lt;label&gt;Categoria&lt;/label&gt;
+          &lt;select id=&quot;anx1-cat&quot;&gt;
+            &lt;option value=&quot;CUSTEIO&quot;&gt;Custeio&lt;/option&gt;
+            &lt;option value=&quot;CAPITAL&quot;&gt;Capital&lt;/option&gt;
+          &lt;/select&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field&quot;&gt;
+          &lt;label&gt;Tipo de Ação&lt;/label&gt;
+          &lt;select id=&quot;anx1-acao&quot;&gt;
+            &lt;option value=&quot;MANUTENCAO&quot;&gt;Manutenção do Funcionamento Escolar&lt;/option&gt;
+            &lt;option value=&quot;CAPITAL&quot;&gt;Aquisição de Bens Móveis / Reforma&lt;/option&gt;
+          &lt;/select&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;doc-preview-wrap&quot;&gt;
+      &lt;div class=&quot;doc-preview-bar&quot;&gt;
+        &lt;span class=&quot;doc-name&quot;&gt;✅ Anexo I — Pré-visualização&lt;/span&gt;
+        &lt;div class=&quot;row gap-8&quot;&gt;
+          &lt;button class=&quot;btn btn-green btn-sm&quot; onclick=&quot;gerarAnx1()&quot;&gt;↺ Gerar Documento&lt;/button&gt;
+          &lt;button class=&quot;btn btn-accent btn-sm&quot; onclick=&quot;imprimirDoc(&#x27;anx1&#x27;)&quot;&gt;🖨 Imprimir / PDF&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div id=&quot;prev-anx1&quot;&gt;
+        &lt;div class=&quot;doc-empty&quot;&gt;&lt;div class=&quot;doc-empty-icon&quot;&gt;✅&lt;/div&gt;Clique em &quot;Gerar Documento&quot;&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/section&gt;
+
+  &lt;!-- ===================== ANEXO IV — GUIAS ===================== --&gt;
+  &lt;section class=&quot;section&quot; id=&quot;page-anx4&quot;&gt;
+    &lt;div class=&quot;page-header&quot;&gt;
+      &lt;div&gt;
+        &lt;div class=&quot;page-title&quot;&gt;Anexo IV — Relação de Guias Pagas&lt;/div&gt;
+        &lt;div class=&quot;page-sub&quot;&gt;INSS, ISSQN e demais guias recolhidas&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;button class=&quot;btn btn-accent btn-sm&quot; onclick=&quot;imprimirDoc(&#x27;anx4&#x27;)&quot;&gt;🖨 Imprimir / PDF&lt;/button&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;form-section&quot;&gt;
+      &lt;div class=&quot;form-section-title&quot;&gt;📝 Guias
+        &lt;button class=&quot;btn btn-secondary btn-sm ml-auto&quot; onclick=&quot;addGuia()&quot;&gt;+ Adicionar Guia&lt;/button&gt;
+      &lt;/div&gt;
+      &lt;table class=&quot;acoes-table&quot; id=&quot;guias-table&quot;&gt;
+        &lt;thead&gt;
+          &lt;tr&gt;
+            &lt;th&gt;Guia (INSS, ISSQN)&lt;/th&gt;
+            &lt;th&gt;Data&lt;/th&gt;
+            &lt;th&gt;Nota Fiscal Referente&lt;/th&gt;
+            &lt;th&gt;Valor da Guia&lt;/th&gt;
+            &lt;th&gt;Valor na NF&lt;/th&gt;
+            &lt;th&gt;&lt;/th&gt;
+          &lt;/tr&gt;
+        &lt;/thead&gt;
+        &lt;tbody id=&quot;guias-tbody&quot;&gt;&lt;/tbody&gt;
+      &lt;/table&gt;
+      &lt;div class=&quot;row&quot; style=&quot;margin-top:12px&quot;&gt;
+        &lt;div class=&quot;field&quot; style=&quot;flex:0 0 160px&quot;&gt;
+          &lt;label&gt;Data do Documento&lt;/label&gt;
+          &lt;input type=&quot;text&quot; id=&quot;anx4-data&quot; placeholder=&quot;30 de MARÇO de 2026&quot;&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;doc-preview-wrap&quot;&gt;
+      &lt;div class=&quot;doc-preview-bar&quot;&gt;
+        &lt;span class=&quot;doc-name&quot;&gt;🧾 Anexo IV — Pré-visualização&lt;/span&gt;
+        &lt;div class=&quot;row gap-8&quot;&gt;
+          &lt;button class=&quot;btn btn-green btn-sm&quot; onclick=&quot;gerarAnx4()&quot;&gt;↺ Gerar&lt;/button&gt;
+          &lt;button class=&quot;btn btn-accent btn-sm&quot; onclick=&quot;imprimirDoc(&#x27;anx4&#x27;)&quot;&gt;🖨 Imprimir&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div id=&quot;prev-anx4&quot;&gt;&lt;div class=&quot;doc-empty&quot;&gt;&lt;div class=&quot;doc-empty-icon&quot;&gt;🧾&lt;/div&gt;Clique em &quot;Gerar&quot;&lt;/div&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/section&gt;
+
+  &lt;!-- ===================== ANEXO V — PARECER ===================== --&gt;
+  &lt;section class=&quot;section&quot; id=&quot;page-anx5&quot;&gt;
+    &lt;div class=&quot;page-header&quot;&gt;
+      &lt;div&gt;
+        &lt;div class=&quot;page-title&quot;&gt;Anexo V — Parecer do Conselho Fiscal&lt;/div&gt;
+        &lt;div class=&quot;page-sub&quot;&gt;Manifestação formal do Conselho Fiscal sobre a prestação de contas&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;button class=&quot;btn btn-accent btn-sm&quot; onclick=&quot;imprimirDoc(&#x27;anx5&#x27;)&quot;&gt;🖨 Imprimir / PDF&lt;/button&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;form-section&quot;&gt;
+      &lt;div class=&quot;form-section-title&quot;&gt;📝 Dados do Parecer&lt;/div&gt;
+      &lt;div class=&quot;form-grid&quot;&gt;
+        &lt;div class=&quot;field&quot;&gt;
+          &lt;label&gt;Data do Crédito (para o texto)&lt;/label&gt;
+          &lt;input type=&quot;text&quot; id=&quot;anx5-datacred&quot; placeholder=&quot;30/01/2026&quot; class=&quot;mono&quot;&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field&quot;&gt;
+          &lt;label&gt;Categoria&lt;/label&gt;
+          &lt;select id=&quot;anx5-cat&quot;&gt;
+            &lt;option value=&quot;custeio&quot;&gt;Custeio&lt;/option&gt;
+            &lt;option value=&quot;capital&quot;&gt;Capital&lt;/option&gt;
+          &lt;/select&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field&quot;&gt;
+          &lt;label&gt;Resultado&lt;/label&gt;
+          &lt;select id=&quot;anx5-resultado&quot;&gt;
+            &lt;option value=&quot;aprovada&quot;&gt;Aprovada (por unanimidade)&lt;/option&gt;
+            &lt;option value=&quot;aprovada com ressalvas&quot;&gt;Aprovada com Ressalvas&lt;/option&gt;
+            &lt;option value=&quot;não aprovada&quot;&gt;Não Aprovada&lt;/option&gt;
+          &lt;/select&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field&quot;&gt;
+          &lt;label&gt;Data do Parecer (dia/mês/ano)&lt;/label&gt;
+          &lt;input type=&quot;text&quot; id=&quot;anx5-data&quot; placeholder=&quot;30 de MARÇO de 2026&quot;&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;field form-full&quot;&gt;
+          &lt;label&gt;Ressalvas / Observações (opcional)&lt;/label&gt;
+          &lt;textarea id=&quot;anx5-ressalva&quot; placeholder=&quot;Deixe em branco se não houver ressalvas&quot;&gt;&lt;/textarea&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;doc-preview-wrap&quot;&gt;
+      &lt;div class=&quot;doc-preview-bar&quot;&gt;
+        &lt;span class=&quot;doc-name&quot;&gt;🔎 Anexo V — Pré-visualização&lt;/span&gt;
+        &lt;div class=&quot;row gap-8&quot;&gt;
+          &lt;button class=&quot;btn btn-green btn-sm&quot; onclick=&quot;gerarAnx5()&quot;&gt;↺ Gerar&lt;/button&gt;
+          &lt;button class=&quot;btn btn-accent btn-sm&quot; onclick=&quot;imprimirDoc(&#x27;anx5&#x27;)&quot;&gt;🖨 Imprimir&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div id=&quot;prev-anx5&quot;&gt;&lt;div class=&quot;doc-empty&quot;&gt;&lt;div class=&quot;doc-empty-icon&quot;&gt;🔎&lt;/div&gt;Clique em &quot;Gerar&quot;&lt;/div&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/section&gt;
+
+  &lt;!-- ===================== ANEXO VI — DOAÇÃO ===================== --&gt;
+  &lt;section class=&quot;section&quot; id=&quot;page-anx6&quot;&gt;
+    &lt;div class=&quot;page-header&quot;&gt;
+      &lt;div&gt;
+        &lt;div class=&quot;page-title&quot;&gt;Anexo VI — Termo de Doação&lt;/div&gt;
+        &lt;div class=&quot;page-sub&quot;&gt;Doação de bens adquiridos com capital para o patrimônio público&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;button class=&quot;btn btn-accent btn-sm&quot; onclick=&quot;imprimirDoc(&#x27;anx6&#x27;)&quot;&gt;🖨 Imprimir / PDF&lt;/button&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;form-section&quot;&gt;
+      &lt;div class=&quot;form-section-title&quot;&gt;📦 Bens Doados
+        &lt;button class=&quot;btn btn-secondary btn-sm ml-auto&quot; onclick=&quot;addBemDoado()&quot;&gt;+ Adicionar Item&lt;/button&gt;
+        &lt;button class=&quot;btn btn-primary btn-sm&quot; onclick=&quot;popularBemsDeCapital()&quot;&gt;↙ Pré-preencher do Capital&lt;/button&gt;
+      &lt;/div&gt;
+      &lt;table class=&quot;acoes-table&quot; id=&quot;bens-table&quot;&gt;
+        &lt;thead&gt;
+          &lt;tr&gt;
+            &lt;th&gt;Discriminação&lt;/th&gt;
+            &lt;th style=&quot;width:60px&quot;&gt;Qtd&lt;/th&gt;
+            &lt;th style=&quot;width:60px&quot;&gt;Unid.&lt;/th&gt;
+            &lt;th style=&quot;width:110px&quot;&gt;Nº Doc.&lt;/th&gt;
+            &lt;th style=&quot;width:100px&quot;&gt;Val. Unit.&lt;/th&gt;
+            &lt;th style=&quot;width:100px&quot;&gt;Val. Total&lt;/th&gt;
+            &lt;th style=&quot;width:40px&quot;&gt;&lt;/th&gt;
+          &lt;/tr&gt;
+        &lt;/thead&gt;
+        &lt;tbody id=&quot;bens-tbody&quot;&gt;&lt;/tbody&gt;
+      &lt;/table&gt;
+      &lt;div class=&quot;row&quot; style=&quot;margin-top:12px&quot;&gt;
+        &lt;div class=&quot;field&quot; style=&quot;flex:0 0 200px&quot;&gt;
+          &lt;label&gt;Data do Termo&lt;/label&gt;
+          &lt;input type=&quot;text&quot; id=&quot;anx6-data&quot; placeholder=&quot;30 de MARÇO de 2026&quot;&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;doc-preview-wrap&quot;&gt;
+      &lt;div class=&quot;doc-preview-bar&quot;&gt;
+        &lt;span class=&quot;doc-name&quot;&gt;🎁 Anexo VI — Pré-visualização&lt;/span&gt;
+        &lt;div class=&quot;row gap-8&quot;&gt;
+          &lt;button class=&quot;btn btn-green btn-sm&quot; onclick=&quot;gerarAnx6()&quot;&gt;↺ Gerar&lt;/button&gt;
+          &lt;button class=&quot;btn btn-accent btn-sm&quot; onclick=&quot;imprimirDoc(&#x27;anx6&#x27;)&quot;&gt;🖨 Imprimir&lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div id=&quot;prev-anx6&quot;&gt;&lt;div class=&quot;doc-empty&quot;&gt;&lt;div class=&quot;doc-empty-icon&quot;&gt;🎁&lt;/div&gt;Clique em &quot;Gerar&quot;&lt;/div&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/section&gt;
+
+&lt;/main&gt;
+&lt;/div&gt;
+
+&lt;!-- HIDDEN PRINT FRAMES --&gt;
+&lt;iframe id=&quot;print-frame&quot; style=&quot;display:none&quot;&gt;&lt;/iframe&gt;
+
+&lt;script&gt;
+// ==================== CONSTANTES FIXAS DA ESCOLA ====================
+const ESCOLA       = &#x27;E.M. ALBERTINA ALVES DO NASCIMENTO&#x27;;
+const CAIXA_ESCOLAR = &#x27;ALBERTINA ALVES NASCIMENTO&#x27;;
+const CNPJ_CE      = &#x27;15.547.261/0001-01&#x27;;
+const PRESIDENTE   = &#x27;JEFERSON CESAR DOS SANTOS&#x27;;
+const TESOUREIRO   = &#x27;ANA PAULA AGUIAR SILVA&#x27;;
+const SECRETARIO   = &#x27;MARIA AZEVEDO MARTINS TORRES DE CARVALHO&#x27;;
+const CF1          = &#x27;ANGEL CASSIO LOPES DE OLIVEIRA&#x27;;
+const CF2          = &#x27;DOMINGOS AILTON SANTOS&#x27;;
+const CF3          = &#x27;VANESSA MARIA AUGUSTO DO NASCIMENTO&#x27;;
+const MANDATO_INI  = &#x27;01/01/2025&#x27;;
+const MANDATO_FIM  = &#x27;31/12/2027&#x27;;
+const REG_CARTORIO = &#x27;10160&#x27;;
+const LIVRO_A      = &#x27;10040&#x27;;
+const BANCO        = &#x27;CAIXA ECONÔMICA FEDERAL&#x27;;
+const AGENCIA      = &#x27;3797&#x27;;
+const CONTA        = &#x27;000577240784-4&#x27;;
+const CONTA_ANT    = &#x27;03000092-0&#x27;;
+const ENDERECO_SEDUC = &#x27;Rua Coimbra, nº 100 — Bairro Santa Cruz Industrial — Contagem/MG — CEP 32.340-010&#x27;;
+const PREFEITURA   = &#x27;PREFEITURA MUNICIPAL DE CONTAGEM\nSecretaria Municipal de Educação&#x27;;
+
+// ==================== SUPABASE ====================
+const SUPA_URL = &#x27;https://nvwkbdlzyfivmkapdhyl.supabase.co&#x27;;
+const SUPA_KEY = &#x27;eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52d2tiZGx6eWZpdm1rYXBkaHlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjI4MzgsImV4cCI6MjA5MzkzODgzOH0.YVVj7nt5u0wsf9UmjLlSaSNFzfzY52kJwKCzh_lCcmw&#x27;;
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ==================== STATE ====================
+let state = {
+  tcs: [],
+  despesas: [],
+  parcelaValores: [],
+  tcSelecionado: null,
+  parcelaSelecionada: &#x27;01&#x27;
+};
+
+let currentPage = &#x27;dash&#x27;;
+let acaoRows = [];
+let guiaRows = [];
+let bemRows = [];
+
+// ==================== INIT ====================
+async function init() {
+  setSyncStatus(&#x27;loading&#x27;);
+  try {
+    const [{ data: tcsData }, { data: despData }, { data: pvData }] = await Promise.all([
+      supa.from(&#x27;tcs&#x27;).select(&#x27;*&#x27;).order(&#x27;criado_em&#x27;),
+      supa.from(&#x27;despesas&#x27;).select(&#x27;*&#x27;).order(&#x27;criado_em&#x27;),
+      supa.from(&#x27;parcela_valores&#x27;).select(&#x27;*&#x27;).order(&#x27;parcela&#x27;)
+    ]);
+
+    state.tcs = (tcsData || []).map(r =&gt; ({
+      id: r.id, numero: r.numero, escola: r.escola,
+      cnpj: r.cnpj, presidente: r.presidente,
+      inicio: r.inicio, fim: r.fim, valor: r.valor,
+      ehAditivo: r.eh_aditivo, tcPaiId: r.tc_pai_id
+    }));
+
+    state.despesas = (despData || []).map(r =&gt; ({
+      id: r.id, tcVinculo: r.tc_vinculo, tipo: r.tipo,
+      parcela: r.parcela, credor: r.credor, cnpj: r.cnpj,
+      nfNum: r.nf_num, nfData: r.nf_data, valor: r.valor,
+      descricao: r.descricao
+    }));
+
+    state.parcelaValores = (pvData || []).map(r =&gt; ({
+      id: r.id, tcId: r.tc_id, parcela: r.parcela,
+      custeio: r.custeio || &#x27;0,00&#x27;, capital: r.capital || &#x27;0,00&#x27;,
+      alem: r.alem_muros || &#x27;0,00&#x27;, obras: r.obras || &#x27;0,00&#x27;,
+      mesAnoInicio: r.mes_ano_inicio || &#x27;&#x27;, dataTermino: r.data_termino || &#x27;&#x27;
+    }));
+
+    preencherSeletorTC();
+    setSyncStatus(&#x27;ok&#x27;);
+    document.getElementById(&#x27;loading-bar&#x27;).style.display = &#x27;none&#x27;;
+    onTcChange();
+  } catch(e) {
+    setSyncStatus(&#x27;err&#x27;);
+    document.getElementById(&#x27;loading-bar&#x27;).innerHTML = &#x27;❌ Erro ao conectar. Verifique a conexão.&#x27;;
+    console.error(e);
+  }
+}
+
+function setSyncStatus(s) {
+  const dot = document.getElementById(&#x27;sync-dot&#x27;);
+  const txt = document.getElementById(&#x27;sync-txt&#x27;);
+  dot.className = &#x27;status-dot &#x27; + (s === &#x27;loading&#x27; ? &#x27;status-loading&#x27; : s === &#x27;ok&#x27; ? &#x27;status-ok&#x27; : &#x27;status-err&#x27;);
+  txt.textContent = s === &#x27;loading&#x27; ? &#x27;Carregando...&#x27; : s === &#x27;ok&#x27; ? &#x27;Sincronizado&#x27; : &#x27;Erro de conexão&#x27;;
+}
+
+function preencherSeletorTC() {
+  const sel = document.getElementById(&#x27;sel-tc&#x27;);
+  sel.innerHTML = &#x27;&lt;option value=&quot;&quot;&gt;— Selecione o TC —&lt;/option&gt;&#x27;;
+  state.tcs.filter(t =&gt; !t.tcPaiId).forEach(tc =&gt; {
+    const o = document.createElement(&#x27;option&#x27;);
+    o.value = tc.id;
+    o.textContent = `TC ${tc.numero}${tc.escola ? &#x27; — &#x27; + tc.escola : &#x27;&#x27;}`;
+    sel.appendChild(o);
+    state.tcs.filter(a =&gt; a.tcPaiId === tc.id).forEach(a =&gt; {
+      const o2 = document.createElement(&#x27;option&#x27;);
+      o2.value = a.id;
+      o2.textContent = `  └ Aditivo ${a.numero} (TC ${tc.numero})`;
+      sel.appendChild(o2);
+    });
+  });
+  // Auto-select primeiro TC ativo
+  if (state.tcs.length) {
+    sel.value = state.tcs[0].id;
+  }
+}
+
+function onTcChange() {
+  const sel = document.getElementById(&#x27;sel-tc&#x27;);
+  state.tcSelecionado = state.tcs.find(t =&gt; String(t.id) === String(sel.value)) || null;
+  onParcelaChange();
+}
+
+function onParcelaChange() {
+  state.parcelaSelecionada = document.getElementById(&#x27;sel-parcela&#x27;).value;
+  atualizarDashboard();
+  preencherCamposAutomaticos();
+}
+
+// ==================== FORMATAÇÃO ====================
+function fmtMoney(v) {
+  return &#x27;R$ &#x27; + Number(v || 0).toLocaleString(&#x27;pt-BR&#x27;, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function parseMoney(s) {
+  if (!s) return 0;
+  return parseFloat(String(s).replace(/\./g,&#x27;&#x27;).replace(&#x27;,&#x27;,&#x27;.&#x27;)) || 0;
+}
+
+function fmtMoneyStr(v) {
+  return Number(v || 0).toLocaleString(&#x27;pt-BR&#x27;, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function numParcelaPorExtenso(p) {
+  const m = { &#x27;01&#x27;:&#x27;PRIMEIRA&#x27;,&#x27;02&#x27;:&#x27;SEGUNDA&#x27;,&#x27;03&#x27;:&#x27;TERCEIRA&#x27;,&#x27;04&#x27;:&#x27;QUARTA&#x27;,&#x27;05&#x27;:&#x27;QUINTA&#x27;,&#x27;U&#x27;:&#x27;ÚNICA&#x27; };
+  return m[p] || p;
+}
+
+function numParcelaOrd(p) {
+  const m = { &#x27;01&#x27;:&#x27;1ª&#x27;,&#x27;02&#x27;:&#x27;2ª&#x27;,&#x27;03&#x27;:&#x27;3ª&#x27;,&#x27;04&#x27;:&#x27;4ª&#x27;,&#x27;05&#x27;:&#x27;5ª&#x27;,&#x27;U&#x27;:&#x27;Única&#x27; };
+  return m[p] || p;
+}
+
+function parcelaNome(p) {
+  const m = { &#x27;01&#x27;:&#x27;PRIMEIRA&#x27;,&#x27;02&#x27;:&#x27;SEGUNDA&#x27;,&#x27;03&#x27;:&#x27;TERCEIRA&#x27;,&#x27;04&#x27;:&#x27;QUARTA&#x27;,&#x27;05&#x27;:&#x27;QUINTA&#x27;,&#x27;U&#x27;:&#x27;ÚNICA&#x27; };
+  return m[p] || p;
+}
+
+function getTCNumero() {
+  if (!state.tcSelecionado) return &#x27;___/____&#x27;;
+  // Se for aditivo, encontra o TC pai e retorna &quot;225/2025 (ADITIVO 01)&quot;
+  if (state.tcSelecionado.tcPaiId) {
+    const pai = state.tcs.find(t =&gt; String(t.id) === String(state.tcSelecionado.tcPaiId));
+    return `${pai ? pai.numero : &#x27;___&#x27;} (ADITIVO ${state.tcSelecionado.numero || &#x27;01&#x27;})`;
+  }
+  return state.tcSelecionado.numero || &#x27;___/____&#x27;;
+}
+
+function getDespesasDaParcela(tipo = null) {
+  if (!state.tcSelecionado) return [];
+  return state.despesas.filter(d =&gt;
+    String(d.tcVinculo) === String(state.tcSelecionado.id) &amp;&amp;
+    d.parcela === state.parcelaSelecionada &amp;&amp;
+    (!tipo || d.tipo === tipo)
+  );
+}
+
+function getPVRow() {
+  if (!state.tcSelecionado) return null;
+  return state.parcelaValores.find(pv =&gt;
+    String(pv.tcId) === String(state.tcSelecionado.id) &amp;&amp;
+    pv.parcela === state.parcelaSelecionada
+  ) || null;
+}
+
+// ==================== PREENCHER AUTOMÁTICO ====================
+function preencherCamposAutomaticos() {
+  const pv = getPVRow();
+  const tc = state.tcSelecionado;
+
+  // Data de crédito — tenta inferir do mes_ano_inicio da parcela
+  let dataCredito = &#x27;&#x27;;
+  if (pv &amp;&amp; pv.mesAnoInicio) {
+    const [ano, mes] = pv.mesAnoInicio.split(&#x27;-&#x27;);
+    dataCredito = `30/${mes}/${ano}`;
+  }
+
+  // Período de execução
+  let periodoExec = &#x27;&#x27;;
+  if (pv &amp;&amp; pv.mesAnoInicio) {
+    const [ano, mes] = pv.mesAnoInicio.split(&#x27;-&#x27;);
+    const mesAbr = [&#x27;JAN&#x27;,&#x27;FEV&#x27;,&#x27;MAR&#x27;,&#x27;ABR&#x27;,&#x27;MAI&#x27;,&#x27;JUN&#x27;,&#x27;JUL&#x27;,&#x27;AGO&#x27;,&#x27;SET&#x27;,&#x27;OUT&#x27;,&#x27;NOV&#x27;,&#x27;DEZ&#x27;][parseInt(mes)-1];
+    periodoExec = `${mesAbr}//${ano} A ${mesAbr}//${ano}`;
+  }
+
+  // Valor creditado (da parcela)
+  let valorCreditado = &#x27;&#x27;;
+  if (pv) {
+    const total = parseMoney(pv.custeio) + parseMoney(pv.capital) + parseMoney(pv.alem) + parseMoney(pv.obras);
+    if (total &gt; 0) valorCreditado = fmtMoneyStr(total);
+  }
+
+  // Atualiza campos Anx2
+  setIfEmpty(&#x27;anx2-datacredito&#x27;, dataCredito);
+  setIfEmpty(&#x27;anx2-periodo&#x27;, periodoExec);
+  setIfEmpty(&#x27;anx2-valor&#x27;, valorCreditado);
+
+  // Atualiza campos Anx3
+  document.getElementById(&#x27;anx3-numparcela&#x27;).value = state.parcelaSelecionada;
+  setIfEmpty(&#x27;anx3-datacredito&#x27;, dataCredito);
+  setIfEmpty(&#x27;anx3-creditado&#x27;, valorCreditado);
+
+  // Anx5
+  setIfEmpty(&#x27;anx5-datacred&#x27;, dataCredito);
+
+  // Dashboard
+  document.getElementById(&#x27;dash-datacredito&#x27;).textContent = dataCredito || &#x27;—&#x27;;
+  document.getElementById(&#x27;dash-periodo&#x27;).textContent = periodoExec || &#x27;—&#x27;;
+}
+
+function setIfEmpty(id, val) {
+  const el = document.getElementById(id);
+  if (el &amp;&amp; !el.value &amp;&amp; val) el.value = val;
+}
+
+// ==================== DASHBOARD ====================
+function atualizarDashboard() {
+  const tc = state.tcSelecionado;
+  const pv = getPVRow();
+  const desps = getDespesasDaParcela();
+  const totalGasto = desps.reduce((s, d) =&gt; s + parseMoney(d.valor), 0);
+
+  // Subtitle
+  if (tc) {
+    document.getElementById(&#x27;dash-subtitle&#x27;).textContent =
+      `TC ${getTCNumero()} — Parcela ${numParcelaOrd(state.parcelaSelecionada)}`;
+  }
+
+  // Cards
+  let valorCredTotal = 0;
+  if (pv) valorCredTotal = parseMoney(pv.custeio) + parseMoney(pv.capital) + parseMoney(pv.alem) + parseMoney(pv.obras);
+
+  document.getElementById(&#x27;dash-cards&#x27;).innerHTML = `
+    &lt;div class=&quot;info-card&quot;&gt;
+      &lt;div class=&quot;info-label&quot;&gt;TC / Aditivo&lt;/div&gt;
+      &lt;div class=&quot;info-value&quot;&gt;${tc ? getTCNumero() : &#x27;—&#x27;}&lt;/div&gt;
+      &lt;div class=&quot;info-meta&quot;&gt;Parcela ${numParcelaOrd(state.parcelaSelecionada)}&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;info-card orange&quot;&gt;
+      &lt;div class=&quot;info-label&quot;&gt;Valor Creditado&lt;/div&gt;
+      &lt;div class=&quot;info-value&quot;&gt;${valorCredTotal &gt; 0 ? fmtMoney(valorCredTotal) : &#x27;—&#x27;}&lt;/div&gt;
+      &lt;div class=&quot;info-meta&quot;&gt;Parcela ${numParcelaOrd(state.parcelaSelecionada)}&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;info-card green&quot;&gt;
+      &lt;div class=&quot;info-label&quot;&gt;Total de Despesas&lt;/div&gt;
+      &lt;div class=&quot;info-value&quot;&gt;${fmtMoney(totalGasto)}&lt;/div&gt;
+      &lt;div class=&quot;info-meta&quot;&gt;${desps.length} lançamento(s)&lt;/div&gt;
+    &lt;/div&gt;
+  `;
+
+  // Despesas list
+  if (!desps.length) {
+    document.getElementById(&#x27;dash-despesas-list&#x27;).innerHTML =
+      &#x27;&lt;div class=&quot;doc-empty&quot; style=&quot;padding:24px&quot;&gt;&lt;div class=&quot;doc-empty-icon&quot; style=&quot;font-size:20px&quot;&gt;📭&lt;/div&gt;Nenhuma despesa lançada para esta parcela&lt;/div&gt;&#x27;;
+  } else {
+    const rows = desps.map((d, i) =&gt; `
+      &lt;div class=&quot;desp-row&quot;&gt;
+        &lt;div class=&quot;desp-num&quot;&gt;${i+1}&lt;/div&gt;
+        &lt;div&gt;&lt;strong&gt;${d.credor}&lt;/strong&gt; &lt;span style=&quot;color:var(--ink3);font-size:11px&quot;&gt;${d.descricao || &#x27;&#x27;}&lt;/span&gt;&lt;/div&gt;
+        &lt;div style=&quot;font-size:11px;color:var(--ink3)&quot;&gt;${d.cnpj || &#x27;—&#x27;}&lt;/div&gt;
+        &lt;div style=&quot;font-size:11px;color:var(--ink3)&quot;&gt;${d.nfNum || &#x27;—&#x27;}${d.nfData ? &#x27; / &#x27; + fmtDate(d.nfData) : &#x27;&#x27;}&lt;/div&gt;
+        &lt;div class=&quot;desp-val&quot;&gt;${fmtMoney(parseMoney(d.valor))}&lt;/div&gt;
+        &lt;div style=&quot;font-size:10px;background:var(--surface2);border-radius:3px;padding:2px 7px;color:var(--ink3)&quot;&gt;${d.tipo || &#x27;—&#x27;}&lt;/div&gt;
+      &lt;/div&gt;
+    `).join(&#x27;&#x27;);
+    document.getElementById(&#x27;dash-despesas-list&#x27;).innerHTML = rows;
+  }
+
+  // Atualiza preview anx3
+  renderAnx3Despesas();
+}
+
+function fmtDate(d) {
+  if (!d) return &#x27;&#x27;;
+  const p = d.split(&#x27;-&#x27;);
+  if (p.length === 3) return `${p[2]}/${p[1]}/${p[0]}`;
+  return d;
+}
+
+// ==================== NAV ====================
+function showPage(id) {
+  document.querySelectorAll(&#x27;.section&#x27;).forEach(s =&gt; s.classList.remove(&#x27;active&#x27;));
+  document.querySelectorAll(&#x27;.nav-item&#x27;).forEach(n =&gt; n.classList.remove(&#x27;active&#x27;));
+  document.getElementById(&#x27;page-&#x27; + id).classList.add(&#x27;active&#x27;);
+  document.querySelectorAll(&#x27;.nav-item&#x27;).forEach(n =&gt; {
+    if (n.getAttribute(&#x27;onclick&#x27;) &amp;&amp; n.getAttribute(&#x27;onclick&#x27;).includes(`&#x27;${id}&#x27;`)) n.classList.add(&#x27;active&#x27;);
+  });
+  currentPage = id;
+  if (id === &#x27;anx2&#x27;) inicializarAcoes();
+  if (id === &#x27;anx3&#x27;) renderAnx3Despesas();
+}
+
+// ==================== AÇÕES MDE (ANX2) ====================
+function inicializarAcoes() {
+  if (acaoRows.length === 0) popularAcoesDeSpesas();
+  renderAcoes();
+}
+
+function popularAcoesDeSpesas() {
+  const desps = getDespesasDaParcela();
+  if (!desps.length) return;
+  const periodo = document.getElementById(&#x27;anx2-periodo&#x27;).value || &#x27;JAN//2026 A MAR//2026&#x27;;
+
+  // Agrupa por tipo
+  const grupos = {};
+  desps.forEach(d =&gt; {
+    const key = tipoAcaoLabel(d.tipo);
+    if (!grupos[key]) grupos[key] = 0;
+    grupos[key] += parseMoney(d.valor);
+  });
+
+  acaoRows = Object.entries(grupos).map(([acao, valor]) =&gt; ({
+    acao, periodo, valor: fmtMoneyStr(valor)
+  }));
+  renderAcoes();
+}
+
+function tipoAcaoLabel(tipo) {
+  const m = {
+    &#x27;CUSTEIO&#x27;: &#x27;MATERIAIS DE EXPEDIENTE/PAPELARIA&#x27;,
+    &#x27;CAPITAL&#x27;: &#x27;EQUIPAMENTOS/MOBILIÁRIO&#x27;,
+    &#x27;ALEM_MUROS&#x27;: &#x27;ROTEIROS EDUCATIVOS/CULTURAIS&#x27;,
+    &#x27;OBRAS&#x27;: &#x27;SERVIÇOS DE ALVENARIA, REDE HIDRÁULICA, REDE ELÉTRICA E REDE LÓGICA&#x27;,
+    &#x27;CAPINA&#x27;: &#x27;CAPINA E LIMPEZA DE TERRENO&#x27;
+  };
+  return m[tipo] || tipo;
+}
+
+function addAcaoAnx2(acao = &#x27;&#x27;, periodo = &#x27;&#x27;, valor = &#x27;&#x27;) {
+  acaoRows.push({ acao: acao || &#x27;&#x27;, periodo: periodo || (document.getElementById(&#x27;anx2-periodo&#x27;).value || &#x27;&#x27;), valor: valor || &#x27;0,00&#x27; });
+  renderAcoes();
+}
+
+function renderAcoes() {
+  const tbody = document.getElementById(&#x27;acoes-tbody&#x27;);
+  tbody.innerHTML = acaoRows.map((r, i) =&gt; `
+    &lt;tr&gt;
+      &lt;td&gt;&lt;input type=&quot;text&quot; value=&quot;${escHtml(r.acao)}&quot; oninput=&quot;acaoRows[${i}].acao=this.value&quot; style=&quot;width:100%&quot;&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;input type=&quot;text&quot; value=&quot;${escHtml(r.periodo)}&quot; oninput=&quot;acaoRows[${i}].periodo=this.value&quot; style=&quot;width:100%&quot;&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;input type=&quot;text&quot; value=&quot;${escHtml(r.valor)}&quot; oninput=&quot;acaoRows[${i}].valor=this.value;calcTotalAcoes()&quot; class=&quot;mono&quot; style=&quot;width:100%&quot;&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;button class=&quot;del-btn&quot; onclick=&quot;acaoRows.splice(${i},1);renderAcoes()&quot;&gt;✕&lt;/button&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+  `).join(&#x27;&#x27;);
+  calcTotalAcoes();
+}
+
+function calcTotalAcoes() {
+  const total = acaoRows.reduce((s, r) =&gt; s + parseMoney(r.valor), 0);
+  document.getElementById(&#x27;acoes-total&#x27;).textContent = fmtMoney(total);
+}
+
+// ==================== ANX3 DESPESAS ====================
+function renderAnx3Despesas() {
+  const desps = getDespesasDaParcela();
+  const wrap = document.getElementById(&#x27;anx3-despesas-wrap&#x27;);
+  if (!desps.length) {
+    wrap.innerHTML = &#x27;&lt;div class=&quot;doc-empty&quot; style=&quot;padding:24px&quot;&gt;&lt;div class=&quot;doc-empty-icon&quot; style=&quot;font-size:20px&quot;&gt;📭&lt;/div&gt;Nenhuma despesa encontrada para esta parcela e TC&lt;/div&gt;&#x27;;
+    return;
+  }
+  const rows = desps.map((d, i) =&gt; `
+    &lt;div class=&quot;desp-row&quot;&gt;
+      &lt;div class=&quot;desp-num&quot;&gt;${i+1}&lt;/div&gt;
+      &lt;div&gt;&lt;strong&gt;${d.credor}&lt;/strong&gt;&lt;/div&gt;
+      &lt;div style=&quot;font-size:11px;color:var(--ink3);font-family:&#x27;IBM Plex Mono&#x27;,monospace&quot;&gt;${d.cnpj || &#x27;—&#x27;}&lt;/div&gt;
+      &lt;div style=&quot;font-size:11px;color:var(--ink3)&quot;&gt;${d.nfNum ? d.nfNum + (d.nfData ? &#x27; — &#x27; + fmtDate(d.nfData) : &#x27;&#x27;) : &#x27;—&#x27;}&lt;/div&gt;
+      &lt;div class=&quot;desp-val&quot;&gt;${fmtMoney(parseMoney(d.valor))}&lt;/div&gt;
+      &lt;div&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  `).join(&#x27;&#x27;);
+  const total = desps.reduce((s, d) =&gt; s + parseMoney(d.valor), 0);
+  wrap.innerHTML = rows + `&lt;div class=&quot;desp-row&quot; style=&quot;border-top:2px solid var(--border);padding-top:10px;margin-top:4px;font-weight:700&quot;&gt;
+    &lt;div&gt;&lt;/div&gt;&lt;div&gt;TOTAL&lt;/div&gt;&lt;div&gt;&lt;/div&gt;&lt;div&gt;&lt;/div&gt;
+    &lt;div class=&quot;desp-val&quot; style=&quot;color:var(--ink)&quot;&gt;${fmtMoney(total)}&lt;/div&gt;&lt;div&gt;&lt;/div&gt;
+  &lt;/div&gt;`;
+}
+
+// ==================== GUIAS (ANX4) ====================
+function addGuia(guia = &#x27;&#x27;, data = &#x27;&#x27;, nf = &#x27;&#x27;, vGuia = &#x27;&#x27;, vNF = &#x27;&#x27;) {
+  guiaRows.push({ guia, data, nf, vGuia: vGuia || &#x27;0,00&#x27;, vNF: vNF || &#x27;0,00&#x27; });
+  renderGuias();
+}
+
+function renderGuias() {
+  const tbody = document.getElementById(&#x27;guias-tbody&#x27;);
+  tbody.innerHTML = guiaRows.map((r, i) =&gt; `
+    &lt;tr&gt;
+      &lt;td&gt;&lt;input type=&quot;text&quot; value=&quot;${escHtml(r.guia)}&quot; oninput=&quot;guiaRows[${i}].guia=this.value&quot; style=&quot;width:100%&quot; placeholder=&quot;Ex.: ISSQN retido&quot;&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;input type=&quot;text&quot; value=&quot;${escHtml(r.data)}&quot; oninput=&quot;guiaRows[${i}].data=this.value&quot; style=&quot;width:100%&quot; placeholder=&quot;23/03/2026&quot;&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;input type=&quot;text&quot; value=&quot;${escHtml(r.nf)}&quot; oninput=&quot;guiaRows[${i}].nf=this.value&quot; style=&quot;width:100%&quot; placeholder=&quot;NF 408&quot;&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;input type=&quot;text&quot; value=&quot;${escHtml(r.vGuia)}&quot; oninput=&quot;guiaRows[${i}].vGuia=this.value&quot; class=&quot;mono&quot; style=&quot;width:100%&quot; placeholder=&quot;0,00&quot;&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;input type=&quot;text&quot; value=&quot;${escHtml(r.vNF)}&quot; oninput=&quot;guiaRows[${i}].vNF=this.value&quot; class=&quot;mono&quot; style=&quot;width:100%&quot; placeholder=&quot;0,00&quot;&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;button class=&quot;del-btn&quot; onclick=&quot;guiaRows.splice(${i},1);renderGuias()&quot;&gt;✕&lt;/button&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+  `).join(&#x27;&#x27;);
+}
+
+// ==================== BENS DOADOS (ANX6) ====================
+function addBemDoado(disc = &#x27;&#x27;, qtd = 1, unid = &#x27;un&#x27;, ndoc = &#x27;&#x27;, vUnit = &#x27;&#x27;, vTot = &#x27;&#x27;) {
+  bemRows.push({ disc, qtd, unid, ndoc, vUnit: vUnit || &#x27;0,00&#x27;, vTot: vTot || &#x27;0,00&#x27; });
+  renderBens();
+}
+
+function renderBens() {
+  const tbody = document.getElementById(&#x27;bens-tbody&#x27;);
+  tbody.innerHTML = bemRows.map((r, i) =&gt; `
+    &lt;tr&gt;
+      &lt;td&gt;&lt;input type=&quot;text&quot; value=&quot;${escHtml(r.disc)}&quot; oninput=&quot;bemRows[${i}].disc=this.value&quot; style=&quot;width:100%&quot; placeholder=&quot;Ex.: Mesa escolar&quot;&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;input type=&quot;number&quot; value=&quot;${r.qtd}&quot; oninput=&quot;bemRows[${i}].qtd=this.value&quot; style=&quot;width:100%&quot;&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;input type=&quot;text&quot; value=&quot;${escHtml(r.unid)}&quot; oninput=&quot;bemRows[${i}].unid=this.value&quot; style=&quot;width:100%&quot;&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;input type=&quot;text&quot; value=&quot;${escHtml(r.ndoc)}&quot; oninput=&quot;bemRows[${i}].ndoc=this.value&quot; style=&quot;width:100%&quot; placeholder=&quot;NF 001&quot;&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;input type=&quot;text&quot; value=&quot;${escHtml(r.vUnit)}&quot; oninput=&quot;bemRows[${i}].vUnit=this.value&quot; class=&quot;mono&quot; style=&quot;width:100%&quot; placeholder=&quot;0,00&quot;&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;input type=&quot;text&quot; value=&quot;${escHtml(r.vTot)}&quot; oninput=&quot;bemRows[${i}].vTot=this.value&quot; class=&quot;mono&quot; style=&quot;width:100%&quot; placeholder=&quot;0,00&quot;&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;button class=&quot;del-btn&quot; onclick=&quot;bemRows.splice(${i},1);renderBens()&quot;&gt;✕&lt;/button&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+  `).join(&#x27;&#x27;);
+}
+
+function popularBemsDeCapital() {
+  const caps = getDespesasDaParcela(&#x27;CAPITAL&#x27;);
+  if (!caps.length) { alert(&#x27;Nenhuma despesa de Capital encontrada para esta parcela.&#x27;); return; }
+  bemRows = caps.map(d =&gt; ({
+    disc: d.descricao || d.credor, qtd: 1, unid: &#x27;un&#x27;,
+    ndoc: d.nfNum || &#x27;&#x27;, vUnit: d.valor, vTot: d.valor
+  }));
+  renderBens();
+}
+
+// ==================== GERADORES DE DOCUMENTO ====================
+
+function gerarAnx1() {
+  const tc = state.tcSelecionado;
+  const dia = document.getElementById(&#x27;anx1-dia&#x27;).value;
+  const mes = document.getElementById(&#x27;anx1-mes&#x27;).value;
+  const ano = document.getElementById(&#x27;anx1-ano&#x27;).value;
+  const cat = document.getElementById(&#x27;anx1-cat&#x27;).value;
+  const acao = document.getElementById(&#x27;anx1-acao&#x27;).value;
+  const tcNum = getTCNumero();
+  const parcela = state.parcelaSelecionada;
+
+  const acaoText = acao === &#x27;MANUTENCAO&#x27;
+    ? &#x27;(X) DESPESAS COM A MANUTENÇÃO DO FUNCIONAMENTO ESCOLAR\n( ) DESPESAS COM AQUISIÇÃO DE BENS MÓVEIS DE CAPITAL OU REFORMA, MANUTENÇÃO, REPARO E REQUALIFICAÇÃO.&#x27;
+    : &#x27;( ) DESPESAS COM A MANUTENÇÃO DO FUNCIONAMENTO ESCOLAR\n(X) DESPESAS COM AQUISIÇÃO DE BENS MÓVEIS DE CAPITAL OU REFORMA, MANUTENÇÃO, REPARO E REQUALIFICAÇÃO.&#x27;;
+
+  const html = docHtml(`ANEXO I — CERTIDÃO DE EXECUÇÃO DO OBJETO`,
+    `&lt;p&gt;&lt;strong&gt;SECRETARIA MUNICIPAL DE EDUCAÇÃO E CULTURA DE CONTAGEM&lt;/strong&gt;&lt;/p&gt;
+     &lt;p&gt;GERÊNCIA DAS CAIXAS ESCOLARES — DIRETORIA DE GESTÃO DE PARCERIAS, TERMOS DE COMPROMISSO E CONVÊNIOS — SUPERINTENDÊNCIA DE PLANEJAMENTO, ORÇAMENTO E FINANÇAS&lt;/p&gt;
+     &lt;p&gt;&lt;strong&gt;${ENDERECO_SEDUC}&lt;/strong&gt;&lt;/p&gt;
+     &lt;br&gt;
+     &lt;h2 style=&quot;text-align:center&quot;&gt;ANEXO I&lt;/h2&gt;
+     &lt;h3 style=&quot;text-align:center&quot;&gt;CERTIDÃO DE EXECUÇÃO DO OBJETO&lt;/h3&gt;
+     &lt;br&gt;
+     &lt;table style=&quot;width:100%;border-collapse:collapse;font-size:11pt&quot;&gt;
+       &lt;tr&gt;&lt;td style=&quot;width:160px;font-weight:bold;padding:4px 0&quot;&gt;Caixa Escolar:&lt;/td&gt;&lt;td&gt;${CAIXA_ESCOLAR}&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td style=&quot;font-weight:bold;padding:4px 0&quot;&gt;Endereço:&lt;/td&gt;&lt;td&gt;${ESCOLA} — Contagem/MG&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td style=&quot;font-weight:bold;padding:4px 0&quot;&gt;N.º do TC:&lt;/td&gt;&lt;td&gt;${tcNum}&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td style=&quot;font-weight:bold;padding:4px 0&quot;&gt;N.º da Parcela:&lt;/td&gt;&lt;td&gt;${numParcelaOrd(parcela)} Parcela&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td style=&quot;font-weight:bold;padding:4px 0&quot;&gt;Categoria:&lt;/td&gt;&lt;td&gt;${cat === &#x27;CUSTEIO&#x27; ? &#x27;(X) CUSTEIO &amp;nbsp;&amp;nbsp; ( ) CAPITAL&#x27; : &#x27;( ) CUSTEIO &amp;nbsp;&amp;nbsp; (X) CAPITAL&#x27;}&lt;/td&gt;&lt;/tr&gt;
+     &lt;/table&gt;
+     &lt;br&gt;
+     &lt;p&gt;&lt;strong&gt;AÇÕES DESENVOLVIDAS NA MANUTENÇÃO DO DESENVOLVIMENTO DO ENSINO:&lt;/strong&gt;&lt;/p&gt;
+     &lt;p style=&quot;margin-top:8px&quot;&gt;${acaoText.replace(/\n/g,&#x27;&lt;br&gt;&#x27;)}&lt;/p&gt;
+     &lt;br&gt;
+     &lt;p style=&quot;text-align:justify&quot;&gt;CERTIFICO PARA FINS DE PRESTAÇÃO DE CONTAS JUNTO À PREFEITURA MUNICIPAL DE CONTAGEM QUE OS OBJETIVOS DO TERMO DE COMPROMISSO SUPRACITADO FORAM ALCANÇADOS.&lt;/p&gt;
+     &lt;br&gt;
+     &lt;p&gt;Contagem, ${dia} de ${mes} de ${ano}.&lt;/p&gt;
+     &lt;br&gt;&lt;br&gt;
+     &lt;assinaturas&gt;
+       &lt;div style=&quot;width:300px;border-top:1px solid #000;padding-top:5px;text-align:center&quot;&gt;
+         &lt;p&gt;Presidente da Caixa Escolar&lt;/p&gt;
+         &lt;p&gt;&lt;strong&gt;${PRESIDENTE}&lt;/strong&gt;&lt;/p&gt;
+         &lt;p&gt;CPF: ___________________________&lt;/p&gt;
+       &lt;/div&gt;
+     &lt;/assinaturas&gt;`
+  );
+  renderDoc(&#x27;anx1&#x27;, html);
+}
+
+function gerarAnx2() {
+  const tc = state.tcSelecionado;
+  if (!tc) { alert(&#x27;Selecione um TC na barra lateral.&#x27;); return; }
+  const dia = document.getElementById(&#x27;anx2-dia&#x27;).value;
+  const mes = document.getElementById(&#x27;anx2-mes&#x27;).value;
+  const ano = document.getElementById(&#x27;anx2-ano&#x27;).value;
+  const dataCredito = document.getElementById(&#x27;anx2-datacredito&#x27;).value;
+  const valorCred = document.getElementById(&#x27;anx2-valor&#x27;).value;
+  const tcNum = getTCNumero();
+  const parcela = state.parcelaSelecionada;
+  const nomeParc = parcelaNome(parcela);
+  const totalAcoes = acaoRows.reduce((s, r) =&gt; s + parseMoney(r.valor), 0);
+
+  // Valor por extenso simples
+  const valorNum = parseMoney(valorCred);
+  const valorExtenso = valorPorExtenso(valorNum);
+
+  const acoesTrs = acaoRows.map(r =&gt; `
+    &lt;tr&gt;
+      &lt;td style=&quot;border:1px solid #000;padding:5px 8px&quot;&gt;${r.acao}&lt;/td&gt;
+      &lt;td style=&quot;border:1px solid #000;padding:5px 8px;text-align:center&quot;&gt;${r.periodo}&lt;/td&gt;
+      &lt;td style=&quot;border:1px solid #000;padding:5px 8px;text-align:right;font-family:monospace&quot;&gt;R$ ${r.valor}&lt;/td&gt;
+    &lt;/tr&gt;
+  `).join(&#x27;&#x27;);
+
+  const html = docHtml(&#x27;ANEXO II — DELIBERAÇÃO DO CONSELHO FISCAL&#x27;,
+    `&lt;div style=&quot;display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px&quot;&gt;
+       &lt;div style=&quot;background:#f0f0f0;border:1px solid #ccc;padding:6px 12px;text-align:center;font-size:9pt&quot;&gt;
+         &lt;img src=&quot;data:image/svg+xml,&lt;svg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; width=&#x27;40&#x27; height=&#x27;40&#x27;&gt;&lt;rect width=&#x27;40&#x27; height=&#x27;40&#x27; fill=&#x27;%23eee&#x27;/&gt;&lt;text x=&#x27;50%&#x27; y=&#x27;55%&#x27; text-anchor=&#x27;middle&#x27; font-size=&#x27;8&#x27; fill=&#x27;%23666&#x27;&gt;CE&lt;/text&gt;&lt;/svg&gt;&quot; style=&quot;width:40px;height:40px;display:block;margin:0 auto&quot;&gt;
+       &lt;/div&gt;
+       &lt;div style=&quot;text-align:center;flex:1;padding:0 16px&quot;&gt;
+         &lt;p style=&quot;font-weight:bold;font-size:12pt&quot;&gt;ANEXO II&lt;/p&gt;
+         &lt;p style=&quot;font-weight:bold&quot;&gt;Deliberação do Conselho Fiscal&lt;/p&gt;
+       &lt;/div&gt;
+       &lt;div style=&quot;background:#f0f0f0;border:1px solid #ccc;padding:8px 14px;text-align:center;font-size:9pt;min-width:140px&quot;&gt;
+         &lt;p style=&quot;font-weight:bold&quot;&gt;N° DO TC&lt;/p&gt;
+         &lt;p style=&quot;font-weight:bold;font-size:11pt&quot;&gt;${tcNum}&lt;/p&gt;
+         &lt;p&gt;PARCELA ${numParcelaOrd(parcela)}&lt;/p&gt;
+       &lt;/div&gt;
+     &lt;/div&gt;
+
+     &lt;p style=&quot;text-align:justify;margin-bottom:10px&quot;&gt;
+       Aos &lt;strong&gt;${dia}&lt;/strong&gt; dias do mês de &lt;strong&gt;${mes}&lt;/strong&gt; do ano de dois mil e vinte e seis, reuniram-se os membros do
+       &lt;strong&gt;Conselho Fiscal da Caixa Escolar da Escola Municipal Albertina Alves do Nascimento.&lt;/strong&gt;
+     &lt;/p&gt;
+
+     &lt;p style=&quot;text-align:justify;margin-bottom:10px&quot;&gt;
+       &lt;strong&gt;Pauta:&lt;/strong&gt; Deliberação sobre a utilização de recurso referente ao repasse &lt;strong&gt;DA ${nomeParc} PARCELA&lt;/strong&gt;
+       para &lt;strong&gt;CUSTEIO&lt;/strong&gt;, no ano de ${ano}, para ações de Manutenção e Desenvolvimento de ensino — MDE,
+       em consonância com a proposta pedagógica da Escola, conforme estabelece o &lt;strong&gt;TERMO DE
+       COMPROMISSO ${tcNum}&lt;/strong&gt;, assinado entre a Caixa Escolar &lt;strong&gt;ALBERTINA ALVES
+       NASCIMENTO&lt;/strong&gt; e a Prefeitura de Contagem, por intermédio da Secretaria Municipal de Educação.
+     &lt;/p&gt;
+
+     &lt;p style=&quot;text-align:justify;margin-bottom:10px&quot;&gt;
+       No primeiro momento da reunião, o (a) Presidente da Caixa Escolar apresentou o valor de &lt;strong&gt;R$
+       ${valorCred} (${valorExtenso})&lt;/strong&gt;, referente
+       ao repasse da &lt;strong&gt;${nomeParc}&lt;/strong&gt; parcela, creditado em &lt;strong&gt;${dataCredito}&lt;/strong&gt;, no Banco
+       &lt;strong&gt;${BANCO}&lt;/strong&gt;/Agência &lt;strong&gt;${AGENCIA}&lt;/strong&gt; conta bancária
+       &lt;strong&gt;${CONTA}&lt;/strong&gt; (ANTIGA ${CONTA_ANT}). No segundo
+       momento, definiu-se a aplicação dos recursos, acima relacionados nas seguintes ações de
+       Manutenção e Desenvolvimento de Ensino — MDE:
+     &lt;/p&gt;
+
+     &lt;table style=&quot;width:100%;border-collapse:collapse;margin-bottom:14px&quot;&gt;
+       &lt;thead&gt;
+         &lt;tr style=&quot;background:#e8e8e8&quot;&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:6px 8px;text-align:center&quot;&gt;AÇÕES - MDE&lt;/th&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:6px 8px;text-align:center;width:180px&quot;&gt;PERÍODO DE EXECUÇÃO&lt;/th&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:6px 8px;text-align:center;width:110px&quot;&gt;VALOR&lt;/th&gt;
+         &lt;/tr&gt;
+       &lt;/thead&gt;
+       &lt;tbody&gt;
+         ${acoesTrs}
+         &lt;tr style=&quot;background:#e8e8e8&quot;&gt;
+           &lt;td colspan=&quot;2&quot; style=&quot;border:1px solid #000;padding:6px 8px;text-align:right;font-weight:bold&quot;&gt;TOTAL&lt;/td&gt;
+           &lt;td style=&quot;border:1px solid #000;padding:6px 8px;text-align:right;font-weight:bold;font-family:monospace&quot;&gt;R$ ${fmtMoneyStr(totalAcoes)}&lt;/td&gt;
+         &lt;/tr&gt;
+       &lt;/tbody&gt;
+     &lt;/table&gt;
+
+     &lt;p style=&quot;margin-bottom:18px&quot;&gt;Nada mais a tratar a reunião foi encerrada, ata lavrada e assinada pelos presentes.&lt;/p&gt;
+
+     &lt;table style=&quot;width:100%;border-collapse:collapse;font-size:9.5pt&quot;&gt;
+       &lt;tr&gt;
+         &lt;td colspan=&quot;3&quot; style=&quot;border:1px solid #000;padding:6px 8px;background:#e8e8e8;font-weight:bold&quot;&gt;
+           MESA DIRETORA DA CAIXA ESCOLAR ALBERTINA ALVES NASCIMENTO&lt;br&gt;
+           &lt;span style=&quot;font-weight:normal;font-size:8.5pt&quot;&gt;VIGÊNCIA DE MANDATO ${MANDATO_INI} a ${MANDATO_FIM}. NÚMERO DE REGISTRO EM CARTÓRIO ${REG_CARTORIO} e averbado no livro A número${LIVRO_A}.&lt;/span&gt;
+         &lt;/td&gt;
+       &lt;/tr&gt;
+       &lt;tr style=&quot;background:#f5f5f5&quot;&gt;
+         &lt;th style=&quot;border:1px solid #000;padding:5px 8px&quot;&gt;Segmento&lt;/th&gt;
+         &lt;th style=&quot;border:1px solid #000;padding:5px 8px&quot;&gt;Nome&lt;/th&gt;
+         &lt;th style=&quot;border:1px solid #000;padding:5px 8px&quot;&gt;Assinatura&lt;/th&gt;
+       &lt;/tr&gt;
+       &lt;tr&gt;&lt;td style=&quot;border:1px solid #000;padding:12px 8px&quot;&gt;Presidente&lt;/td&gt;&lt;td style=&quot;border:1px solid #000;padding:12px 8px&quot;&gt;${PRESIDENTE}&lt;/td&gt;&lt;td style=&quot;border:1px solid #000;padding:12px 8px&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td style=&quot;border:1px solid #000;padding:12px 8px&quot;&gt;Tesoureiro&lt;/td&gt;&lt;td style=&quot;border:1px solid #000;padding:12px 8px&quot;&gt;${TESOUREIRO}&lt;/td&gt;&lt;td style=&quot;border:1px solid #000;padding:12px 8px&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td style=&quot;border:1px solid #000;padding:12px 8px&quot;&gt;Secretário&lt;/td&gt;&lt;td style=&quot;border:1px solid #000;padding:12px 8px&quot;&gt;${SECRETARIO}&lt;/td&gt;&lt;td style=&quot;border:1px solid #000;padding:12px 8px&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td colspan=&quot;3&quot; style=&quot;border:1px solid #000;padding:5px 8px;font-weight:bold;background:#f5f5f5&quot;&gt;CONSELHO FISCAL&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td style=&quot;border:1px solid #000;padding:12px 8px&quot;&gt;Representante (1)&lt;/td&gt;&lt;td style=&quot;border:1px solid #000;padding:12px 8px&quot;&gt;${CF1}&lt;/td&gt;&lt;td style=&quot;border:1px solid #000;padding:12px 8px&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td style=&quot;border:1px solid #000;padding:12px 8px&quot;&gt;Representante (2)&lt;/td&gt;&lt;td style=&quot;border:1px solid #000;padding:12px 8px&quot;&gt;${CF2}&lt;/td&gt;&lt;td style=&quot;border:1px solid #000;padding:12px 8px&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+       &lt;tr&gt;&lt;td style=&quot;border:1px solid #000;padding:12px 8px&quot;&gt;Representante (3)&lt;/td&gt;&lt;td style=&quot;border:1px solid #000;padding:12px 8px&quot;&gt;${CF3}&lt;/td&gt;&lt;td style=&quot;border:1px solid #000;padding:12px 8px&quot;&gt;&amp;nbsp;&lt;/td&gt;&lt;/tr&gt;
+     &lt;/table&gt;
+
+     &lt;p style=&quot;margin-top:12px;font-size:8.5pt&quot;&gt;Este documento consta de _____ páginas numeradas e rubricadas pelo (a) da Presidente da Caixa Escolar&lt;/p&gt;`
+  );
+  renderDoc(&#x27;anx2&#x27;, html);
+}
+
+function gerarAnx3() {
+  const tc = state.tcSelecionado;
+  if (!tc) { alert(&#x27;Selecione um TC.&#x27;); return; }
+  const saldoAnt = document.getElementById(&#x27;anx3-saldo-ant&#x27;).value || &#x27;0,05&#x27;;
+  const creditado = document.getElementById(&#x27;anx3-creditado&#x27;).value || &#x27;0,00&#x27;;
+  const rendimento = document.getElementById(&#x27;anx3-rendimento&#x27;).value || &#x27;0,00&#x27;;
+  const dataCredito = document.getElementById(&#x27;anx3-datacredito&#x27;).value;
+  const tipo = document.getElementById(&#x27;anx3-tipo&#x27;).value;
+  const parcela = document.getElementById(&#x27;anx3-numparcela&#x27;).value;
+  const tcNum = getTCNumero();
+
+  const desps = getDespesasDaParcela(tipo === &#x27;CUSTEIO&#x27; ? null : tipo);
+  const totalGasto = desps.reduce((s, d) =&gt; s + parseMoney(d.valor), 0);
+  const totalReceita = parseMoney(saldoAnt) + parseMoney(creditado) + parseMoney(rendimento);
+  const saldo = totalReceita - totalGasto;
+
+  const tipoLabel = { CUSTEIO: &#x27;CUSTEIO&#x27;, CAPITAL: &#x27;CAPITAL&#x27;, ALEM_MUROS: &#x27;ALÉM DOS MUROS&#x27;, OBRAS: &#x27;OBRAS&#x27; }[tipo] || tipo;
+
+  const despTrs = desps.map((d, i) =&gt; `
+    &lt;tr&gt;
+      &lt;td style=&quot;border:1px solid #000;padding:5px 7px;text-align:center&quot;&gt;${i+1}&lt;/td&gt;
+      &lt;td style=&quot;border:1px solid #000;padding:5px 7px&quot;&gt;${d.credor}&lt;/td&gt;
+      &lt;td style=&quot;border:1px solid #000;padding:5px 7px;font-family:monospace;font-size:9pt&quot;&gt;${d.cnpj || &#x27;—&#x27;}&lt;/td&gt;
+      &lt;td style=&quot;border:1px solid #000;padding:5px 7px;font-size:9pt&quot;&gt;${d.nfNum || &#x27;—&#x27;}${d.nfData ? &#x27; — &#x27; + fmtDate(d.nfData) : &#x27;&#x27;}&lt;/td&gt;
+      &lt;td style=&quot;border:1px solid #000;padding:5px 7px;text-align:right;font-family:monospace;font-weight:bold&quot;&gt;R$ ${d.valor}&lt;/td&gt;
+    &lt;/tr&gt;
+  `).join(&#x27;&#x27;);
+
+  const html = docHtml(&#x27;ANEXO III — RELATÓRIO DE EXECUÇÃO FÍSICO-FINANCEIRO&#x27;,
+    `&lt;div style=&quot;text-align:center;margin-bottom:8px&quot;&gt;
+       &lt;p style=&quot;font-size:10pt&quot;&gt;&lt;strong&gt;${PREFEITURA.replace(&#x27;\n&#x27;,&#x27;&lt;br&gt;&#x27;)}&lt;/strong&gt;&lt;/p&gt;
+       &lt;p style=&quot;font-size:8pt;color:#444&quot;&gt;Gerência das Caixas Escolares — Diretoria de Gestão de Parcerias, Termos de Compromisso e Convênios — Superintendência de Planejamento, Orçamento e Finanças&lt;/p&gt;
+     &lt;/div&gt;
+
+     &lt;h2 style=&quot;text-align:center;border:1px solid #000;padding:6px;background:#e8e8e8&quot;&gt;ANEXO III&lt;br&gt;RELATÓRIO DE EXECUÇÃO FÍSICO-FINANCEIRO&lt;/h2&gt;
+
+     &lt;table style=&quot;width:100%;border-collapse:collapse;margin-top:2px;font-size:9.5pt&quot;&gt;
+       &lt;tr&gt;
+         &lt;td style=&quot;border:1px solid #000;padding:5px 8px&quot;&gt;&lt;strong&gt;Caixa Escolar:&lt;/strong&gt; ${CAIXA_ESCOLAR}&lt;/td&gt;
+         &lt;td style=&quot;border:1px solid #000;padding:5px 8px;width:200px&quot;&gt;&lt;strong&gt;CNPJ:&lt;/strong&gt; ${CNPJ_CE}&lt;/td&gt;
+       &lt;/tr&gt;
+       &lt;tr&gt;
+         &lt;td style=&quot;border:1px solid #000;padding:5px 8px&quot; colspan=&quot;2&quot;&gt;
+           &lt;strong&gt;Data do Crédito:&lt;/strong&gt; ${dataCredito} &amp;nbsp;&amp;nbsp;
+           &lt;strong&gt;Nº da parcela:&lt;/strong&gt; ${numParcelaOrd(parcela)} &amp;nbsp;&amp;nbsp;
+           &lt;strong&gt;Discriminação da verba:&lt;/strong&gt; &lt;u&gt;${tipoLabel}&lt;/u&gt;
+         &lt;/td&gt;
+       &lt;/tr&gt;
+     &lt;/table&gt;
+
+     &lt;table style=&quot;width:100%;border-collapse:collapse;font-size:9pt;margin-top:2px&quot;&gt;
+       &lt;thead&gt;
+         &lt;tr style=&quot;background:#e8e8e8&quot;&gt;
+           &lt;th colspan=&quot;4&quot; style=&quot;border:1px solid #000;padding:5px;text-align:center&quot;&gt;Receita&lt;/th&gt;
+           &lt;th colspan=&quot;2&quot; style=&quot;border:1px solid #000;padding:5px;text-align:center&quot;&gt;Despesas / Saldo&lt;/th&gt;
+         &lt;/tr&gt;
+         &lt;tr style=&quot;background:#f5f5f5&quot;&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px 6px;text-align:center&quot;&gt;Saldo anterior&lt;/th&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px 6px;text-align:center&quot;&gt;Valor Creditado&lt;/th&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px 6px;text-align:center&quot;&gt;Recursos Próprios&lt;/th&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px 6px;text-align:center&quot;&gt;Rendimento de Aplic. Fin.&lt;/th&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px 6px;text-align:center&quot;&gt;Total De receita&lt;/th&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px 6px;text-align:center&quot;&gt;Total De despesas&lt;/th&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px 6px;text-align:center&quot;&gt;Saldo&lt;/th&gt;
+         &lt;/tr&gt;
+       &lt;/thead&gt;
+       &lt;tbody&gt;
+         &lt;tr style=&quot;text-align:right;font-family:monospace&quot;&gt;
+           &lt;td style=&quot;border:1px solid #000;padding:6px 8px&quot;&gt;&lt;strong&gt;R$ ${saldoAnt}&lt;/strong&gt;&lt;/td&gt;
+           &lt;td style=&quot;border:1px solid #000;padding:6px 8px&quot;&gt;&lt;strong&gt;R$ ${creditado}&lt;/strong&gt;&lt;/td&gt;
+           &lt;td style=&quot;border:1px solid #000;padding:6px 8px&quot;&gt;&lt;strong&gt;R$ 0,00&lt;/strong&gt;&lt;/td&gt;
+           &lt;td style=&quot;border:1px solid #000;padding:6px 8px&quot;&gt;&lt;strong&gt;R$ ${rendimento}&lt;/strong&gt;&lt;/td&gt;
+           &lt;td style=&quot;border:1px solid #000;padding:6px 8px&quot;&gt;&lt;strong&gt;R$ ${fmtMoneyStr(totalReceita)}&lt;/strong&gt;&lt;/td&gt;
+           &lt;td style=&quot;border:1px solid #000;padding:6px 8px&quot;&gt;&lt;strong&gt;R$ ${fmtMoneyStr(totalGasto)}&lt;/strong&gt;&lt;/td&gt;
+           &lt;td style=&quot;border:1px solid #000;padding:6px 8px;color:${saldo &lt; 0 ? &#x27;red&#x27; : &#x27;black&#x27;}&quot;&gt;&lt;strong&gt;${saldo &lt; 0 ? &#x27;-&#x27; : &#x27;&#x27;}R$ ${fmtMoneyStr(Math.abs(saldo))}&lt;/strong&gt;&lt;/td&gt;
+         &lt;/tr&gt;
+       &lt;/tbody&gt;
+     &lt;/table&gt;
+
+     &lt;h3 style=&quot;text-align:center;padding:6px;border:1px solid #000;border-top:none;background:#f5f5f5&quot;&gt;Relação de Pagamentos&lt;/h3&gt;
+     &lt;table style=&quot;width:100%;border-collapse:collapse;font-size:9.5pt&quot;&gt;
+       &lt;thead&gt;
+         &lt;tr style=&quot;background:#e8e8e8&quot;&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px 7px;width:30px&quot;&gt;Ord&lt;/th&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px 7px&quot;&gt;Credor&lt;/th&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px 7px;width:140px&quot;&gt;CNPJ&lt;/th&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px 7px;width:140px&quot;&gt;Comprovante De despesas&lt;/th&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px 7px;width:100px;text-align:right&quot;&gt;Valor R$&lt;/th&gt;
+         &lt;/tr&gt;
+       &lt;/thead&gt;
+       &lt;tbody&gt;
+         ${despTrs}
+         &lt;tr style=&quot;background:#e8e8e8&quot;&gt;
+           &lt;td colspan=&quot;4&quot; style=&quot;border:1px solid #000;padding:6px 8px;text-align:center;font-size:13pt&quot;&gt;&lt;strong&gt;Total&lt;/strong&gt;&lt;/td&gt;
+           &lt;td style=&quot;border:1px solid #000;padding:6px 8px;text-align:right;font-family:monospace;font-weight:bold&quot;&gt;&lt;strong&gt;R$ ${fmtMoneyStr(totalGasto)}&lt;/strong&gt;&lt;/td&gt;
+         &lt;/tr&gt;
+       &lt;/tbody&gt;
+     &lt;/table&gt;
+
+     &lt;br&gt;&lt;br&gt;
+     &lt;div style=&quot;display:flex;justify-content:space-between;margin-top:20px&quot;&gt;
+       &lt;div style=&quot;width:45%;border-top:1px solid #000;padding-top:5px;text-align:center&quot;&gt;
+         &lt;p&gt;(assinatura e carimbo do Presidente da Caixa Escolar)&lt;/p&gt;
+         &lt;p style=&quot;margin-top:4px&quot;&gt;&lt;strong&gt;${PRESIDENTE}&lt;/strong&gt;&lt;/p&gt;
+       &lt;/div&gt;
+       &lt;div style=&quot;width:45%;border-top:1px solid #000;padding-top:5px;text-align:center&quot;&gt;
+         &lt;p&gt;Assinatura do Tesoureiro (matrícula e/ou carimbo)&lt;/p&gt;
+         &lt;p style=&quot;margin-top:4px&quot;&gt;&lt;strong&gt;${TESOUREIRO}&lt;/strong&gt;&lt;/p&gt;
+       &lt;/div&gt;
+     &lt;/div&gt;`
+  );
+  renderDoc(&#x27;anx3&#x27;, html);
+}
+
+function gerarAnx4() {
+  const tcNum = getTCNumero();
+  const parcela = state.parcelaSelecionada;
+  const dataDoc = document.getElementById(&#x27;anx4-data&#x27;).value;
+
+  let total = 0;
+  const guiaTrs = guiaRows.map((r, i) =&gt; {
+    total += parseMoney(r.vGuia);
+    return `&lt;tr&gt;
+      &lt;td style=&quot;border:1px solid #000;padding:5px 7px;text-align:center&quot;&gt;${i+1}&lt;/td&gt;
+      &lt;td style=&quot;border:1px solid #000;padding:5px 7px&quot;&gt;${r.guia}&lt;/td&gt;
+      &lt;td style=&quot;border:1px solid #000;padding:5px 7px;text-align:center&quot;&gt;${r.data}&lt;/td&gt;
+      &lt;td style=&quot;border:1px solid #000;padding:5px 7px&quot;&gt;${r.nf}&lt;/td&gt;
+      &lt;td style=&quot;border:1px solid #000;padding:5px 7px;text-align:right;font-family:monospace&quot;&gt;R$ ${r.vGuia}&lt;/td&gt;
+      &lt;td style=&quot;border:1px solid #000;padding:5px 7px;text-align:right;font-family:monospace&quot;&gt;R$ ${r.vNF}&lt;/td&gt;
+    &lt;/tr&gt;`;
+  }).join(&#x27;&#x27;);
+
+  const html = docHtml(&#x27;ANEXO IV — RELAÇÃO DE GUIAS PAGAS&#x27;,
+    `&lt;div style=&quot;text-align:center;margin-bottom:8px&quot;&gt;
+       &lt;p&gt;&lt;strong&gt;SECRETARIA MUNICIPAL DE EDUCAÇÃO E CULTURA DE CONTAGEM&lt;/strong&gt;&lt;/p&gt;
+       &lt;p style=&quot;font-size:9pt&quot;&gt;GERÊNCIA DAS CAIXAS ESCOLARES — ${ENDERECO_SEDUC}&lt;/p&gt;
+     &lt;/div&gt;
+
+     &lt;h2 style=&quot;text-align:center;border:1px solid #000;padding:6px;background:#e8e8e8&quot;&gt;ANEXO IV&lt;br&gt;RELAÇÃO DE GUIAS PAGAS&lt;/h2&gt;
+
+     &lt;table style=&quot;width:100%;border-collapse:collapse;font-size:9.5pt;margin-top:2px&quot;&gt;
+       &lt;tr&gt;
+         &lt;td style=&quot;border:1px solid #000;padding:5px 8px&quot; colspan=&quot;2&quot;&gt;&lt;strong&gt;Caixa Escolar:&lt;/strong&gt; ${CAIXA_ESCOLAR} &amp;nbsp;&amp;nbsp; &lt;strong&gt;CNPJ:&lt;/strong&gt; ${CNPJ_CE}&lt;/td&gt;
+       &lt;/tr&gt;
+       &lt;tr&gt;
+         &lt;td style=&quot;border:1px solid #000;padding:5px 8px&quot;&gt;&lt;strong&gt;Termo de Compromisso:&lt;/strong&gt; Nº ${tcNum}&lt;/td&gt;
+         &lt;td style=&quot;border:1px solid #000;padding:5px 8px&quot;&gt;&lt;strong&gt;Repasse:&lt;/strong&gt; PARCELA ${numParcelaOrd(parcela)} - CUSTEIO&lt;/td&gt;
+       &lt;/tr&gt;
+     &lt;/table&gt;
+
+     &lt;table style=&quot;width:100%;border-collapse:collapse;font-size:9.5pt;margin-top:2px&quot;&gt;
+       &lt;thead&gt;
+         &lt;tr style=&quot;background:#e8e8e8&quot;&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px;text-align:center;width:30px&quot;&gt;Ord.&lt;/th&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px&quot;&gt;Guia (INSS, ISSQN)&lt;/th&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px;width:90px&quot;&gt;Data&lt;/th&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px&quot;&gt;Nota Fiscal Referente&lt;/th&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px;width:90px&quot;&gt;Valor da Guia&lt;/th&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px;width:90px&quot;&gt;Valor na NF&lt;/th&gt;
+         &lt;/tr&gt;
+       &lt;/thead&gt;
+       &lt;tbody&gt;
+         ${guiaTrs || &#x27;&lt;tr&gt;&lt;td colspan=&quot;6&quot; style=&quot;border:1px solid #000;padding:8px;text-align:center;color:#666&quot;&gt;(Nenhuma guia informada)&lt;/td&gt;&lt;/tr&gt;&#x27;}
+         &lt;tr style=&quot;background:#f5f5f5&quot;&gt;
+           &lt;td colspan=&quot;4&quot; style=&quot;border:1px solid #000;padding:6px 8px;font-weight:bold&quot;&gt;Total de despesas&lt;/td&gt;
+           &lt;td style=&quot;border:1px solid #000;padding:6px 8px;text-align:right;font-family:monospace;font-weight:bold&quot;&gt;R$ ${fmtMoneyStr(total)}&lt;/td&gt;
+           &lt;td style=&quot;border:1px solid #000;padding:6px 8px&quot;&gt;&lt;/td&gt;
+         &lt;/tr&gt;
+       &lt;/tbody&gt;
+     &lt;/table&gt;
+
+     &lt;p style=&quot;margin-top:16px;font-weight:bold&quot;&gt;ASSINATURAS&lt;/p&gt;
+     &lt;p style=&quot;margin-top:8px&quot;&gt;CONTAGEM, ${dataDoc}&lt;/p&gt;
+     &lt;br&gt;&lt;br&gt;
+     &lt;div style=&quot;display:flex;justify-content:space-between;margin-top:20px&quot;&gt;
+       &lt;div style=&quot;width:45%;border-top:1px solid #000;padding-top:5px&quot;&gt;
+         &lt;p&gt;Presidente da Caixa Escolar&lt;/p&gt;
+         &lt;p&gt;&lt;strong&gt;${PRESIDENTE}&lt;/strong&gt;&lt;/p&gt;
+       &lt;/div&gt;
+       &lt;div style=&quot;width:45%;border-top:1px solid #000;padding-top:5px&quot;&gt;
+         &lt;p&gt;Responsável pelo preenchimento&lt;/p&gt;
+       &lt;/div&gt;
+     &lt;/div&gt;`
+  );
+  renderDoc(&#x27;anx4&#x27;, html);
+}
+
+function gerarAnx5() {
+  const datacred = document.getElementById(&#x27;anx5-datacred&#x27;).value;
+  const cat = document.getElementById(&#x27;anx5-cat&#x27;).value;
+  const resultado = document.getElementById(&#x27;anx5-resultado&#x27;).value;
+  const ressalva = document.getElementById(&#x27;anx5-ressalva&#x27;).value;
+  const dataDoc = document.getElementById(&#x27;anx5-data&#x27;).value;
+  const tcNum = getTCNumero();
+
+  const resultText = resultado === &#x27;aprovada&#x27;
+    ? &#x27;APROVA, por unanimidade&#x27;
+    : resultado === &#x27;aprovada com ressalvas&#x27;
+    ? &#x27;APROVA COM RESSALVAS&#x27;
+    : &#x27;NÃO APROVA&#x27;;
+
+  const html = docHtml(&#x27;ANEXO V — PARECER DO CONSELHO FISCAL&#x27;,
+    `&lt;div style=&quot;text-align:center;margin-bottom:8px&quot;&gt;
+       &lt;p&gt;&lt;strong&gt;SECRETARIA MUNICIPAL DE EDUCAÇÃO E CULTURA DE CONTAGEM&lt;/strong&gt;&lt;/p&gt;
+       &lt;p style=&quot;font-size:9pt&quot;&gt;GERÊNCIA DAS CAIXAS ESCOLARES — DIRETORIA DE GESTÃO DE PARCERIAS, TERMOS DE COMPROMISSO E CONVÊNIOS — SUPERINTENDÊNCIA DE PLANEJAMENTO, ORÇAMENTO E FINANÇAS&lt;/p&gt;
+       &lt;p style=&quot;font-size:9pt&quot;&gt;&lt;strong&gt;${ENDERECO_SEDUC}&lt;/strong&gt;&lt;/p&gt;
+     &lt;/div&gt;
+
+     &lt;h2 style=&quot;text-align:center&quot;&gt;ANEXO V&lt;/h2&gt;
+     &lt;h3 style=&quot;text-align:center&quot;&gt;PARECER DO CONSELHO FISCAL&lt;/h3&gt;
+     &lt;br&gt;
+
+     &lt;table style=&quot;width:100%;border-collapse:collapse&quot;&gt;
+       &lt;tr&gt;
+         &lt;td style=&quot;border:1px solid #000;padding:10px 14px;text-align:justify&quot;&gt;
+           &lt;p&gt;Os membros do Conselho Fiscal da Caixa Escolar: &lt;strong&gt;${CAIXA_ESCOLAR}&lt;/strong&gt;&lt;/p&gt;
+           &lt;p style=&quot;margin-top:8px&quot;&gt;Após, análise detalhada da prestação de contas dos recursos financeiros recebidos na Caixa Escolar &lt;strong&gt;${CAIXA_ESCOLAR}&lt;/strong&gt;, em &lt;strong&gt;${datacred}&lt;/strong&gt; (Data do Crédito em Conta) — &lt;strong&gt;Origem:&lt;/strong&gt; Prefeitura de Contagem / (&lt;strong&gt;${cat}&lt;/strong&gt;), ${resultText} a Prestação de Contas, em virtude da aplicação dos recursos financeiros estar em consonância com a proposta pedagógica da Unidade Escolar &lt;strong&gt;${ESCOLA}&lt;/strong&gt;.${ressalva ? &#x27;&lt;br&gt;&lt;br&gt;&lt;strong&gt;Ressalvas/Observações:&lt;/strong&gt; &#x27; + ressalva : &#x27;&#x27;}&lt;/p&gt;
+           &lt;p style=&quot;margin-top:8px&quot;&gt;Segue abaixo as assinaturas pertinentes, conforme Estatuto registrado em Cartório da cidade de Contagem:&lt;/p&gt;
+           &lt;p style=&quot;margin-top:12px&quot;&gt;&lt;strong&gt;Contagem, ${dataDoc}&lt;/strong&gt;&lt;/p&gt;
+           &lt;br&gt;
+           &lt;div style=&quot;display:flex;justify-content:space-between;margin-top:12px&quot;&gt;
+             &lt;div style=&quot;width:45%;border-top:1px solid #000;padding-top:5px;text-align:center&quot;&gt;
+               &lt;p&gt;&lt;strong&gt;${PRESIDENTE}&lt;/strong&gt;&lt;/p&gt;
+               &lt;p&gt;Presidente&lt;/p&gt;
+             &lt;/div&gt;
+             &lt;div style=&quot;width:45%;border-top:1px solid #000;padding-top:5px;text-align:center&quot;&gt;
+               &lt;p&gt;&lt;strong&gt;${TESOUREIRO}&lt;/strong&gt;&lt;/p&gt;
+               &lt;p&gt;Tesoureiro&lt;/p&gt;
+             &lt;/div&gt;
+           &lt;/div&gt;
+           &lt;p style=&quot;margin-top:16px;font-weight:bold&quot;&gt;Membros do Conselho Fiscal — ASSINATURAS / Segmento de Representação&lt;/p&gt;
+           &lt;br&gt;
+           &lt;div style=&quot;display:flex;justify-content:space-between;margin-top:12px&quot;&gt;
+             &lt;div style=&quot;width:45%;border-top:1px solid #000;padding-top:5px&quot;&gt;&lt;p&gt;${CF1}&lt;/p&gt;&lt;/div&gt;
+             &lt;div style=&quot;width:45%;border-top:1px solid #000;padding-top:5px&quot;&gt;Segmento: _______________&lt;/div&gt;
+           &lt;/div&gt;
+           &lt;div style=&quot;display:flex;justify-content:space-between;margin-top:16px&quot;&gt;
+             &lt;div style=&quot;width:45%;border-top:1px solid #000;padding-top:5px&quot;&gt;&lt;p&gt;${CF2}&lt;/p&gt;&lt;/div&gt;
+             &lt;div style=&quot;width:45%;border-top:1px solid #000;padding-top:5px&quot;&gt;Segmento: _______________&lt;/div&gt;
+           &lt;/div&gt;
+           &lt;div style=&quot;display:flex;justify-content:space-between;margin-top:16px&quot;&gt;
+             &lt;div style=&quot;width:45%;border-top:1px solid #000;padding-top:5px&quot;&gt;&lt;p&gt;${CF3}&lt;/p&gt;&lt;/div&gt;
+             &lt;div style=&quot;width:45%;border-top:1px solid #000;padding-top:5px&quot;&gt;Segmento: _______________&lt;/div&gt;
+           &lt;/div&gt;
+         &lt;/td&gt;
+       &lt;/tr&gt;
+     &lt;/table&gt;`
+  );
+  renderDoc(&#x27;anx5&#x27;, html);
+}
+
+function gerarAnx6() {
+  const dataDoc = document.getElementById(&#x27;anx6-data&#x27;).value;
+  const tcNum = getTCNumero();
+  let total = 0;
+
+  const bemTrs = bemRows.map(r =&gt; {
+    total += parseMoney(r.vTot);
+    return `&lt;tr&gt;
+      &lt;td style=&quot;border:1px solid #000;padding:5px 7px&quot;&gt;${dataDoc}&lt;/td&gt;
+      &lt;td style=&quot;border:1px solid #000;padding:5px 7px;text-align:center&quot;&gt;${r.qtd}&lt;/td&gt;
+      &lt;td style=&quot;border:1px solid #000;padding:5px 7px;text-align:center&quot;&gt;${r.unid}&lt;/td&gt;
+      &lt;td style=&quot;border:1px solid #000;padding:5px 7px&quot;&gt;${r.disc}&lt;/td&gt;
+      &lt;td style=&quot;border:1px solid #000;padding:5px 7px&quot;&gt;${r.ndoc}&lt;/td&gt;
+      &lt;td style=&quot;border:1px solid #000;padding:5px 7px;text-align:right;font-family:monospace&quot;&gt;R$ ${r.vUnit}&lt;/td&gt;
+      &lt;td style=&quot;border:1px solid #000;padding:5px 7px;text-align:right;font-family:monospace&quot;&gt;R$ ${r.vTot}&lt;/td&gt;
+    &lt;/tr&gt;`;
+  }).join(&#x27;&#x27;);
+
+  const html = docHtml(&#x27;ANEXO VI — TERMO DE DOAÇÃO&#x27;,
+    `&lt;div style=&quot;text-align:center;margin-bottom:8px&quot;&gt;
+       &lt;p&gt;&lt;strong&gt;SECRETARIA MUNICIPAL DE EDUCAÇÃO E CULTURA DE CONTAGEM&lt;/strong&gt;&lt;/p&gt;
+       &lt;p style=&quot;font-size:9pt&quot;&gt;&lt;strong&gt;GERÊNCIA DAS CAIXAS ESCOLARES — DIRETORIA DE GESTÃO DE PARCERIAS, TERMOS DE COMPROMISSO E CONVÊNIOS — SUPERINTENDÊNCIA DE PLANEJAMENTO, ORÇAMENTO E FINANÇAS&lt;/strong&gt;&lt;/p&gt;
+       &lt;p style=&quot;font-size:9pt&quot;&gt;&lt;strong&gt;${ENDERECO_SEDUC}&lt;/strong&gt;&lt;/p&gt;
+     &lt;/div&gt;
+
+     &lt;h2 style=&quot;text-align:center&quot;&gt;ANEXO VI&lt;/h2&gt;
+     &lt;h3 style=&quot;text-align:center&quot;&gt;T E R M O &amp;nbsp; D E &amp;nbsp; D O A Ç Ã O&lt;/h3&gt;
+     &lt;br&gt;
+     &lt;p style=&quot;text-align:justify&quot;&gt;&lt;em&gt;Pelo presente instrumento a Caixa Escolar &lt;strong&gt;${CAIXA_ESCOLAR}&lt;/strong&gt; da Unidade Escolar &lt;strong&gt;${ESCOLA}&lt;/strong&gt;, faz, em conformidade com a legislação aplicável ao &lt;strong&gt;Termo de Compromisso de nº ${tcNum}&lt;/strong&gt; e demais normas pertinentes à matéria, a doação do(s) bem(ns), conforme discriminado(s) abaixo, adquirido(s) ou produzido(s) com recursos do referido Programa de Manutenção e Desenvolvimento da Educação Básica para que seja(m) tombado(s) e incorporado(s) ao seu patrimônio público e destinado(s) à escola acima identificada, à qual cabe a responsabilidade pela guarda e conservação do(s) mesmo(s).&lt;/em&gt;&lt;/p&gt;
+     &lt;br&gt;
+     &lt;table style=&quot;width:100%;border-collapse:collapse;font-size:9.5pt&quot;&gt;
+       &lt;thead&gt;
+         &lt;tr style=&quot;background:#e8e8e8&quot;&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px&quot;&gt;Data&lt;/th&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px&quot;&gt;Qtd.&lt;/th&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px&quot;&gt;Unid.&lt;/th&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px&quot;&gt;Discriminação&lt;/th&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px&quot;&gt;Nº Doc.&lt;/th&gt;
+           &lt;th style=&quot;border:1px solid #000;padding:5px&quot; colspan=&quot;2&quot;&gt;Valor em R$&lt;br&gt;&lt;span style=&quot;font-weight:normal&quot;&gt;Unitário / Total&lt;/span&gt;&lt;/th&gt;
+         &lt;/tr&gt;
+       &lt;/thead&gt;
+       &lt;tbody&gt;
+         ${bemTrs || &#x27;&lt;tr&gt;&lt;td colspan=&quot;7&quot; style=&quot;border:1px solid #000;padding:8px;text-align:center;color:#666&quot;&gt;(Nenhum item adicionado)&lt;/td&gt;&lt;/tr&gt;&#x27;}
+         &lt;tr style=&quot;background:#e8e8e8&quot;&gt;
+           &lt;td colspan=&quot;5&quot; style=&quot;border:1px solid #000;padding:6px 8px;font-weight:bold;text-align:right&quot;&gt;TOTAL&lt;/td&gt;
+           &lt;td colspan=&quot;2&quot; style=&quot;border:1px solid #000;padding:6px 8px;font-family:monospace;font-weight:bold;text-align:right&quot;&gt;R$ ${fmtMoneyStr(total)}&lt;/td&gt;
+         &lt;/tr&gt;
+       &lt;/tbody&gt;
+     &lt;/table&gt;
+     &lt;br&gt;
+     &lt;div style=&quot;display:flex;justify-content:space-between;margin-top:20px&quot;&gt;
+       &lt;div style=&quot;width:45%;border-top:1px solid #000;padding-top:5px&quot;&gt;
+         &lt;p&gt;(carimbo e assinatura do Presidente da Caixa Escolar)&lt;/p&gt;
+         &lt;p&gt;&lt;strong&gt;${PRESIDENTE}&lt;/strong&gt;&lt;/p&gt;
+       &lt;/div&gt;
+       &lt;div style=&quot;width:45%;border-top:1px solid #000;padding-top:5px&quot;&gt;
+         &lt;p&gt;(nome, matrícula e assinatura do responsável pelo preenchimento)&lt;/p&gt;
+       &lt;/div&gt;
+     &lt;/div&gt;`
+  );
+  renderDoc(&#x27;anx6&#x27;, html);
+}
+
+// ==================== RENDER DOC ====================
+function docHtml(titulo, corpo) {
+  return `&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;&lt;meta charset=&quot;UTF-8&quot;&gt;
+  &lt;title&gt;${titulo}&lt;/title&gt;
+  &lt;style&gt;
+    @import url(&#x27;https://fonts.googleapis.com/css2?family=Times+New+Roman&amp;display=swap&#x27;);
+    body { font-family: &#x27;Times New Roman&#x27;, Times, serif; font-size: 11pt; line-height: 1.45; color: #000; background: #fff; padding: 20mm 20mm 20mm 25mm; max-width: 210mm; margin: 0 auto; }
+    h2 { font-size: 13pt; margin: 6px 0; }
+    h3 { font-size: 12pt; margin: 4px 0; }
+    p { margin: 4px 0; }
+    table { font-family: &#x27;Times New Roman&#x27;, Times, serif; }
+    .credit { font-size: 8pt; color: #aaa; text-align:center; margin-top:30px; border-top: 1px solid #eee; padding-top: 8px; font-style:italic; }
+    @media print { body { padding: 15mm 18mm 15mm 20mm; } .credit { display:none; } @page { size: A4; margin: 0; } }
+  &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
+  ${corpo}
+  &lt;div class=&quot;credit&quot;&gt;Gerado por: Sistema de Prestação de Contas — Caixa Escolar Albertina Alves Nascimento&lt;/div&gt;
+  &lt;/body&gt;&lt;/html&gt;`;
+}
+
+function renderDoc(docId, html) {
+  const el = document.getElementById(&#x27;prev-&#x27; + docId);
+  el.innerHTML = `&lt;iframe srcdoc=&quot;${escAttr(html)}&quot; style=&quot;width:100%;height:580px;border:none;background:#fff&quot;&gt;&lt;/iframe&gt;`;
+}
+
+function imprimirDoc(docId) {
+  const iframe = document.querySelector(&#x27;#prev-&#x27; + docId + &#x27; iframe&#x27;);
+  if (!iframe) { alert(&#x27;Gere o documento primeiro clicando em &quot;Gerar Documento&quot;.&#x27;); return; }
+  iframe.contentWindow.focus();
+  iframe.contentWindow.print();
+}
+
+// ==================== VALOR POR EXTENSO ====================
+function valorPorExtenso(valor) {
+  if (!valor || valor === 0) return &#x27;ZERO REAIS&#x27;;
+  const inteiro = Math.floor(valor);
+  const centavos = Math.round((valor - inteiro) * 100);
+
+  const unidades = [&#x27;&#x27;, &#x27;UM&#x27;, &#x27;DOIS&#x27;, &#x27;TRÊS&#x27;, &#x27;QUATRO&#x27;, &#x27;CINCO&#x27;, &#x27;SEIS&#x27;, &#x27;SETE&#x27;, &#x27;OITO&#x27;, &#x27;NOVE&#x27;,
+    &#x27;DEZ&#x27;, &#x27;ONZE&#x27;, &#x27;DOZE&#x27;, &#x27;TREZE&#x27;, &#x27;QUATORZE&#x27;, &#x27;QUINZE&#x27;, &#x27;DEZESSEIS&#x27;, &#x27;DEZESSETE&#x27;, &#x27;DEZOITO&#x27;, &#x27;DEZENOVE&#x27;];
+  const dezenas = [&#x27;&#x27;, &#x27;&#x27;, &#x27;VINTE&#x27;, &#x27;TRINTA&#x27;, &#x27;QUARENTA&#x27;, &#x27;CINQUENTA&#x27;, &#x27;SESSENTA&#x27;, &#x27;SETENTA&#x27;, &#x27;OITENTA&#x27;, &#x27;NOVENTA&#x27;];
+  const centenas = [&#x27;&#x27;, &#x27;CENTO&#x27;, &#x27;DUZENTOS&#x27;, &#x27;TREZENTOS&#x27;, &#x27;QUATROCENTOS&#x27;, &#x27;QUINHENTOS&#x27;,
+    &#x27;SEISCENTOS&#x27;, &#x27;SETECENTOS&#x27;, &#x27;OITOCENTOS&#x27;, &#x27;NOVECENTOS&#x27;];
+
+  function ext3(n) {
+    if (n === 0) return &#x27;&#x27;;
+    if (n === 100) return &#x27;CEM&#x27;;
+    let r = &#x27;&#x27;;
+    if (n &gt;= 100) { r += centenas[Math.floor(n/100)]; n %= 100; if (n) r += &#x27; E &#x27;; }
+    if (n &gt;= 20) { r += dezenas[Math.floor(n/10)]; n %= 10; if (n) r += &#x27; E &#x27; + unidades[n]; }
+    else if (n &gt; 0) r += unidades[n];
+    return r;
+  }
+
+  let partes = [];
+  const mil = Math.floor(inteiro / 1000);
+  const resto = inteiro % 1000;
+
+  if (mil === 1) partes.push(&#x27;MIL&#x27;);
+  else if (mil &gt; 1) partes.push(ext3(mil) + &#x27; MIL&#x27;);
+  if (resto &gt; 0) partes.push(ext3(resto));
+
+  let txt = partes.join(&#x27; E &#x27;);
+  if (!txt) txt = &#x27;ZERO&#x27;;
+  txt += inteiro === 1 ? &#x27; REAL&#x27; : &#x27; REAIS&#x27;;
+
+  if (centavos &gt; 0) {
+    txt += &#x27; E &#x27; + ext3(centavos);
+    txt += centavos === 1 ? &#x27; CENTAVO&#x27; : &#x27; CENTAVOS&#x27;;
+  }
+  return txt;
+}
+
+// ==================== UTILS ====================
+function escHtml(s) {
+  return String(s || &#x27;&#x27;).replace(/&amp;/g,&#x27;&amp;amp;&#x27;).replace(/&lt;/g,&#x27;&amp;lt;&#x27;).replace(/&gt;/g,&#x27;&amp;gt;&#x27;).replace(/&quot;/g,&#x27;&amp;quot;&#x27;);
+}
+
+function escAttr(s) {
+  return String(s || &#x27;&#x27;).replace(/&amp;/g,&#x27;&amp;amp;&#x27;).replace(/&quot;/g,&#x27;&amp;quot;&#x27;);
+}
+
+// ==================== START ====================
+init();
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"
+          style="width:100%;height:calc(100vh - 180px);min-height:700px;border:none;display:block"
+          title="Gerador de Documentos"
+        ></iframe>
       </div>
     </section>
 
