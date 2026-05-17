@@ -5852,11 +5852,16 @@ function renderDespesas() {
   const tbody = document.getElementById('despesas-tbody');
   const f    = state.parcelaFiltro;
   const fTc  = state.parcelaTcFiltro || '';
-  const list = f === 'todas'
+  const listRaw = f === 'todas'
     ? state.despesas
     : state.despesas.filter(d =>
         d.parcela === f && (fTc === '' || String(d.tcVinculo||'') === String(fTc))
       );
+  const list = [...listRaw].sort((a, b) => {
+    const da = a.nfData ? new Date(a.nfData) : new Date(0);
+    const db = b.nfData ? new Date(b.nfData) : new Date(0);
+    return da - db;
+  });
   if (!list.length) {
     tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">📊</div><div class="empty-title">Nenhuma despesa</div></div></td></tr>`;
     document.getElementById('total-tabela').textContent = 'R$ 0,00';
