@@ -5223,6 +5223,7 @@ let state = {
   checkStates: {},
   parcelaFiltro: 'todas',
   parcelaTcFiltro: '',
+  role: 'admin',
   editIndex: null,
   tcAtivo: null,
   parcelaValores: [],    // [{id, tcId, parcela, custeio, capital, alem, obras, capina}]
@@ -9732,9 +9733,70 @@ async function inicializarApp() {
 }
 
 async function mostrarApp(user) {
+  // Detecta perfil: user_metadata.role === 'viewer' → somente leitura
+  const role = (user && user.user_metadata && user.user_metadata.role) || 'admin';
+  state.role = role;
   loginScreen.classList.remove('visible');
   appShell.classList.add('authed');
   await inicializarApp();
+  aplicarPerfil();
+}
+
+// ==================== PERFIL DE ACESSO ====================
+// Para criar um usuário viewer, defina user_metadata.role = 'viewer'
+// no painel Supabase: Authentication → Users → Edit → user_metadata: {"role":"viewer"}
+function aplicarPerfil() {
+  const isViewer = state.role === 'viewer';
+  if (!isViewer) return; // admin: nada muda
+
+  // 1. Esconde itens de menu restritos
+  const sectionsHidden = ['tc', 'despesas', 'alertas', 'checklist', 'gerador', 'fornecedores'];
+  document.querySelectorAll('.nav-item').forEach(item => {
+    const oc = item.getAttribute('onclick') || '';
+    const match = oc.match(/showSection\('([^']+)'\)/);
+    if (match && sectionsHidden.includes(match[1])) {
+      item.style.display = 'none';
+    }
+  });
+
+  // 2. Esconde labels de seção "Principal" e "Documentos" e "Cadastros"
+  //    (só sobra Dashboard e Links Rápidos → reorganiza visualmente)
+  document.querySelectorAll('.nav-label').forEach(lbl => {
+    const nav = lbl.closest('nav');
+    if (!nav) return;
+    const visibleItems = [...nav.querySelectorAll('.nav-item')].filter(i => i.style.display !== 'none');
+    if (!visibleItems.length) nav.style.display = 'none';
+    else lbl.style.display = 'none'; // esconde o rótulo mas mantém os itens visíveis
+  });
+
+  // 3. Desabilita botão "+ Lançar Despesa" no dashboard
+  document.querySelectorAll('button').forEach(btn => {
+    if (btn.textContent.includes('Lançar Despesa')) {
+      btn.disabled = true;
+      btn.title = 'Acesso restrito — perfil somente leitura';
+      btn.style.opacity = '0.35';
+      btn.style.cursor = 'not-allowed';
+      btn.style.pointerEvents = 'none';
+    }
+  });
+
+  // 4. Adiciona badge de perfil na sidebar
+  const userDiv = document.querySelector('.sidebar [style*="Prestador de Contas"]');
+  if (userDiv) {
+    userDiv.innerHTML = userDiv.innerHTML.replace('Prestador de Contas',
+      '<span style="display:inline-flex;align-items:center;gap:5px">' +
+      'Visualização' +
+      '<span style="font-size:9px;padding:1px 6px;border-radius:20px;background:rgba(246,166,35,0.15);color:var(--accent3);border:1px solid rgba(246,166,35,0.3)">Somente leitura</span>' +
+      '</span>');
+  }
+
+  // 5. Garante que só Dashboard seja acessível via showSection
+  const _showSectionOrig = showSection;
+  window.showSection = function(id) {
+    const permitidas = ['dashboard', 'links'];
+    if (!permitidas.includes(id)) return;
+    _showSectionOrig(id);
+  };
 }
 
 function mostrarLogin() {
