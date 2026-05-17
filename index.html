@@ -3017,6 +3017,24 @@ const SUPA_URL = 'https://nvwkbdlzyfivmkapdhyl.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52d2tiZGx6eWZpdm1rYXBkaHlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzNjI4MzgsImV4cCI6MjA5MzkzODgzOH0.YVVj7nt5u0wsf9UmjLlSaSNFzfzY52kJwKCzh_lCcmw';
 const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 
+// ==================== UTILS GLOBAIS ====================
+function parseMoney(v) {
+  if (!v) return 0;
+  return parseFloat(String(v).replace(/\./g,'').replace(',','.')) || 0;
+}
+function fmtMoney(v) {
+  return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function fmtMoneyStr(v) {
+  return v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function fmtDate(d) {
+  if (!d) return '';
+  const parts = d.split('-');
+  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  return d;
+}
+
 // ==================== MÁSCARA CNPJ ====================
 function mascaraCNPJ(input) {
   // Remove tudo que não for dígito
