@@ -6073,8 +6073,8 @@ function renderChecklist() {
     const safeKey   = (f.cnpj || f.credor).replace(/[^a-zA-Z0-9]/g, '_');
     const accordId  = 'acc_' + safeKey;
 
-    // Calcula status de cada item (ok = sim ou na; pend = nao; sem_info = null/undefined)
-    const itemStatus = (val) => val === 'sim' || val === 'na' ? 'ok' : val === 'nao' ? 'pend' : 'sem';
+    // Calcula status de cada item (ok = sim; na = não aparece; pend = nao; sem_info = null/undefined)
+    const itemStatus = (val) => val === 'sim' ? 'ok' : val === 'nao' ? 'pend' : val === 'na' ? 'sem' : 'sem';
 
     const nfNums      = f.nfs.map(n => n.num || '?').join(', ');
     // NF: sempre presente — ok se há NF número registrado
