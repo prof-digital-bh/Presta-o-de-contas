@@ -1350,7 +1350,7 @@
       </div>
 
       <div class="parcela-tabs" id="parcela-tabs">
-        <div class="parcela-tab active" data-parcela="todas" onclick="filtrarParcela('todas', this)">Todas</div>
+        <div class="parcela-tab active" data-parcela="todas" onclick="filtrarParcela('todas', '', this)">Todas</div>
       </div>
 
       <div class="card" style="padding:0;overflow:hidden">
@@ -5222,6 +5222,7 @@ let state = {
   fornecedoresCad: [],
   checkStates: {},
   parcelaFiltro: 'todas',
+  parcelaTcFiltro: '',
   editIndex: null,
   tcAtivo: null,
   parcelaValores: [],    // [{id, tcId, parcela, custeio, capital, alem, obras, capina}]
@@ -5751,29 +5752,96 @@ function onParcelaOrTipoChange() {
 }
 
 
-function addParcelaTab(p) {
+// Reconstrói todas as tabs de parcela do zero com base nas despesas atuais,
+// usando chave composta tcVinculo+parcela para não mesclar parcelas homônimas de TCs diferentes.
+function reconstruirParcelaTabs() {
   const tabs = document.getElementById('parcela-tabs');
-  if (!tabs.querySelector(`[data-parcela="${p}"]`)) {
+  if (!tabs) return;
+  // Remove todas as tabs exceto "Todas"
+  [...tabs.querySelectorAll('.parcela-tab')].forEach(t => {
+    if (t.dataset.parcela !== 'todas') t.remove();
+  });
+
+  const parNomesLong = {'01':'1ª Parcela','02':'2ª Parcela','03':'3ª Parcela','04':'4ª Parcela','05':'5ª Parcela','U':'Parcela Única'};
+
+  // Coleta combos únicos { tcVinculo, parcela } presentes nas despesas
+  const seen = new Set();
+  const combos = [];
+  (state.despesas || []).forEach(d => {
+    const key = `${d.tcVinculo||''}||${d.parcela}`;
+    if (!seen.has(key)) { seen.add(key); combos.push({ tcId: d.tcVinculo, parcela: d.parcela }); }
+  });
+
+  // Detecta quais nomes de parcela aparecem em mais de um TC (colisão de nome)
+  const parcelaCount = {};
+  combos.forEach(c => { parcelaCount[c.parcela] = (parcelaCount[c.parcela]||0) + 1; });
+
+  // Ordena: por parcela primeiro, depois por tcId
+  combos.sort((a, b) => {
+    if (a.parcela < b.parcela) return -1;
+    if (a.parcela > b.parcela) return 1;
+    return String(a.tcId||'').localeCompare(String(b.tcId||''));
+  });
+
+  combos.forEach(({ tcId, parcela }) => {
     const tab = document.createElement('div');
     tab.className = 'parcela-tab';
-    tab.dataset.parcela = p;
-    tab.textContent = 'Parcela ' + p;
-    tab.onclick = function() { filtrarParcela(p, this); };
+    tab.dataset.parcela = parcela;
+    tab.dataset.tcFiltro = tcId || '';
+
+    // Se há colisão de nome entre TCs diferentes, discrimina qual TC
+    let label = parNomesLong[parcela] || ('Parcela ' + parcela);
+    if (parcelaCount[parcela] > 1 && tcId) {
+      const tcObj = (state.tcs||[]).find(t => String(t.id) === String(tcId));
+      if (tcObj) {
+        const prefixo = tcObj.tcPaiId ? `Adit. ${tcObj.numero}` : `TC ${tcObj.numero}`;
+        label += ' · ' + prefixo;
+      }
+    }
+    tab.textContent = label;
+    tab.onclick = (function(p, id) { return function() { filtrarParcela(p, id, this); }; })(parcela, tcId||'');
     tabs.appendChild(tab);
+  });
+
+  // Garante que a tab ativa ainda exista; senão, volta para "todas"
+  const fAtiva = state.parcelaFiltro;
+  const fTcAtivo = state.parcelaTcFiltro || '';
+  const tabAtiva = fAtiva === 'todas'
+    ? tabs.querySelector('[data-parcela="todas"]')
+    : tabs.querySelector(`[data-parcela="${fAtiva}"][data-tc-filtro="${fTcAtivo}"]`);
+  document.querySelectorAll('.parcela-tab').forEach(t => t.classList.remove('active'));
+  if (tabAtiva) {
+    tabAtiva.classList.add('active');
+  } else {
+    state.parcelaFiltro = 'todas';
+    state.parcelaTcFiltro = '';
+    const tabTodas = tabs.querySelector('[data-parcela="todas"]');
+    if (tabTodas) tabTodas.classList.add('active');
   }
 }
 
-function filtrarParcela(p, el) {
+// Mantido por compatibilidade — apenas aciona a reconstrução completa
+function addParcelaTab(_p) {
+  reconstruirParcelaTabs();
+}
+
+function filtrarParcela(p, tcId, el) {
   state.parcelaFiltro = p;
+  state.parcelaTcFiltro = tcId || '';
   document.querySelectorAll('.parcela-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
+  if (el) el.classList.add('active');
   renderDespesas();
 }
 
 function renderDespesas() {
   const tbody = document.getElementById('despesas-tbody');
-  const f = state.parcelaFiltro;
-  const list = f === 'todas' ? state.despesas : state.despesas.filter(d => d.parcela === f);
+  const f    = state.parcelaFiltro;
+  const fTc  = state.parcelaTcFiltro || '';
+  const list = f === 'todas'
+    ? state.despesas
+    : state.despesas.filter(d =>
+        d.parcela === f && (fTc === '' || String(d.tcVinculo||'') === String(fTc))
+      );
   if (!list.length) {
     tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">📊</div><div class="empty-title">Nenhuma despesa</div></div></td></tr>`;
     document.getElementById('total-tabela').textContent = 'R$ 0,00';
@@ -7759,21 +7827,46 @@ function renderDashVisaoTermos() {
       const saldoTC = valorTotal - gastoTotal;
       const pctTC = valorTotal > 0 ? Math.min(gastoTotal/valorTotal*100,100) : 0;
 
-      // Parcelas registradas
-      const allPvRows = (state.parcelaValores||[]).filter(pv => allIds.some(id=>String(id)===String(pv.tcId)));
+      // Parcelas registradas — agrupadas por tcId+parcela para não mesclar
+      // parcelas homônimas do TC original com as dos aditivos
+      const allPvRows  = (state.parcelaValores||[]).filter(pv => allIds.some(id=>String(id)===String(pv.tcId)));
       const allSitRows = (state.parcelaSituacoes||[]).filter(ps => allIds.some(id=>String(id)===String(ps.tcId)));
-      const parcelas = [...new Set([...allPvRows.map(r=>r.parcela), ...allSitRows.map(r=>r.parcela)])].sort();
 
-      const parcelasHtml = parcelas.length ? parcelas.map(p => {
-        const sit = (allSitRows.find(r=>r.parcela===p)||{}).situacao || '';
-        const pvR  = allPvRows.find(r=>r.parcela===p);
+      // Monta lista de { tcItemId, parcela } únicos (sem duplicar por tcId+parcela)
+      const parcelaKeys = [];
+      const seenKeys = new Set();
+      [...allPvRows, ...allSitRows].forEach(r => {
+        const key = `${r.tcId}||${r.parcela}`;
+        if (!seenKeys.has(key)) { seenKeys.add(key); parcelaKeys.push({ tcId: r.tcId, parcela: r.parcela }); }
+      });
+      // Ordena: TC pai primeiro, depois aditivos; dentro de cada um, por nome de parcela
+      parcelaKeys.sort((a, b) => {
+        const aIsPai = String(a.tcId) === String(tc.id) ? 0 : 1;
+        const bIsPai = String(b.tcId) === String(tc.id) ? 0 : 1;
+        if (aIsPai !== bIsPai) return aIsPai - bIsPai;
+        return a.parcela < b.parcela ? -1 : a.parcela > b.parcela ? 1 : 0;
+      });
+
+      // Verifica se há parcelas com mesmo nome em itens diferentes (para exibir label de origem)
+      const nomeCount = {};
+      parcelaKeys.forEach(({parcela}) => { nomeCount[parcela] = (nomeCount[parcela]||0) + 1; });
+
+      const parcelasHtml = parcelaKeys.length ? parcelaKeys.map(({tcId: itemId, parcela: p}) => {
+        const sit    = (allSitRows.find(r=>String(r.tcId)===String(itemId) && r.parcela===p)||{}).situacao || '';
+        const pvR    = allPvRows.find(r=>String(r.tcId)===String(itemId) && r.parcela===p);
         const totalPv = pvR ? parseMoney(pvR.custeio)+parseMoney(pvR.capital)+parseMoney(pvR.alem)+parseMoney(pvR.obras)+parseMoney(pvR.capina) : 0;
-        const gastoP = state.despesas.filter(d => allIds.some(id=>String(id)===String(d.tcVinculo)) && d.parcela===p)
+        const gastoP  = state.despesas.filter(d => String(d.tcVinculo)===String(itemId) && d.parcela===p)
           .reduce((s,d) => s+parseMoney(d.valor), 0);
+        // Quando o mesmo nome de parcela aparece em mais de um item, mostra de qual é
+        const itemTc  = (state.tcs||[]).find(t => String(t.id)===String(itemId));
+        const origemLabel = nomeCount[p] > 1
+          ? (itemTc && itemTc.tcPaiId ? `<span style="font-size:9px;color:var(--accent3);margin-right:2px" title="Parcela do Aditivo ${itemTc.numero}">Adit.</span>`
+                                       : `<span style="font-size:9px;color:var(--text-dim);margin-right:2px" title="Parcela do TC Original">Orig.</span>`)
+          : '';
         return `<div style="display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:4px 9px;cursor:pointer"
           title="Clique para acompanhar esta parcela"
-          onclick="abrirAcompParcela('${tc.id}','${p}')">
-          <span style="font-size:11px;font-weight:600;color:var(--text-muted)">${parNomes[p]||p} Parc.</span>
+          onclick="abrirAcompParcela('${itemId}','${p}')">
+          ${origemLabel}<span style="font-size:11px;font-weight:600;color:var(--text-muted)">${parNomes[p]||p} Parc.</span>
           ${totalPv>0?`<span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--text-dim)">${fmtMoney(totalPv)}</span>`:''}
           ${gastoP>0?`<span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--accent-red)">−${fmtMoney(gastoP)}</span>`:''}
           ${sit?`<span class="sit-pill ${sitCls(sit)}" style="padding:1px 6px;font-size:9px">${sitLabel(sit)}</span>`:''}
@@ -9626,7 +9719,7 @@ async function inicializarApp() {
 
   await carregarDados();
 
-  state.despesas.forEach(d => addParcelaTab(d.parcela));
+  reconstruirParcelaTabs();
   renderDespesas();
   renderTCs();
   renderDashboard();
