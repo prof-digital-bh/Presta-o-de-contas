@@ -7709,20 +7709,33 @@ function imprimirAba(nomeAba, filtros) {
 
     // Cópia da lógica de renderAlertas
     const parcelaNomesAlerta = {'01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única'};
+    const SIT_ENTREGUE_TC = ['aprovada', 'analise', 'ajuste', 'ressalvas'];
     (state.parcelaValores||[]).forEach(pv => {
       if (!pv.dataLimite) return;
       const tcItem = tcs.find(t=>String(t.id)===String(pv.tcId));
       if (!tcItem) return;
+      // Não alertar se prestação já foi entregue à SEDUC/FUNEC
+      const sitRec = (state.parcelaSituacoes||[]).find(s=>String(s.tcId)===String(pv.tcId)&&s.parcela===pv.parcela);
+      if (SIT_ENTREGUE_TC.includes(sitRec?.situacao||'')) return;
       try {
-        const limite = new Date(pv.dataLimite+'T00:00:00');
-        const diff = Math.round((limite-hoje)/(864e5));
-        const nP = parcelaNomesAlerta[pv.parcela]||pv.parcela;
+        const dataLimite   = new Date(pv.dataLimite+'T00:00:00');
+        const prazoEntrega = new Date(dataLimite); prazoEntrega.setDate(prazoEntrega.getDate()+30);
+        const diffGasto    = Math.round((dataLimite-hoje)/864e5);
+        const diffEntrega  = Math.round((prazoEntrega-hoje)/864e5);
+        const nP  = parcelaNomesAlerta[pv.parcela]||pv.parcela;
         const nTC = tcItem.tcPaiId?`Aditivo ${tcItem.numero}`:`TC ${tcItem.numero}`;
-        const lFmt = limite.toLocaleDateString('pt-BR');
-        if (diff<0)        alertas.push({tipo:'red',    msg:`${nTC} — Parc. ${nP}: PRAZO VENCIDO há ${Math.abs(diff)} dia(s) (limite: ${lFmt}).`});
-        else if (diff<=15) alertas.push({tipo:'red',    msg:`${nTC} — Parc. ${nP}: Vence em ${diff} dia(s) — ${lFmt}. URGENTE.`});
-        else if (diff<=30) alertas.push({tipo:'orange', msg:`${nTC} — Parc. ${nP}: Vence em ${diff} dia(s) — ${lFmt}. Organize a documentação.`});
-        else if (diff<=60) alertas.push({tipo:'blue',   msg:`${nTC} — Parc. ${nP}: Vence em ${diff} dia(s) — ${lFmt}. Planeje a prestação de contas.`});
+        const lFmt = dataLimite.toLocaleDateString('pt-BR');
+        const pFmt = prazoEntrega.toLocaleDateString('pt-BR');
+        if (diffEntrega<0)
+          alertas.push({tipo:'red',    msg:`${nTC} — Parc. ${nP}: PRAZO DE ENTREGA VENCIDO há ${Math.abs(diffEntrega)} dia(s) (prazo: ${pFmt}). Entregue à SEDUC/FUNEC!`});
+        else if (diffGasto<0)
+          alertas.push({tipo:'red',    msg:`${nTC} — Parc. ${nP}: Gastos encerrados (${lFmt}). Entregue a prestação até ${pFmt} (${diffEntrega} dia(s)).`});
+        else if (diffGasto<=15)
+          alertas.push({tipo:'red',    msg:`${nTC} — Parc. ${nP}: Limite de gastos em ${diffGasto} dia(s) — ${lFmt}. Entrega até ${pFmt}.`});
+        else if (diffGasto<=30)
+          alertas.push({tipo:'orange', msg:`${nTC} — Parc. ${nP}: Limite de gastos em ${diffGasto} dia(s) — ${lFmt}. Entrega até ${pFmt}.`});
+        else if (diffGasto<=60)
+          alertas.push({tipo:'blue',   msg:`${nTC} — Parc. ${nP}: Limite de gastos em ${diffGasto} dia(s) — ${lFmt}. Entrega até ${pFmt}.`});
       } catch(e){}
     });
 
@@ -9207,28 +9220,54 @@ function renderAlertas() {
   const hoje = new Date(); hoje.setHours(0,0,0,0);
   const tcs = state.tcs || [];
 
-  // ── ALERTAS DE DATA LIMITE DAS PARCELAS ──
-  // Usa data_limite diretamente (cadastrado em parcela_valores)
+  // ── ALERTAS DE PRAZO DE PRESTAÇÃO DE CONTAS ──
+  // Regra:
+  //   data_limite         = último dia para gastar (lançar despesas)
+  //   data_limite + 30d   = prazo final para ENTREGAR a prestação à SEDUC/FUNEC
+  // Situações que indicam prestação já entregue (sem alerta de prazo):
+  //   aprovada | analise | ajuste | ressalvas
   const parcelaNomesAlerta = { '01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única','UI':'Única(i)','UII':'Única(ii)','ALI':'Alimentação','SVC':'Serviços','MAT':'Materialidade' };
+  const SIT_ENTREGUE = ['aprovada', 'analise', 'ajuste', 'ressalvas'];
+
   (state.parcelaValores||[]).forEach(pv => {
-    if (!pv.dataLimite) return; // data_limite cadastrada no parcela_valores
+    if (!pv.dataLimite) return;
     const tcItem = (state.tcs||[]).find(t => String(t.id) === String(pv.tcId));
     if (!tcItem) return;
+
+    // Verificar situação — se já foi entregue à SEDUC/FUNEC, não alertar sobre prazo
+    const sitRec = (state.parcelaSituacoes||[]).find(s =>
+      String(s.tcId) === String(pv.tcId) && s.parcela === pv.parcela
+    );
+    const situacao = sitRec ? sitRec.situacao : '';
+    if (SIT_ENTREGUE.includes(situacao)) return; // prestação já enviada, sem alerta
+
     try {
-      const limite = new Date(pv.dataLimite + 'T00:00:00');
-      const diffDias = Math.round((limite - hoje) / (1000*60*60*24));
-      const nomeParc = parcelaNomesAlerta[pv.parcela] || pv.parcela;
-      const numTC = tcItem.tcPaiId ? `Aditivo ${tcItem.numero}` : `TC ${tcItem.numero}`;
-      const limiteFmt = limite.toLocaleDateString('pt-BR');
-      const creditoFmt = pv.dataCredito ? new Date(pv.dataCredito+'T00:00:00').toLocaleDateString('pt-BR') : '—';
-      if (diffDias < 0) {
-        alertas.push({ tipo: 'red', msg: `📋 ${numTC} — Parcela ${nomeParc}: PRAZO VENCIDO há ${Math.abs(diffDias)} dia(s) (limite: ${limiteFmt}). Providencie imediatamente!` });
-      } else if (diffDias <= 15) {
-        alertas.push({ tipo: 'red', msg: `📋 ${numTC} — Parcela ${nomeParc}: Prazo vence em ${diffDias} dia(s) — ${limiteFmt}. URGENTE: finalize a prestação de contas.` });
-      } else if (diffDias <= 30) {
-        alertas.push({ tipo: 'orange', msg: `📋 ${numTC} — Parcela ${nomeParc}: Prazo vence em ${diffDias} dia(s) — ${limiteFmt}. Organize a documentação.` });
-      } else if (diffDias <= 60) {
-        alertas.push({ tipo: 'blue', msg: `📋 ${numTC} — Parcela ${nomeParc}: Prazo vence em ${diffDias} dia(s) — ${limiteFmt}. Planeje a prestação de contas.` });
+      const dataLimite  = new Date(pv.dataLimite + 'T00:00:00');
+      // Prazo de entrega = data_limite + 30 dias
+      const prazoEntrega = new Date(dataLimite);
+      prazoEntrega.setDate(prazoEntrega.getDate() + 30);
+
+      const diffGasto    = Math.round((dataLimite  - hoje) / (1000*60*60*24)); // dias até limite de gastos
+      const diffEntrega  = Math.round((prazoEntrega - hoje) / (1000*60*60*24)); // dias até prazo de entrega
+
+      const nomeParc    = parcelaNomesAlerta[pv.parcela] || pv.parcela;
+      const numTC       = tcItem.tcPaiId ? `Aditivo ${tcItem.numero}` : `TC ${tcItem.numero}`;
+      const limiteFmt   = dataLimite.toLocaleDateString('pt-BR');
+      const prazoFmt    = prazoEntrega.toLocaleDateString('pt-BR');
+
+      if (diffEntrega < 0) {
+        // Prazo de entrega vencido e prestação não enviada
+        alertas.push({ tipo: 'red', msg: `📋 ${numTC} — Parcela ${nomeParc}: PRAZO DE ENTREGA VENCIDO há ${Math.abs(diffEntrega)} dia(s) (prazo: ${prazoFmt}). Entregue a prestação à SEDUC/FUNEC imediatamente!` });
+      } else if (diffGasto < 0 && diffEntrega >= 0) {
+        // Período de gastos encerrado, ainda dentro do prazo de entrega
+        alertas.push({ tipo: 'red', msg: `📋 ${numTC} — Parcela ${nomeParc}: Período de gastos encerrado (limite: ${limiteFmt}). Entregue a prestação até ${prazoFmt} (${diffEntrega} dia(s) restantes).` });
+      } else if (diffGasto <= 15) {
+        // Próximo do fim do período de gastos
+        alertas.push({ tipo: 'red', msg: `📋 ${numTC} — Parcela ${nomeParc}: Último prazo para gastar em ${diffGasto} dia(s) — ${limiteFmt}. Organize os documentos. Entrega da prestação até ${prazoFmt}.` });
+      } else if (diffGasto <= 30) {
+        alertas.push({ tipo: 'orange', msg: `📋 ${numTC} — Parcela ${nomeParc}: Prazo de gastos vence em ${diffGasto} dia(s) — ${limiteFmt}. Entrega da prestação até ${prazoFmt}.` });
+      } else if (diffGasto <= 60) {
+        alertas.push({ tipo: 'blue', msg: `📋 ${numTC} — Parcela ${nomeParc}: Prazo de gastos vence em ${diffGasto} dia(s) — ${limiteFmt}. Entrega da prestação até ${prazoFmt}.` });
       }
     } catch(e) {}
   });
