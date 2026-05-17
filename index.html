@@ -7750,20 +7750,18 @@ function imprimirAba(nomeAba, filtros) {
       } catch(e){}
     });
 
-    tcs.filter(t=>!t.tcPaiId).forEach(tc => {
-      if (!tc.fim) return;
-      const fim = new Date(tc.fim+'T00:00:00');
-      const diff = Math.round((fim-hoje)/(864e5));
-      if (diff<0)        alertas.push({tipo:'red',    msg:`TC ${tc.numero} — VENCIDO há ${Math.abs(diff)} dia(s). Apresente a PC final em até 30 dias.`});
-      else if (diff<=30) alertas.push({tipo:'orange', msg:`TC ${tc.numero} — Vence em ${diff} dia(s) (${_dt(tc.fim)}). Solicite aditivo se necessário.`});
-      else if (diff<=60) alertas.push({tipo:'blue',   msg:`TC ${tc.numero} — Vence em ${diff} dia(s) (${_dt(tc.fim)}). Planeje a PC parcial.`});
-
+    // Verificar gastos acima de 50k por fornecedor em cada TC/Aditivo
+    tcs.forEach(tc => {
       const fornMap = {};
       despesas.filter(d=>String(d.tcVinculo)===String(tc.id)).forEach(d=>{
         const k=d.cnpj||d.credor; if(!fornMap[k]) fornMap[k]={nome:d.credor,total:0}; fornMap[k].total+=_pm(d.valor);
       });
+      const tcPaiRef = tc.tcPaiId ? tcs.find(t=>String(t.id)===String(tc.tcPaiId)) : null;
+      const tcLbl = tc.tcPaiId
+        ? `TC ${tcPaiRef?tcPaiRef.numero:'?'} — Aditivo ${tc.numero}`
+        : `TC ${tc.numero}`;
       Object.values(fornMap).forEach(f=>{
-        if(f.total>50000) alertas.push({tipo:'orange',msg:`TC ${tc.numero} — Fornecedor "${f.nome}": total R$ ${_fmt(f.total)} ultrapassa R$ 50.000. Verifique procedimento competitivo (Art. 16/Decreto 1134/2024).`});
+        if(f.total>50000) alertas.push({tipo:'orange',msg:`⚠ ${tcLbl} — Fornecedor "${f.nome}": total R$ ${_fmt(f.total)} ultrapassa R$ 50.000. Verifique procedimento competitivo (Art. 16/Decreto 1134/2024).`});
       });
     });
 
@@ -9312,29 +9310,21 @@ function renderAlertas() {
     } catch(e) {}
   });
 
-  tcs.filter(t => !t.tcPaiId).forEach(tc => {
-    if (!tc.fim) return;
-    const fim = new Date(tc.fim + 'T00:00:00');
-    const diffDias = Math.round((fim - hoje) / (1000*60*60*24));
-
-    if (diffDias < 0) {
-      alertas.push({ tipo: 'red', msg: `TC ${tc.numero} — VENCIDO há ${Math.abs(diffDias)} dia(s). Apresente a prestação de contas final em até 30 dias após o encerramento.` });
-    } else if (diffDias <= 30) {
-      alertas.push({ tipo: 'orange', msg: `TC ${tc.numero} — Vence em ${diffDias} dia(s) (${fmtDate(tc.fim)}). Solicite aditivo se necessário com antecedência mínima de 30 dias.` });
-    } else if (diffDias <= 60) {
-      alertas.push({ tipo: 'blue', msg: `TC ${tc.numero} — Vence em ${diffDias} dia(s) (${fmtDate(tc.fim)}). Planeje a prestação de contas parcial.` });
-    }
-
-    // Verificar gastos acima de 50k por fornecedor (alerta de fracionamento ou procedimento competitivo)
+  // Verificar gastos acima de 50k por fornecedor em cada TC/Aditivo
+  tcs.forEach(tc => {
     const fornMap = {};
     state.despesas.filter(d => String(d.tcVinculo) === String(tc.id)).forEach(d => {
       const key = d.cnpj || d.credor;
       if (!fornMap[key]) fornMap[key] = { nome: d.credor, total: 0 };
       fornMap[key].total += parseMoney(d.valor);
     });
+    const tcPaiRef = tc.tcPaiId ? tcs.find(t => String(t.id) === String(tc.tcPaiId)) : null;
+    const tcLabel = tc.tcPaiId
+      ? `TC ${tcPaiRef ? tcPaiRef.numero : '?'} — Aditivo ${tc.numero}`
+      : `TC ${tc.numero}`;
     Object.values(fornMap).forEach(f => {
       if (f.total > 50000) {
-        alertas.push({ tipo: 'orange', msg: `⚠ TC ${tc.numero} — Fornecedor "${f.nome}": total acumulado R$ ${fmtMoneyStr(f.total)} ultrapassa R$ 50.000. Verifique se foi realizado procedimento competitivo conforme Art. 16 do Decreto 1134/2024.` });
+        alertas.push({ tipo: 'orange', msg: `⚠ ${tcLabel} — Fornecedor "${f.nome}": total acumulado R$ ${fmtMoneyStr(f.total)} ultrapassa R$ 50.000. Verifique se foi realizado procedimento competitivo conforme Art. 16 do Decreto 1134/2024.` });
       }
     });
   });
