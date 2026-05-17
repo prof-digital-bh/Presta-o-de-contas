@@ -5790,15 +5790,29 @@ function reconstruirParcelaTabs() {
     tab.dataset.parcela = parcela;
     tab.dataset.tcFiltro = tcId || '';
 
-    // Se há colisão de nome entre TCs diferentes, discrimina qual TC
+    // Sempre exibe o TC/Aditivo de origem
     let label = parNomesLong[parcela] || ('Parcela ' + parcela);
-    if (parcelaCount[parcela] > 1 && tcId) {
+    if (tcId) {
       const tcObj = (state.tcs||[]).find(t => String(t.id) === String(tcId));
       if (tcObj) {
         const prefixo = tcObj.tcPaiId ? `Adit. ${tcObj.numero}` : `TC ${tcObj.numero}`;
-        label += ' · ' + prefixo;
+        label = prefixo + ' · ' + label;
       }
     }
+
+    // Adiciona os tipos/categorias presentes nas despesas desta parcela+TC
+    const tiposPresentes = [...new Set(
+      (state.despesas||[])
+        .filter(d => d.parcela === parcela && (tcId === undefined || tcId === null || String(d.tcVinculo||'') === String(tcId||'')))
+        .map(d => d.tipo)
+        .filter(Boolean)
+    )];
+    const tipoAbrev = { CUSTEIO: 'Cust.', CAPITAL: 'Cap.', ALEM_MUROS: 'Além', OBRAS: 'Obras', CAPINA: 'Cap.' };
+    const tipoAbrevFull = { CUSTEIO: 'Custeio', CAPITAL: 'Capital', ALEM_MUROS: 'Além dos Muros', OBRAS: 'Obras', CAPINA: 'Capina' };
+    if (tiposPresentes.length) {
+      label += ' · ' + tiposPresentes.map(t => tipoAbrevFull[t] || t).join(', ');
+    }
+
     tab.textContent = label;
     tab.onclick = (function(p, id) { return function() { filtrarParcela(p, id, this); }; })(parcela, tcId||'');
     tabs.appendChild(tab);
@@ -5853,13 +5867,15 @@ function renderDespesas() {
     const v = parseMoney(d.valor);
     total += v;
     const tcVinc = d.tcVinculo ? (state.tcs||[]).find(t => String(t.id) === String(d.tcVinculo)) : null;
-    const tcLabel = tcVinc ? `TC ${tcVinc.numero}` : '—';
+    const tcLabel = tcVinc ? (tcVinc.tcPaiId ? `Adit. ${tcVinc.numero}` : `TC ${tcVinc.numero}`) : '—';
+    const parNomesDesp = {'01':'1ª Parcela','02':'2ª Parcela','03':'3ª Parcela','04':'4ª Parcela','05':'5ª Parcela','U':'Parcela Única'};
+    const parcelaLabel = parNomesDesp[d.parcela] || ('Parcela ' + d.parcela);
     return `
       <tr>
         <td class="td-muted">${i+1}</td>
         <td class="td-mono td-muted" style="font-size:11px;color:var(--accent)">${tcLabel}</td>
         <td><span class="tipo-pill tipo-${d.tipo}">${tipoLabel(d.tipo)}</span></td>
-        <td class="td-muted">${d.parcela}</td>
+        <td class="td-muted" style="font-size:11px;white-space:nowrap">${parcelaLabel}</td>
         <td style="font-weight:500">${d.credor}</td>
         <td class="td-mono td-muted">${d.cnpj||'—'}</td>
         <td class="td-muted">${d.nfNum||'—'}</td>
@@ -7860,14 +7876,25 @@ function renderDashVisaoTermos() {
           .reduce((s,d) => s+parseMoney(d.valor), 0);
         // Quando o mesmo nome de parcela aparece em mais de um item, mostra de qual é
         const itemTc  = (state.tcs||[]).find(t => String(t.id)===String(itemId));
-        const origemLabel = nomeCount[p] > 1
-          ? (itemTc && itemTc.tcPaiId ? `<span style="font-size:9px;color:var(--accent3);margin-right:2px" title="Parcela do Aditivo ${itemTc.numero}">Adit.</span>`
-                                       : `<span style="font-size:9px;color:var(--text-dim);margin-right:2px" title="Parcela do TC Original">Orig.</span>`)
+        // Sempre exibe a origem (TC ou Aditivo)
+        const origemTxt = itemTc
+          ? (itemTc.tcPaiId
+              ? `<span style="font-size:9px;color:var(--accent3);font-weight:700;margin-right:2px" title="Aditivo ${itemTc.numero}">Adit.&nbsp;${itemTc.numero}</span>`
+              : `<span style="font-size:9px;color:var(--accent);font-weight:700;margin-right:2px" title="TC ${itemTc.numero}">TC&nbsp;${itemTc.numero}</span>`)
           : '';
-        return `<div style="display:inline-flex;align-items:center;gap:5px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:4px 9px;cursor:pointer"
+        // Tipos/categorias com despesas lançadas nesta parcela+item
+        const tiposParc = [...new Set(
+          state.despesas.filter(d => String(d.tcVinculo)===String(itemId) && d.parcela===p).map(d=>d.tipo).filter(Boolean)
+        )];
+        const tipoAbrevMap = { CUSTEIO:'Custeio', CAPITAL:'Capital', ALEM_MUROS:'Além', OBRAS:'Obras', CAPINA:'Capina' };
+        const tiposHtml = tiposParc.length
+          ? `<span style="font-size:9px;color:var(--text-dim);margin-left:2px">${tiposParc.map(t=>tipoAbrevMap[t]||t).join(', ')}</span>`
+          : '';
+        return `<div style="display:inline-flex;align-items:center;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:4px 9px;cursor:pointer;flex-wrap:wrap"
           title="Clique para acompanhar esta parcela"
           onclick="abrirAcompParcela('${itemId}','${p}')">
-          ${origemLabel}<span style="font-size:11px;font-weight:600;color:var(--text-muted)">${parNomes[p]||p} Parc.</span>
+          ${origemTxt}<span style="font-size:11px;font-weight:600;color:var(--text-muted)">${parNomes[p]||p}&nbsp;Parc.</span>
+          ${tiposHtml}
           ${totalPv>0?`<span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--text-dim)">${fmtMoney(totalPv)}</span>`:''}
           ${gastoP>0?`<span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--accent-red)">−${fmtMoney(gastoP)}</span>`:''}
           ${sit?`<span class="sit-pill ${sitCls(sit)}" style="padding:1px 6px;font-size:9px">${sitLabel(sit)}</span>`:''}
