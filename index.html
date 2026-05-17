@@ -1081,7 +1081,7 @@
   .sit-ressalvas  { background: rgba(181,123,238,0.15);color: var(--alem);       border: 1px solid rgba(181,123,238,0.3); }
   .sit-reprovada  { background: rgba(240,80,96,0.15);  color: var(--accent-red); border: 1px solid rgba(240,80,96,0.3); }
   .sit-sem        { background: var(--surface2); color: var(--text-dim); border: 1px solid var(--border); }
-  .sit-nao-creditada { background: rgba(240,80,96,0.1); color: #f88; border: 1px solid rgba(240,80,96,0.25); }
+  .sit-nao-creditada { background: rgba(246,166,35,0.12); color: #f6a623; border: 1px solid rgba(246,166,35,0.35); }
   .sit-andamento  { background: rgba(79,142,247,0.1); color: #7abfff; border: 1px solid rgba(79,142,247,0.25); }
   .sit-liquidada  { background: rgba(56,217,169,0.2); color: #5ef0c0; border: 1px solid rgba(56,217,169,0.4); }
   .sit-montagem   { background: rgba(246,166,35,0.1); color: #f9c96a; border: 1px solid rgba(246,166,35,0.25); }
@@ -4275,6 +4275,8 @@ init();
             <th>Capina (R$)</th>
             <th style="min-width:180px">Situação da Prestação</th>
             <th style="min-width:110px">Mês/Ano Início</th>
+            <th style="min-width:120px">Data do Crédito</th>
+            <th style="min-width:120px">Data Limite</th>
             <th style="min-width:120px">Término da Execução</th>
             <th></th>
           </tr>
@@ -4565,6 +4567,20 @@ init();
         <label style="color:var(--accent-red)">⚠ Pendência — Justificativa</label>
         <input type="text" id="edit-d-justificativa-pend" placeholder="Descreva o motivo ou pendência...">
       </div>
+
+      <!-- CONFIRMAÇÃO DE PATRIMÔNIO — visível apenas para tipo Capital -->
+      <div class="field form-full" id="edit-field-confirmacao-patrimonio" style="display:none">
+        <div style="background:rgba(56,217,169,0.07);border:1px solid rgba(56,217,169,0.25);border-radius:9px;padding:12px 14px">
+          <label style="color:var(--capital);font-size:12px;font-weight:600">📦 Confirmação de Entrada no Patrimônio (Capital)</label>
+          <div style="margin-top:8px">
+            <select id="edit-d-confirmacao-patrimonio" style="background:var(--surface3);border:1px solid rgba(56,217,169,0.3);border-radius:7px;padding:8px 12px;font-size:13px;color:var(--text);width:100%">
+              <option value="sim">✅ Sim — bem já incorporado ao patrimônio</option>
+              <option value="nao">❌ Não — pendente de incorporação</option>
+              <option value="na">N/A — Não se Aplica</option>
+            </select>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modal-edit-despesa')">Cancelar</button>
@@ -4753,6 +4769,20 @@ init();
       <div class="field" id="field-justificativa-pend" style="display:none">
         <label style="color:var(--accent-red)">⚠ Pendência — Justificativa</label>
         <input type="text" id="d-justificativa-pend" placeholder="Descreva o motivo ou pendência...">
+      </div>
+
+      <!-- CONFIRMAÇÃO DE PATRIMÔNIO — visível apenas para tipo Capital -->
+      <div class="field form-full" id="field-confirmacao-patrimonio" style="display:none">
+        <div style="background:rgba(56,217,169,0.07);border:1px solid rgba(56,217,169,0.25);border-radius:9px;padding:12px 14px">
+          <label style="color:var(--capital);font-size:12px;font-weight:600">📦 Confirmação de Entrada no Patrimônio (Capital)</label>
+          <div style="margin-top:8px">
+            <select id="d-confirmacao-patrimonio" style="background:var(--surface3);border:1px solid rgba(56,217,169,0.3);border-radius:7px;padding:8px 12px;font-size:13px;color:var(--text);width:100%">
+              <option value="sim">✅ Sim — bem já incorporado ao patrimônio</option>
+              <option value="nao">❌ Não — pendente de incorporação</option>
+              <option value="na">N/A — Não se Aplica</option>
+            </select>
+          </div>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -5157,10 +5187,32 @@ async function salvarDespesa() {
     contratoNfPend: document.getElementById('d-contrato-nf-pend') ? document.getElementById('d-contrato-nf-pend').value : '',
     justificativa: document.getElementById('d-justificativa').value,
     justificativaPend: document.getElementById('d-justificativa-pend') ? document.getElementById('d-justificativa-pend').value : '',
+    confirmacaoPatrimonio: document.getElementById('d-confirmacao-patrimonio') ? document.getElementById('d-confirmacao-patrimonio').value : null,
     id: Date.now()
   };
   if (!d.credor || !d.valor) { alert('Preencha ao menos o credor e o valor.'); return; }
   if (!d.tcVinculo) { alert('Selecione o TC ou Aditivo vinculado.'); return; }
+  // Validar período permitido: data_credito ≤ nfData ≤ data_limite
+  if (d.nfData) {
+    const pvPeriodo = (state.parcelaValores||[]).find(r => String(r.tcId)===String(d.tcVinculo) && r.parcela===d.parcela);
+    if (pvPeriodo) {
+      const nfDate = new Date(d.nfData + 'T00:00:00');
+      if (pvPeriodo.dataCredito) {
+        const credito = new Date(pvPeriodo.dataCredito + 'T00:00:00');
+        if (nfDate < credito) {
+          alert(`⛔ Data da NF (${nfDate.toLocaleDateString('pt-BR')}) é anterior à data de crédito da parcela (${credito.toLocaleDateString('pt-BR')}).\n\nNão é permitido lançar despesas antes do crédito ser recebido.`);
+          return;
+        }
+      }
+      if (pvPeriodo.dataLimite) {
+        const limite = new Date(pvPeriodo.dataLimite + 'T00:00:00');
+        if (nfDate > limite) {
+          alert(`⛔ Data da NF (${nfDate.toLocaleDateString('pt-BR')}) é posterior à data limite da parcela (${limite.toLocaleDateString('pt-BR')}).\n\nNão é permitido lançar despesas após o prazo desta parcela.`);
+          return;
+        }
+      }
+    }
+  }
   // Validar saldo da parcela por tipo
   const pvCheck = (state.parcelaValores||[]).find(r => String(r.tcId)===String(d.tcVinculo) && r.parcela===d.parcela);
   if (pvCheck) {
@@ -5296,7 +5348,8 @@ function despesaToRow(d) {
     contrato_nf: d.contratoNf || null,
     contrato_nf_pend: d.contratoNfPend || null,
     justificativa: d.justificativa || null,
-    justificativa_pend: d.justificativaPend || null
+    justificativa_pend: d.justificativaPend || null,
+    confirmacao_patrimonio: d.confirmacaoPatrimonio || null
   };
 }
 
@@ -5325,7 +5378,8 @@ function rowToDespesa(r) {
     contratoNf: r.contrato_nf,
     contratoNfPend: r.contrato_nf_pend,
     justificativa: r.justificativa,
-    justificativaPend: r.justificativa_pend
+    justificativaPend: r.justificativa_pend,
+    confirmacaoPatrimonio: r.confirmacao_patrimonio || null
   };
 }
 
@@ -5391,6 +5445,8 @@ async function carregarDados() {
     obras: r.obras || '0,00',
     capina: r.capina || '0,00',
     mesAnoInicio: r.mes_ano_inicio || '',
+    dataCredito: r.data_credito || '',
+    dataLimite: r.data_limite || '',
     dataTermino: r.data_termino || ''
   }));
   state.parcelaSituacoes = (psData || []).map(r => ({
@@ -5742,6 +5798,8 @@ async function removerTC(i) {
 function tipoChange() {
   const tipo = document.getElementById('d-tipo').value;
   document.getElementById('field-subtipo').style.display = tipo === 'ALEM_MUROS' ? '' : 'none';
+  const fpat = document.getElementById('field-confirmacao-patrimonio');
+  if (fpat) fpat.style.display = tipo === 'CAPITAL' ? '' : 'none';
   onParcelaOrTipoChange();
 }
 
@@ -5935,6 +5993,11 @@ function editarDespesa(id) {
   });
   if (d.tcVinculo) sel.value = d.tcVinculo;
   document.getElementById('edit-desp-tipo').value = d.tipo || 'CUSTEIO';
+  // Campo patrimônio — mostrar/preencher só se Capital
+  const epat = document.getElementById('edit-field-confirmacao-patrimonio');
+  if (epat) epat.style.display = (d.tipo === 'CAPITAL') ? '' : 'none';
+  const epatSel = document.getElementById('edit-d-confirmacao-patrimonio');
+  if (epatSel) epatSel.value = d.confirmacaoPatrimonio || 'nao';
   // add Parcela Única option if needed
   const ps = document.getElementById('edit-desp-parcela');
   const hasU = [...ps.options].some(o => o.value === 'U');
@@ -5992,6 +6055,7 @@ async function salvarEdicaoDespesa() {
   d.contratoNfPend      = getEditInp('edit-d-contrato-nf-pend');
   d.justificativa       = getEditSel('edit-d-justificativa');
   d.justificativaPend   = getEditInp('edit-d-justificativa-pend');
+  d.confirmacaoPatrimonio = getEditSel('edit-d-confirmacao-patrimonio') || null;
   if (!d.credor || !d.valor) { alert('Preencha ao menos o credor e o valor.'); return; }
   setSyncStatus('syncing');
   const { error } = await supa.from('despesas').update(despesaToRow(d)).eq('id', id);
@@ -7646,18 +7710,16 @@ function imprimirAba(nomeAba, filtros) {
     // Cópia da lógica de renderAlertas
     const parcelaNomesAlerta = {'01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única'};
     (state.parcelaValores||[]).forEach(pv => {
-      if (!pv.dataTermino) return;
+      if (!pv.dataLimite) return;
       const tcItem = tcs.find(t=>String(t.id)===String(pv.tcId));
       if (!tcItem) return;
       try {
-        const termino = new Date(pv.dataTermino+'T00:00:00');
-        const limite = new Date(termino); limite.setDate(limite.getDate()+30);
+        const limite = new Date(pv.dataLimite+'T00:00:00');
         const diff = Math.round((limite-hoje)/(864e5));
         const nP = parcelaNomesAlerta[pv.parcela]||pv.parcela;
         const nTC = tcItem.tcPaiId?`Aditivo ${tcItem.numero}`:`TC ${tcItem.numero}`;
         const lFmt = limite.toLocaleDateString('pt-BR');
-        const tFmt = termino.toLocaleDateString('pt-BR');
-        if (diff<0)       alertas.push({tipo:'red',    msg:`${nTC} — Parc. ${nP}: PRAZO VENCIDO há ${Math.abs(diff)} dia(s) (término ${tFmt} → limite ${lFmt}).`});
+        if (diff<0)        alertas.push({tipo:'red',    msg:`${nTC} — Parc. ${nP}: PRAZO VENCIDO há ${Math.abs(diff)} dia(s) (limite: ${lFmt}).`});
         else if (diff<=15) alertas.push({tipo:'red',    msg:`${nTC} — Parc. ${nP}: Vence em ${diff} dia(s) — ${lFmt}. URGENTE.`});
         else if (diff<=30) alertas.push({tipo:'orange', msg:`${nTC} — Parc. ${nP}: Vence em ${diff} dia(s) — ${lFmt}. Organize a documentação.`});
         else if (diff<=60) alertas.push({tipo:'blue',   msg:`${nTC} — Parc. ${nP}: Vence em ${diff} dia(s) — ${lFmt}. Planeje a prestação de contas.`});
@@ -9146,25 +9208,21 @@ function renderAlertas() {
   const tcs = state.tcs || [];
 
   // ── ALERTAS DE DATA LIMITE DAS PARCELAS ──
-  // Data limite = data_termino da execução + 30 dias (Art. 28 Decreto 1134/2024)
+  // Usa data_limite diretamente (cadastrado em parcela_valores)
   const parcelaNomesAlerta = { '01':'1ª','02':'2ª','03':'3ª','04':'4ª','05':'5ª','U':'Única','UI':'Única(i)','UII':'Única(ii)','ALI':'Alimentação','SVC':'Serviços','MAT':'Materialidade' };
   (state.parcelaValores||[]).forEach(pv => {
-    if (!pv.dataTermino) return; // usa data_termino como base
+    if (!pv.dataLimite) return; // data_limite cadastrada no parcela_valores
     const tcItem = (state.tcs||[]).find(t => String(t.id) === String(pv.tcId));
     if (!tcItem) return;
     try {
-      const termino = new Date(pv.dataTermino + 'T00:00:00');
-      const limite = new Date(termino);
-      limite.setDate(limite.getDate() + 30); // prazo: 30 dias após término da execução
+      const limite = new Date(pv.dataLimite + 'T00:00:00');
       const diffDias = Math.round((limite - hoje) / (1000*60*60*24));
       const nomeParc = parcelaNomesAlerta[pv.parcela] || pv.parcela;
       const numTC = tcItem.tcPaiId ? `Aditivo ${tcItem.numero}` : `TC ${tcItem.numero}`;
-      const dd = String(limite.getDate()).padStart(2,'0');
-      const mm = String(limite.getMonth()+1).padStart(2,'0');
-      const terminoFmt = termino.toLocaleDateString('pt-BR');
-      const limiteFmt = `${dd}/${mm}/${limite.getFullYear()}`;
+      const limiteFmt = limite.toLocaleDateString('pt-BR');
+      const creditoFmt = pv.dataCredito ? new Date(pv.dataCredito+'T00:00:00').toLocaleDateString('pt-BR') : '—';
       if (diffDias < 0) {
-        alertas.push({ tipo: 'red', msg: `📋 ${numTC} — Parcela ${nomeParc}: PRAZO DE PRESTAÇÃO VENCIDO há ${Math.abs(diffDias)} dia(s) (término ${terminoFmt} → limite ${limiteFmt}). Providencie imediatamente!` });
+        alertas.push({ tipo: 'red', msg: `📋 ${numTC} — Parcela ${nomeParc}: PRAZO VENCIDO há ${Math.abs(diffDias)} dia(s) (limite: ${limiteFmt}). Providencie imediatamente!` });
       } else if (diffDias <= 15) {
         alertas.push({ tipo: 'red', msg: `📋 ${numTC} — Parcela ${nomeParc}: Prazo vence em ${diffDias} dia(s) — ${limiteFmt}. URGENTE: finalize a prestação de contas.` });
       } else if (diffDias <= 30) {
@@ -9472,16 +9530,14 @@ function setSyncStatus(s) {
 
 // ==================== PARCELA VALORES & SITUAÇÕES ====================
 const SIT_OPTIONS = [
-  { value: '',              label: '— Sem situação —',         cls: 'sit-sem' },
-  { value: 'nao_creditada', label: '🔴 Não creditada',         cls: 'sit-nao-creditada' },
-  { value: 'em_andamento',  label: '🔄 Em andamento',          cls: 'sit-andamento' },
-  { value: 'montagem',      label: '🗂️ Montagem de prestação', cls: 'sit-montagem' },
-  { value: 'analise',       label: '🔍 Em Análise',             cls: 'sit-analise' },
-  { value: 'aprovada',      label: '✅ Aprovada',               cls: 'sit-aprovada' },
-  { value: 'liquidada',     label: '💰 Liquidada',              cls: 'sit-liquidada' },
-  { value: 'ajuste',        label: '✏️ Em Ajuste',              cls: 'sit-ajuste' },
-  { value: 'ressalvas',     label: '⚠️ Aprovada com Ressalvas', cls: 'sit-ressalvas' },
-  { value: 'reprovada',     label: '❌ Reprovada',              cls: 'sit-reprovada' }
+  { value: '',              label: '— Sem situação —',            cls: 'sit-sem' },
+  { value: 'nao_creditada', label: '🟠 Não creditada',            cls: 'sit-nao-creditada' },
+  { value: 'montagem',      label: '🗂️ Montagem em andamento',   cls: 'sit-montagem' },
+  { value: 'analise',       label: '🔍 Em Análise',               cls: 'sit-analise' },
+  { value: 'aprovada',      label: '✅ Aprovada',                  cls: 'sit-aprovada' },
+  { value: 'ajuste',        label: '✏️ Em Ajuste',                cls: 'sit-ajuste' },
+  { value: 'ressalvas',     label: '⚠️ Aprovada com Ressalvas',   cls: 'sit-ressalvas' },
+  { value: 'reprovada',     label: '❌ Reprovada',                 cls: 'sit-reprovada' }
 ];
 
 function sitLabel(v) {
@@ -9548,6 +9604,8 @@ function abrirModalParcelaValores(tcId) {
       capina:  v.capina  || '0,00',
       situacao: s ? s.situacao : '',
       mesAnoInicio: v.mesAnoInicio || '',
+      dataCredito: v.dataCredito || '',
+      dataLimite: v.dataLimite || '',
       dataTermino: v.dataTermino || ''
     });
   });
@@ -9560,7 +9618,7 @@ function abrirModalParcelaValores(tcId) {
           tcItemId: String(id),
           parcela: p,
           custeio: '0,00', capital: '0,00', alem: '0,00', obras: '0,00', capina: '0,00',
-          situacao: '', mesAnoInicio: '', dataTermino: ''
+          situacao: '', mesAnoInicio: '', dataCredito: '', dataLimite: '', dataTermino: ''
         });
       }
     });
@@ -9573,7 +9631,7 @@ function abrirModalParcelaValores(tcId) {
 
   // Se não há nenhuma linha ainda, começa com uma em branco para o TC original
   if (!_pvRows.length) {
-    _pvRows.push({ tcItemId: String(tc.id), parcela: '01', custeio:'0,00', capital:'0,00', alem:'0,00', obras:'0,00', capina:'0,00', situacao:'', mesAnoInicio:'', dataTermino:'' });
+    _pvRows.push({ tcItemId: String(tc.id), parcela: '01', custeio:'0,00', capital:'0,00', alem:'0,00', obras:'0,00', capina:'0,00', situacao:'', mesAnoInicio:'', dataCredito:'', dataLimite:'', dataTermino:'' });
   }
 
   renderPVTable();
@@ -9648,6 +9706,12 @@ function renderPVTable() {
         <input type="month" value="${r.mesAnoInicio||''}" oninput="_pvRows[${i}].mesAnoInicio=this.value" title="Mês/Ano de início da parcela" style="background:var(--surface3);border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-size:12px;color:var(--text-muted);width:120px">
       </td>
       <td>
+        <input type="date" value="${r.dataCredito||''}" oninput="_pvRows[${i}].dataCredito=this.value" title="Data do crédito na conta da escola" style="background:var(--surface3);border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-size:12px;color:var(--accent2);width:130px">
+      </td>
+      <td>
+        <input type="date" value="${r.dataLimite||''}" oninput="_pvRows[${i}].dataLimite=this.value" title="Último dia para gastar o valor desta parcela" style="background:var(--surface3);border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-size:12px;color:var(--accent-red);width:130px">
+      </td>
+      <td>
         <input type="date" value="${r.dataTermino||''}" oninput="_pvRows[${i}].dataTermino=this.value" title="Data de término da execução da parcela" style="background:var(--surface3);border:1px solid var(--border);border-radius:5px;padding:4px 7px;font-size:12px;color:var(--text-muted);width:130px">
       </td>
       <td><button class="action-btn del" onclick="removerLinhaPV(${i})" title="Remover linha">✕</button></td>
@@ -9661,7 +9725,7 @@ function renderPVTable() {
 function adicionarLinhaPV() {
   // Nova linha aponta por padrão para o TC original
   const defaultId = _pvAllItems.length ? String(_pvAllItems[0].id) : '';
-  _pvRows.push({ tcItemId: defaultId, parcela:'01', custeio:'0,00', capital:'0,00', alem:'0,00', obras:'0,00', capina:'0,00', situacao:'', mesAnoInicio:'', dataTermino:'' });
+  _pvRows.push({ tcItemId: defaultId, parcela:'01', custeio:'0,00', capital:'0,00', alem:'0,00', obras:'0,00', capina:'0,00', situacao:'', mesAnoInicio:'', dataCredito:'', dataLimite:'', dataTermino:'' });
   renderPVTable();
 }
 
@@ -9694,6 +9758,8 @@ async function salvarParcelaValores() {
     obras:          r.obras      || '0,00',
     capina:         r.capina     || '0,00',
     mes_ano_inicio: r.mesAnoInicio || null,
+    data_credito:   r.dataCredito  || null,
+    data_limite:    r.dataLimite   || null,
     data_termino:   r.dataTermino  || null
   }));
   const psInserts = _pvRows.filter(r => r.situacao).map(r => ({
@@ -9714,7 +9780,7 @@ async function salvarParcelaValores() {
     state.parcelaValores.push({
       tcId: Number(r.tcItemId), parcela: r.parcela,
       custeio: r.custeio, capital: r.capital, alem: r.alem, obras: r.obras, capina: r.capina,
-      mesAnoInicio: r.mesAnoInicio, dataTermino: r.dataTermino
+      mesAnoInicio: r.mesAnoInicio, dataCredito: r.dataCredito, dataLimite: r.dataLimite, dataTermino: r.dataTermino
     });
     if (r.situacao) state.parcelaSituacoes.push({ tcId: Number(r.tcItemId), parcela: r.parcela, situacao: r.situacao });
   });
