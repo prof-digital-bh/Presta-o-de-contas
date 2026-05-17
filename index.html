@@ -1194,8 +1194,8 @@
         <span class="sync-time" id="sync-time"></span>
       </div>
       <div style="padding:10px 12px;margin-bottom:4px">
-        <div style="font-size:12px;font-weight:600;color:var(--text)">Prof. Everton Correa Alves</div>
-        <div style="font-size:11px;color:var(--text-dim);margin-top:2px">Prestador de Contas</div>
+        <div id="sidebar-user-name" style="font-size:12px;font-weight:600;color:var(--text)">Prof. Everton Correa Alves</div>
+        <div id="sidebar-user-role" style="font-size:11px;color:var(--text-dim);margin-top:2px">Prestador de Contas</div>
         <div style="font-size:10px;color:var(--text-dim);margin-top:8px;padding-top:8px;border-top:1px solid var(--border);line-height:1.5;opacity:0.7">Criado e desenvolvido por<br><span style="color:var(--text-muted)">Prof. Everton Correa Alves</span></div>
       </div>
       <div class="nav-item" onclick="fazerLogout()" style="color:var(--accent-red)">
@@ -9736,6 +9736,8 @@ async function mostrarApp(user) {
   // Detecta perfil: user_metadata.role === 'viewer' → somente leitura
   const role = (user && user.user_metadata && user.user_metadata.role) || 'admin';
   state.role = role;
+  state.userEmail = (user && user.email) || '';
+  state.userName  = (user && user.user_metadata && user.user_metadata.nome) || '';
   loginScreen.classList.remove('visible');
   appShell.classList.add('authed');
   await inicializarApp();
@@ -9744,10 +9746,22 @@ async function mostrarApp(user) {
 
 // ==================== PERFIL DE ACESSO ====================
 // Para criar um usuário viewer, defina user_metadata.role = 'viewer'
-// no painel Supabase: Authentication → Users → Edit → user_metadata: {"role":"viewer"}
+// e opcionalmente user_metadata.nome = 'Nome Completo'
+// no painel Supabase: Authentication → Users → Edit → user_metadata
 function aplicarPerfil() {
+  // ── Nome dinâmico na sidebar (vale para todos os perfis) ──
+  const nomeEl  = document.getElementById('sidebar-user-name');
+  const roleEl  = document.getElementById('sidebar-user-role');
+  if (nomeEl && state.userName) nomeEl.textContent = state.userName;
+  else if (nomeEl && state.userEmail) {
+    // Usa a parte antes do @ como fallback amigável
+    const fallback = state.userEmail.split('@')[0].replace(/[._]/g, ' ')
+      .replace(/\b\w/g, c => c.toUpperCase());
+    nomeEl.textContent = fallback;
+  }
+
   const isViewer = state.role === 'viewer';
-  if (!isViewer) return; // admin: nada muda
+  if (!isViewer) return; // admin: nada muda além do nome
 
   // 1. Esconde itens de menu restritos
   const sectionsHidden = ['tc', 'despesas', 'alertas', 'checklist', 'gerador', 'fornecedores'];
@@ -9759,14 +9773,13 @@ function aplicarPerfil() {
     }
   });
 
-  // 2. Esconde labels de seção "Principal" e "Documentos" e "Cadastros"
-  //    (só sobra Dashboard e Links Rápidos → reorganiza visualmente)
+  // 2. Esconde labels de seção que ficarem sem itens visíveis
   document.querySelectorAll('.nav-label').forEach(lbl => {
     const nav = lbl.closest('nav');
     if (!nav) return;
     const visibleItems = [...nav.querySelectorAll('.nav-item')].filter(i => i.style.display !== 'none');
     if (!visibleItems.length) nav.style.display = 'none';
-    else lbl.style.display = 'none'; // esconde o rótulo mas mantém os itens visíveis
+    else lbl.style.display = 'none';
   });
 
   // 3. Desabilita botão "+ Lançar Despesa" no dashboard
@@ -9780,23 +9793,47 @@ function aplicarPerfil() {
     }
   });
 
-  // 4. Adiciona badge de perfil na sidebar
-  const userDiv = document.querySelector('.sidebar [style*="Prestador de Contas"]');
-  if (userDiv) {
-    userDiv.innerHTML = userDiv.innerHTML.replace('Prestador de Contas',
+  // 4. Atualiza cargo e adiciona badge "Somente leitura" na sidebar
+  if (roleEl) {
+    roleEl.innerHTML =
       '<span style="display:inline-flex;align-items:center;gap:5px">' +
-      'Visualização' +
+      'Visualizador' +
       '<span style="font-size:9px;padding:1px 6px;border-radius:20px;background:rgba(246,166,35,0.15);color:var(--accent3);border:1px solid rgba(246,166,35,0.3)">Somente leitura</span>' +
-      '</span>');
+      '</span>';
   }
 
-  // 5. Garante que só Dashboard seja acessível via showSection
+  // 5. Bloqueia showSection para seções não permitidas
   const _showSectionOrig = showSection;
   window.showSection = function(id) {
     const permitidas = ['dashboard', 'links'];
     if (!permitidas.includes(id)) return;
     _showSectionOrig(id);
   };
+
+  // 6. Desabilita controles de edição em Links Rápidos
+  //    (botão Adicionar + botões editar/remover de cada card)
+  //    Feito via patch em renderLinks para remover os botões após renderização
+  const _renderLinksOrig = window.renderLinks;
+  window.renderLinks = function() {
+    _renderLinksOrig && _renderLinksOrig();
+    // Esconde botão "+ Adicionar Link" no header da seção
+    document.querySelectorAll('#section-links button').forEach(btn => {
+      if (btn.textContent.includes('Adicionar Link')) {
+        btn.style.display = 'none';
+      }
+    });
+    // Remove botões ✏️ e ✕ de cada card de link
+    document.querySelectorAll('#section-links .link-card button').forEach(btn => {
+      btn.style.display = 'none';
+    });
+  };
+  // Aplica imediatamente caso links já tenham sido renderizados
+  document.querySelectorAll('#section-links button').forEach(btn => {
+    if (btn.textContent.includes('Adicionar Link')) btn.style.display = 'none';
+  });
+  document.querySelectorAll('#section-links .link-card button').forEach(btn => {
+    btn.style.display = 'none';
+  });
 }
 
 function mostrarLogin() {
