@@ -7090,7 +7090,12 @@ function imprimirAba(nomeAba, filtros) {
       }).join('') || `<tr><td colspan="7" class="no-data">Nenhum TC cadastrado</td></tr>`;
 
       const porTipo = {};
-      despesas.forEach(d => { porTipo[d.tipo]=(porTipo[d.tipo]||0)+_pm(d.valor); });
+      const despesasOrdenadas = [...despesas].sort((a, b) => {
+      const da = a.nfData ? new Date(a.nfData) : new Date(0);
+      const db = b.nfData ? new Date(b.nfData) : new Date(0);
+      return da - db;
+    });
+    despesasOrdenadas.forEach(d => { porTipo[d.tipo]=(porTipo[d.tipo]||0)+_pm(d.valor); });
       const tiposLinhas = Object.entries(porTipo).map(([tipo,val]) =>
         `<tr><td>${_tl(tipo)}</td><td class="right mono">${_fmt(val)}</td><td class="right muted">${totalDesp?Math.round(val/totalDesp*100):0}%</td></tr>`
       ).join('') || `<tr><td colspan="3" class="no-data">Nenhuma despesa lançada</td></tr>`;
@@ -8453,7 +8458,7 @@ function renderDashboard() {
     const da = a.nfData ? new Date(a.nfData) : new Date(0);
     const db = b.nfData ? new Date(b.nfData) : new Date(0);
     return da - db;
-  }).slice(-4);
+  }).slice(0, 4);
   if (ul.length) {
     document.getElementById('dash-ultimos').innerHTML = ul.map(d => {
       const tcVinc = d.tcVinculo ? (state.tcs||[]).find(t => String(t.id) === String(d.tcVinculo)) : null;
