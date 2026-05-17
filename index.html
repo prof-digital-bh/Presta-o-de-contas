@@ -1994,7 +1994,7 @@
         </div>
         <div class="gap-8">
           <button class="btn btn-secondary" onclick="imprimirAba('alertas')">🖨 Imprimir</button>
-          <button class="btn btn-secondary" onclick="renderAlertas()">↺ Atualizar</button>
+          <button class="btn btn-secondary" id="btn-atualizar-alertas" onclick="atualizarAlertas()">↺ Atualizar</button>
         </div>
       </div>
 
@@ -9221,6 +9221,18 @@ _____________________________________________
 }
 
 // ==================== ALERTAS AUTOMÁTICOS ====================
+async function atualizarAlertas() {
+  const btn = document.getElementById('btn-atualizar-alertas');
+  if (btn) { btn.disabled = true; btn.textContent = '↺ Atualizando…'; }
+  try {
+    await carregarDados();
+  } catch(e) {
+    console.error('Erro ao recarregar dados:', e);
+  }
+  renderAlertas();
+  if (btn) { btn.disabled = false; btn.textContent = '↺ Atualizar'; }
+}
+
 function renderAlertas() {
   const el = document.getElementById('alertas-automaticos');
   if (!el) return;
